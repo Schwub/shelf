@@ -1,35 +1,44 @@
 # AGENTS.md
 
 ## Commands
-- Install: `<command>`
-- Run one test: `<command>`
-- Run all tests: `<command>` (<takes ~N min; use the single-test form while iterating>)
-- Lint / typecheck: `<command>`
-- Full check before finishing: `<command>`
+Run Flutter commands in `app/` through mise (`mise exec -- flutter ...`):
+mise isn't activated in the shell, and `flutter`/`dart` there may be
+aliased to fvm with a different version.
+- Install: `mise install`, then `cd app && mise exec -- flutter pub get`
+- Run one test: `cd app && mise exec -- flutter test test/widget_test.dart`
+- Run all tests: `mise run check:test`
+- Format: `mise exec -- dart format app`
+- Full check before finishing: `mise run check` (format, analyze, tests,
+  web build; ~30 s)
+- Native builds (not in CI; run after changing `app/ios` or `app/android`):
+  `mise exec -- flutter build ios --debug --no-codesign` (~1 min) and
+  `mise exec -- flutter build apk --debug` (~2.5 min), both in `app/`.
+- Tasks live in `backlog/` (Backlog.md): `mise exec -- backlog task list --plain`,
+  `backlog task view <id> --plain`, `backlog task edit <id> -s "In Progress"`,
+  `backlog task edit <id> --check-ac <n> -s Done`,
+  `backlog task create "<title>" --ac "<criterion>"`. Edit task files with
+  the CLI, not by hand (they contain marker comments).
 
 ## Done means
-- `<full check command>` passes and new behaviour has a test.
+- `mise run check` passes and new behaviour has a test.
+- Changes to `app/ios` or `app/android` also pass the native build for that
+  platform.
 
 ## Conventions
-- <Where this repo differs from common defaults> (<short reason>).
-- New <kind of code> follows `<path/to/exemplar>`.
+- The Dart package is `shelf_app` (imports: `package:shelf_app/...`), not
+  `shelf`, which is a well-known pub.dev package.
 - New skills go in `.agents/skills/<name>/SKILL.md` (Agent Skills standard), linked into Claude Code with `ln -s ../../.agents/skills/<name> .claude/skills/<name>`; no Claude-only frontmatter.
 
-## Gotchas
-- <Misleading code, e.g. a live legacy folder that shouldn't be copied>
-- <Environment, e.g. required env vars, services, generated files and how to regenerate them>
-
 ## Boundaries
-- Ask first: <only what the working agreements don't cover, e.g. migrations, changing CI>
-- Never: <e.g. edit vendor/, commit secrets> (enforced by <pre-commit / CI>)
-
-## Git and PRs
-- <Branch naming, commit and PR format, attribution policy>
+- Ask first: changing the app ID `de.schwubware.shelf`; running
+  `supabase link`, `db push` or `functions deploy` (they touch the hosted
+  project).
 
 ## Where to look
+- Goal, scope, milestones and risks: `docs/project.md`.
 - Intended architecture and key decisions: `docs/architecture.md`.
-- Working on <area>: read `<docs/area.md>` first.
-- <Library or API newer than the model's training>: read `<docs/lib/INDEX.md>` before using it.
+- Flutter 3.50 and Supabase CLI 3.x may be newer than your training: check
+  `--help` or the official docs before relying on remembered flags or APIs.
 
 # Working agreements
 

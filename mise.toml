@@ -1,3 +1,9 @@
+[tools]
+flutter = "3.50.1"
+supabase = "3.2.0"
+node = "24"
+"npm:backlog.md" = "1.55.3"
+
 [tasks.agent]
 description = "Run Claude Code in a Docker sandbox on a private clone of this repo"
 run = "sbx run --clone claude ."
@@ -10,3 +16,23 @@ depends = ["check:*"]
 description = "Test the command guard"
 run = ".agents/guard.test.sh"
 
+
+[tasks."check:format"]
+description = "Check Dart formatting (fix with: dart format .)"
+dir = "app"
+run = "dart format --output=none --set-exit-if-changed ."
+
+[tasks."check:analyze"]
+description = "Analyze the Flutter app"
+dir = "app"
+run = "flutter analyze"
+
+[tasks."check:test"]
+description = "Run the Flutter tests"
+dir = "app"
+run = "flutter test"
+
+[tasks."check:build"]
+description = "Build the web app (iOS and Android need local SDKs)"
+dir = "app"
+run = "flutter build web"
