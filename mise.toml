@@ -1,0 +1,20 @@
+[tasks.agent]
+description = "Run Claude Code in a Docker sandbox on a private clone of this repo"
+run = "sbx run --clone claude ."
+
+[tasks.check]
+description = "Run all checks (every check:* task)"
+depends = ["check:*"]
+
+[tasks."check:guard"]
+description = "Test the command guard"
+run = ".agents/guard.test.sh"
+
+# Blueprint only: init removes everything from here.
+[tasks."check:init"]
+description = "Test init on a throwaway repo"
+run = ".blueprint/init.test.sh"
+
+[tasks.init]
+description = "Turn a repo just created from this template into a project"
+run = ".blueprint/init.sh"
