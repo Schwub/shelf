@@ -4,10 +4,7 @@
 Run Flutter commands in `app/` through mise (`mise exec -- flutter ...`):
 mise isn't activated in the shell, and `flutter`/`dart` there may be
 aliased to fvm with a different version.
-- Install: `mise install`, then `cd app && mise exec -- flutter pub get`
 - Run one test: `cd app && mise exec -- flutter test test/widget_test.dart`
-- Run all tests: `mise run check:test`
-- Format: `mise exec -- dart format app`
 - Full check before finishing: `mise run check` (format, analyze, tests,
   web build; ~30 s)
 - Native builds (not in CI; run after changing `app/ios` or `app/android`):
@@ -25,8 +22,6 @@ aliased to fvm with a different version.
   platform.
 
 ## Conventions
-- The Dart package is `shelf_app` (imports: `package:shelf_app/...`), not
-  `shelf`, which is a well-known pub.dev package.
 - New skills go in `.agents/skills/<name>/SKILL.md` (Agent Skills standard), linked into Claude Code with `ln -s ../../.agents/skills/<name> .claude/skills/<name>`; no Claude-only frontmatter.
 
 ## Boundaries
