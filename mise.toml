@@ -8,6 +8,10 @@ node = "24"
 description = "Run Claude Code in a Docker sandbox on a private clone of this repo"
 run = "sbx run --clone claude ."
 
+[tasks."agentic:update"]
+description = "Update the files shared with the blueprint (see .agents/managed.txt)"
+run = ".agents/update.sh"
+
 [tasks.check]
 description = "Run all checks (every check:* task)"
 depends = ["check:*"]

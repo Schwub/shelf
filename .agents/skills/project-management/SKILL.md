@@ -1,6 +1,6 @@
 ---
 name: project-management
-description: Decide how a project tracks its tasks and set it up - from no tracker (a list in docs/project.md) to a task tool - using fixed criteria and a maintained candidate list. Use during project setup, or when a project outgrows how it tracks work.
+description: Decide with the user how the project tracks its tasks - from a list in docs/project.md to a task tool - against fixed criteria, and set it up. Use when setup calls it or the user asks.
 ---
 
 # Project management

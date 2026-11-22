@@ -71,6 +71,9 @@ conflict and ask.
 ## Changes
 - Follow how this codebase already solves similar problems and reuse its
   helpers. If you think it should deviate, say so.
+- In a project, files listed in `.agents/managed.txt` and this section come
+  from the blueprint and `mise run agentic:update` overwrites them: don't
+  edit them; note what's wrong in `docs/blueprint-feedback.md`.
 - Make the smallest change that solves the request; every changed line,
   tests included, should trace to it. No speculative abstractions, options,
   or error handling for cases that can't happen.
