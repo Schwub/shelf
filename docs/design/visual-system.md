@@ -113,9 +113,13 @@ Five sizes only: 24, 15, 14, 13, 12.
   under the board.
 - **Rating meter:** five bars, one per star; half a star fills half a
   bar. Small: 76 × 6 px, 4 px gaps. On the album entry: five 44 px keys,
-  each with a 6 px bar centred on the key's face (12 px from the face's
-  left and right edges, vertically on the face's centre, not the whole key);
-  tap a key for a full star, again for a half.
+  each with a 6 px bar on its face (12 px from the face's left and right
+  edges, on the face's vertical centre) that moves with the face. A key
+  with a full star is pressed (state B, bar filled); a key with a half star
+  is pressed halfway: sides 3.5 px right and 4.2 px front, face moved 1.5 /
+  1.8 px, shadow halfway (2.1 / 2.8 / 3.5 px), bar half filled; empty keys
+  are at rest. Tap a key for a full star, again for a half, a third time to
+  clear.
 - **Fields** are recessed like a cassette window: 1 px line outline and a
   soft inner shadow at the top, no lip.
 - **Status without a rating:** signal light plus "Want" or "To listen" in

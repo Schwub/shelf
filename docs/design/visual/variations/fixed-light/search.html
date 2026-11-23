@@ -173,8 +173,22 @@ h1{font:600 20px system-ui;margin:0 0 4px}p.d{margin:0 0 18px;max-width:960px;co
 
 .key.on::after,.tab.on::after{background:var(--facePressed)!important}
 .key.on .led,.tab.on .led{box-shadow:inset 0 1px 1px #0006,0 0 6px #F2B13A88,0 0 18px 8px var(--winGlow)}
-/* Rating bar centred on the visible face (face = key minus 5 px right side, 6 px front side). */
-.rate .seg:before{left:12px!important;right:17px!important;top:16px!important;margin:0!important}
+/* Rating keys: the same key; filled = pressed (state B), half star = halfway, empty = at rest.
+   The bar sits on the face and moves with it: 12 px from the face edges, on its vertical centre. */
+.rate .rk{flex:1;height:44px;padding:0!important}
+.rate .rk .rbar{position:absolute;left:12px;right:17px;top:16px;height:6px;border-radius:1px;background:var(--off)}
+.rate .rk.on .rbar{left:15px;right:14px;top:19.6px}
+.rate .rk.half{background:transparent;box-shadow:none}
+.rate .rk.half::before{content:"";position:absolute;left:1.5px;top:1.8px;right:0;bottom:0;border-radius:4px;z-index:-2;background:var(--side);
+ box-shadow:inset -1px -1px 0 var(--contact),inset -3.5px 0 0 var(--sideR),2.1px 2.8px 3.5px -0.75px var(--edge)}
+.rate .rk.half::after{left:1.5px;top:1.8px;right:3.5px;bottom:4.2px;background:var(--facePressed);
+ box-shadow:inset 1px 1px 0 var(--signal),inset 2px 2px 0 #F2B13A33,inset 0 0 0 1px var(--line)}
+.rate .rk.half .rbar{left:13.5px;right:15.5px;top:17.8px}
+.rate .rk:nth-child(1).on .rbar{background:var(--m1)}.rate .rk:nth-child(2).on .rbar{background:var(--m2)}.rate .rk:nth-child(3).on .rbar{background:var(--m3)}
+.rate .rk:nth-child(4).on .rbar{background:var(--m4)}.rate .rk:nth-child(5).on .rbar{background:var(--m5)}
+.rate .rk:nth-child(1).half .rbar{background:linear-gradient(90deg,var(--m1) 50%,var(--off) 50%)}.rate .rk:nth-child(2).half .rbar{background:linear-gradient(90deg,var(--m2) 50%,var(--off) 50%)}
+.rate .rk:nth-child(3).half .rbar{background:linear-gradient(90deg,var(--m3) 50%,var(--off) 50%)}.rate .rk:nth-child(4).half .rbar{background:linear-gradient(90deg,var(--m4) 50%,var(--off) 50%)}
+.rate .rk:nth-child(5).half .rbar{background:linear-gradient(90deg,var(--m5) 50%,var(--off) 50%)}
 
 .key:has(.led),.tab:has(.led){padding-left:28px!important;padding-right:21px!important}
 .key.on:has(.led),.tab.on:has(.led){padding-left:31px!important;padding-right:18px!important}
