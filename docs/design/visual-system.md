@@ -113,7 +113,9 @@ Five sizes only: 24, 15, 14, 13, 12.
   under the board.
 - **Rating meter:** five bars, one per star; half a star fills half a
   bar. Small: 76 × 6 px, 4 px gaps. On the album entry: five 44 px keys,
-  each with a 6 px bar; tap a key for a full star, again for a half.
+  each with a 6 px bar centred on the key's face (12 px from the face's
+  left and right edges, vertically on the face's centre, not the whole key);
+  tap a key for a full star, again for a half.
 - **Fields** are recessed like a cassette window: 1 px line outline and a
   soft inner shadow at the top, no lip.
 - **Status without a rating:** signal light plus "Want" or "To listen" in

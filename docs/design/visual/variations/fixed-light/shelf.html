@@ -173,6 +173,8 @@ h1{font:600 20px system-ui;margin:0 0 4px}p.d{margin:0 0 18px;max-width:960px;co
 
 .key.on::after,.tab.on::after{background:var(--facePressed)!important}
 .key.on .led,.tab.on .led{box-shadow:inset 0 1px 1px #0006,0 0 6px #F2B13A88,0 0 18px 8px var(--winGlow)}
+/* Rating bar centred on the visible face (face = key minus 5 px right side, 6 px front side). */
+.rate .seg:before{left:12px!important;right:17px!important;top:16px!important;margin:0!important}
 
 .key:has(.led),.tab:has(.led){padding-left:28px!important;padding-right:21px!important}
 .key.on:has(.led),.tab.on:has(.led){padding-left:31px!important;padding-right:18px!important}
