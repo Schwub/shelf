@@ -39,12 +39,13 @@
 - `albums`: shared catalog; `musicbrainz_id` (release group) is unique and
   nullable for links that don't resolve. Signed-in users read and add;
   no client edits or deletes.
-- `shelf_entries`: one per user and album. Two independent statuses, at
-  least one set: `listening` (want_to_listen, listened) and `owning` (want,
-  own); `formats` (vinyl, cd, cassette, digital; several allowed, only when
-  owned). Optional `rating` 1–10 (half stars), `comment`, `updated_at`
-  set by a trigger. RLS: only the owner reads and writes; friends' read
-  access comes with M2.
+- `shelf_entries`: one per user and album. Optional `rating` 1–10 (half
+  stars), `comment`, `updated_at` set by a trigger. RLS: only the owner
+  reads and writes; friends' read access comes with M2.
+- Tags (`tag_groups`, `tags`, `entry_tags`, `shelf_filters`): user-defined
+  groups, exclusive or multiple choice, sub-groups under a tag, built-in
+  groups Collection and Listening shared in meaning across users; suggested
+  groups created for each new user. Details: `docs/features/tags.md`.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 
@@ -87,6 +88,12 @@
   (the app has no CocoaPods); Apache-2.0, maintained. Considered: own native
   code (same Xcode setup, ~150 lines of Kotlin/Swift more), `share_handler`
   (CocoaPods only, last release 2025).
+- **2026-11-24 – Generic tags instead of fixed statuses.** Tag groups,
+  tags and a join table, with the rules (one tag per exclusive group,
+  sub-tags need their parent, built-ins can't be deleted, owner only)
+  enforced in Postgres. Works for every media type. Considered: tag IDs as
+  an array on the entry (rules only via triggers, stale IDs), text labels
+  (renaming rewrites every item). See `docs/features/tags.md`.
 - **2026-11-23 – Visual system "subtle 80s".** Warm surfaces with a few
   cues (teak shelf lines, cassette-recorder keys in 3D seen from the bottom
   right, a filter bar with labels above its keys, wide Archivo type, light
