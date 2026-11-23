@@ -127,8 +127,9 @@ Five sizes only: 24, 15, 14, 13, 12.
   clear.
 - **Fields** are recessed like a cassette window: 1 px line outline and a
   soft inner shadow at the top, no lip.
-- **Status without a rating:** signal light plus "Want" or "To listen" in
-  signal colour, 12/600.
+- **Shelf tiles** show only title, artist and, if rated, the small rating
+  meter. No status tags on the shelf (less clutter): listening and
+  collection status live on the album entry and in the filter bar.
 - **Spines view:** the list alternative; spines coloured from the cover,
   artist and title rotated, full width, standing on shelf boards; heights
   vary per album, pale spines get a 1 px line outline. Tapping a spine
