@@ -1,6 +1,8 @@
 # Visual system
 
-Locked 2026-11-23. Mockups: [visual/system.html](visual/system.html)
+Locked 2026-11-23, colours and keys updated the same day (variation V3 with
+cassette keys). Mockups: [visual/variations/v3-cassette.html](visual/variations/v3-cassette.html)
+and, for layout, [visual/system.html](visual/system.html)
 (earlier directions A–B5 are kept next to it for reference). Screens and
 states are in [screens.md](screens.md); this file decides how they look.
 
@@ -23,12 +25,14 @@ Two themes; the app follows the system setting.
 | text | #F1E6D4 | #2A1D16 | Text |
 | muted | #B5A28B | #665444 | Secondary text, labels |
 | signal | #F0A830 | #B06A00 | Indicator lights, rating meter, selected outline, amber text |
-| amber | #F0A830 | #F0A830 | Primary action fill only |
+| warm | #F2B13A → #E8743A | #B06A00 → #B4471C | The one gradient: rating bars (amber to coral across the five bars), indicator lights |
+| amber | #F2B13A → #E8743A | same | Primary key face, left to right; lip #B4501E |
 | onAmber | #1F1510 | #2A1D16 | Text on amber |
 | line | text at 12 % | text at 15 % | Hairlines, key outlines |
 | off | #8C7C6A | #A39482 | Unlit light outlines, empty meter segments (≥ 3:1) |
 
-One accent: amber. Cover colours are the only other colour on screen; the
+One accent: the warm amber-to-coral gradient, like a level meter warming
+up; backgrounds stay flat. Cover colours are the only other colour on screen; the
 album entry tints the wall behind the cover with the cover's colour
 (`ColorScheme.fromImageProvider`, `DynamicSchemeVariant.fidelity`), at
 33 % (evening) or 25 % (daylight).
@@ -55,16 +59,23 @@ Five sizes only: 24, 15, 14, 13, 12.
   spines.
 
 ## Components
-- **Key** (the only control): surface fill, 1 px line outline, 4 px
-  corners, 44 px. Options carry an 8 px square light before the label,
-  unlit as a 1 px off outline. Selected: surfaceOn fill, 1.5 px signal
-  outline, light filled with signal. Primary: amber fill, onAmber text, no
-  light. Cancel and close are plain keys without a light. Used for every
-  choice (each option a key), formats, toolbar, Save/Cancel, close.
+- **Key** (the only control), modelled on a cassette recorder's piano
+  keys: 44 px, 4 px corners, a lit top face (evening #36271D → #2A1D16,
+  daylight #FFFFFF → #F3ECE2), a 4 px front lip (#130C08 / #D2C2AE), a
+  1 px line outline and a hairline shadow below. Options carry an 8 px
+  square light before the label, unlit as a 1 px off outline.
+  **Selected = pressed down:** the face darkens (#241811 → #2D2017 /
+  #E8DCCA → #F1E7D8), the content sinks 3 px, the lip shrinks to 1 px, a
+  soft shadow falls in at the top, the outline turns 1.5 px signal and the
+  light comes on. **Primary:** the amber gradient face with a coral lip,
+  onAmber text, no light. Cancel and close are plain keys without a light.
+  Every press gives a light haptic click (`HapticFeedback.selectionClick`).
+  Used for every choice (each option a key), formats, toolbar,
+  Save/Cancel, close.
 - **Divider tabs** (shelf filters): 44 px keys standing on a 4 px teak
-  baseline, bottom tucked 8 px behind it, label plus count. Selected: like
-  a selected key, raised 4 px, with a 2 px signal top edge. The row
-  scrolls sideways and fades out over the last 32 px.
+  baseline, bottom tucked 8 px behind it, label plus count. Selected: a
+  pressed key, like every other selection. The row scrolls sideways and
+  fades out over the last 32 px.
 - **Shelf board:** a 4 px teak line (1 px lighter top edge) across the
   full width under each row of three covers, a 10 px soft shadow below,
   and a 2 px contact shadow under each cover; title, artist and meter
@@ -72,6 +83,8 @@ Five sizes only: 24, 15, 14, 13, 12.
 - **Rating meter:** five bars, one per star; half a star fills half a
   bar. Small: 76 × 6 px, 4 px gaps. On the album entry: five 44 px keys,
   each with a 6 px bar; tap a key for a full star, again for a half.
+- **Fields** are recessed like a cassette window: 1 px line outline and a
+  soft inner shadow at the top, no lip.
 - **Status without a rating:** signal light plus "Want" or "To listen" in
   signal colour, 12/600.
 - **Spines view:** the list alternative; spines coloured from the cover,
@@ -81,7 +94,7 @@ Five sizes only: 24, 15, 14, 13, 12.
   below; tapping again opens it.
 
 ## Motion
-Short and functional only: keys press in 100 ms; a pulled spine slides
+Short and functional only: keys press in 100 ms (sink, lip shrinks); a pulled spine slides
 150 ms. No looping or decorative animation.
 
 ## Later ideas (not in M1)
