@@ -12,3 +12,5 @@
   locked layout (flat keys, divider tabs).
 - `variations/` – colour variations V1–V5, key and pressed-state studies,
   tab bar studies (T1–T3, piano keys, S1–S5; S2 chosen), the top-down key.
+- `variations/fixed-light/` – all M1 screens with the light window fixed at
+  the start of every key (for comparison with the final, centred light).
