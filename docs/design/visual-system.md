@@ -1,18 +1,21 @@
 # Visual system
 
-Locked 2026-11-23, colours and keys updated the same day (colours V3, key
-C4, pressed state B). Mockups: [visual/variations/c4-final-sheet.html](visual/variations/c4-final-sheet.html)
-and [visual/variations/c4-final-entries.html](visual/variations/c4-final-entries.html) for the key and screens; [visual/system.html](visual/system.html) for the spines view
-and, for layout, [visual/system.html](visual/system.html)
-(earlier directions A–B5 are kept next to it for reference). Screens and
-states are in [screens.md](screens.md); this file decides how they look.
+Final 2026-11-23: colours V3, key C4 with pressed state B, filter bar S2.
+The final mockups of every M1 screen and state, evening and daylight, are
+in [visual/screens/](visual/screens/); the key in close-up is
+[visual/variations/c4-final-sheet.html](visual/variations/c4-final-sheet.html)
+(option B). Everything else in [visual/](visual/) is exploration, kept for
+reference ([visual/README.md](visual/README.md)). Screens and states are
+in [screens.md](screens.md); this file decides how they look.
 
 ## Idea
-The shelf is the product. Modern and flat, with a few cues from an 80s
+The shelf is the product. Calm, warm surfaces with a few cues from an 80s
 living room and hi-fi that you feel rather than notice: covers standing on
-teak shelf lines, a filter bar of keys, wide type, a small indicator light on
-selected keys, a five-segment rating meter. Nothing else is decorative: no
-textures, bevels, glows, round buttons or illustrations.
+teak shelf lines, tactile keys like a cassette recorder's (seen from the
+bottom right, light from the top left), a filter bar with labels printed
+above its keys, wide type, a small light window on selected keys, a
+five-segment rating meter. Nothing else is decorative: no textures, glows,
+round buttons or illustrations.
 
 ## Colour
 Two themes; the app follows the system setting.

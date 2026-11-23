@@ -87,10 +87,14 @@
   (the app has no CocoaPods); Apache-2.0, maintained. Considered: own native
   code (same Xcode setup, ~150 lines of Kotlin/Swift more), `share_handler`
   (CocoaPods only, last release 2025).
-- **2026-11-23 – Visual system "subtle 80s".** Modern and flat with a few
-  cues (teak shelf lines, divider tabs, wide Archivo type, indicator light,
-  five-bar rating meter), one control (the 44 px key, 4 px corners), evening
-  and daylight themes; see `docs/design/visual-system.md`. Considered: five
+- **2026-11-23 – Visual system "subtle 80s".** Warm surfaces with a few
+  cues (teak shelf lines, cassette-recorder keys in 3D seen from the bottom
+  right, a filter bar with labels above its keys, wide Archivo type, light
+  windows, five-bar rating meter, amber-to-coral accent), one control (the
+  44 px key, 4 px corners; pressed keys sit lower, never sunk in), evening
+  and daylight themes; see `docs/design/visual-system.md`. Considered: a
+  top-down flat key (calmer, but loses the tactile feel), piano keys seen
+  from the front (inconsistent with the other keys). Considered: five
   earlier directions in `docs/design/visual/` (staff picks, crate digging,
   inner sleeve, cover light, literal 80s hi-fi): too playful, too modern or
   too literal.
