@@ -87,6 +87,13 @@
   (the app has no CocoaPods); Apache-2.0, maintained. Considered: own native
   code (same Xcode setup, ~150 lines of Kotlin/Swift more), `share_handler`
   (CocoaPods only, last release 2025).
+- **2026-11-23 – Visual system "subtle 80s".** Modern and flat with a few
+  cues (teak shelf lines, divider tabs, wide Archivo type, indicator light,
+  five-bar rating meter), one control (the 44 px key, 4 px corners), evening
+  and daylight themes; see `docs/design/visual-system.md`. Considered: five
+  earlier directions in `docs/design/visual/` (staff picks, crate digging,
+  inner sleeve, cover light, literal 80s hi-fi): too playful, too modern or
+  too literal.
 - **2026-11-23 – Cloudflare Pages for the web app.** Free, unlimited
   static bandwidth with no usage cap that pauses the site, a preview URL per
   branch, and the build stays in GitHub Actions so the host is replaceable.

@@ -45,13 +45,15 @@ flowchart LR
     Cassette, Digital file (several can be selected; none is fine).
   Tapping the selected option again clears it. Adding needs at least one of
   the two; "Add to shelf" stays disabled until then.
-- **Rating** is optional: five 48 px stars. Tapping a star sets that many
-  stars, tapping the same star again makes it a half star, "Clear" removes
-  the rating. Screen readers get "Rating, 3.5 of 5 stars" with increase /
-  decrease actions in half-star steps.
+- **Rating** is optional: five 44 px keys, each a bar of the rating meter.
+  Tapping a key sets that many stars, tapping the same key again makes it a
+  half, tapping it a third time clears the rating. Screen readers get
+  "Rating, 3.5 of 5 stars" with increase / decrease actions in half-star
+  steps.
 - **Comment** is an optional multi-line field labelled "Comment (optional)".
-- **Grid / list** toggle in the shelf's app bar; the choice is remembered on
-  the device. Filter chips (All, Own, Want, Want to listen, Listened) sit
-  above the albums and scroll sideways.
+- **Covers / spines** toggle in the bottom bar next to "Add album"; the
+  choice is remembered on the device. Divider tabs (All, Own, Want, To
+  listen, Listened, each with a count) sit above the albums and scroll
+  sideways. Look and components: [visual-system.md](visual-system.md).
 - Confirmation after adding or removing is a snackbar; removing offers Undo
   instead of a confirmation dialog.
