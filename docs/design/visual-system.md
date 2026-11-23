@@ -1,8 +1,8 @@
 # Visual system
 
 Locked 2026-11-23, colours and keys updated the same day (colours V3, key
-C4). Mockups: [visual/variations/key-c4-layered.html](visual/variations/key-c4-layered.html)
-for the key and screens; [visual/system.html](visual/system.html) for the spines view
+C4, pressed state B). Mockups: [visual/variations/c4-final-sheet.html](visual/variations/c4-final-sheet.html)
+and [visual/variations/c4-final-entries.html](visual/variations/c4-final-entries.html) for the key and screens; [visual/system.html](visual/system.html) for the spines view
 and, for layout, [visual/system.html](visual/system.html)
 (earlier directions A–B5 are kept next to it for reference). Screens and
 states are in [screens.md](screens.md); this file decides how they look.
@@ -62,7 +62,7 @@ Five sizes only: 24, 15, 14, 13, 12.
 ## Components
 - **Key** (the only control), modelled on a cassette recorder's piano
   key, seen from the bottom right with light from the top left (mockup:
-  [visual/variations/key-c4-layered.html](visual/variations/key-c4-layered.html)):
+  [visual/variations/c4-final-sheet.html](visual/variations/c4-final-sheet.html), option B):
   - **Construction:** two layers, each a rounded rectangle with 4 px
     corners: the edge (the full key, side colour) and the face on top of
     it, inset 5 px from the right and 6 px from the bottom. Never draw the
@@ -77,11 +77,18 @@ Five sizes only: 24, 15, 14, 13, 12.
   - **Label:** Archivo 13/600, engraved (1 px shadow below, faint
     highlight above). Options carry a light window before the label: 10 × 6
     px, 2 px corners, recessed (#0E0907 / #E4D8C8).
-  - **Selected = pressed down:** the face moves the full side depth (5 px
-    right, 6 px down), so the sides disappear; a dark band at top and left
-    shows the opening (#0B0705 / #CDBCA6) with a soft shadow inside. A 1 px
-    signal line runs along the face's bottom and right edges. Backlit: a warm glow rises from
-    the bottom of the face, and the light window glows amber.
+  - **Selected = pressed down, not sunk in:** the key gets lower but keeps
+    standing on the panel; no opening around it. It loses 60 % of its
+    height: sides 2 px right, 2.4 px front (the 5:6 ratio of the resting
+    key), the face moves 3 px right and 3.6 px down, the shadow shrinks to
+    1.2 / 1.6 / 2 px. The face shades like at rest, slightly darker
+    (evening #33251C → #271B14, daylight #F7F2EA → #ECE3D6). Amber
+    reflection: the top and left edges catch the light in signal colour
+    instead of white; no line on the shadow side. A soft glow around the
+    light window, which lights up amber.
+  - **Light:** always from the top left. The right side is a little darker
+    than the front side (evening #120B08 vs #1A110C, daylight #CDBFAC vs
+    #DCCFBE), at rest and pressed.
   - **Primary:** the same key with the amber gradient face (#F2B13A →
     #E8743A), a coral side (#B4501E), a dark contact line (#7A3010),
     onAmber text, no light window.
@@ -111,7 +118,7 @@ Five sizes only: 24, 15, 14, 13, 12.
   below; tapping again opens it.
 
 ## Motion
-Short and functional only: keys press in 100 ms (the face slides into the opening); a pulled spine slides
+Short and functional only: keys press in 100 ms (the face slides down and right as the sides shrink); a pulled spine slides
 150 ms. No looping or decorative animation.
 
 ## Later ideas (not in M1)
