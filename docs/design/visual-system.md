@@ -10,7 +10,7 @@ states are in [screens.md](screens.md); this file decides how they look.
 ## Idea
 The shelf is the product. Modern and flat, with a few cues from an 80s
 living room and hi-fi that you feel rather than notice: covers standing on
-teak shelf lines, divider tabs, wide type, a small indicator light on
+teak shelf lines, a filter bar of keys, wide type, a small indicator light on
 selected keys, a five-segment rating meter. Nothing else is decorative: no
 textures, bevels, glows, round buttons or illustrations.
 

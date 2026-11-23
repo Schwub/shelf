@@ -52,8 +52,7 @@ flowchart LR
   steps.
 - **Comment** is an optional multi-line field labelled "Comment (optional)".
 - **Covers / spines** toggle in the bottom bar next to "Add album"; the
-  choice is remembered on the device. Divider tabs (All, Own, Want, To
-  listen, Listened, each with a count) sit above the albums and scroll
-  sideways. Look and components: [visual-system.md](visual-system.md).
+  choice is remembered on the device. A filter bar (labels All, Own, Want, To listen, Listened above five keys,
+  each key showing its count) sits above the albums; all five always fit. Look and components: [visual-system.md](visual-system.md).
 - Confirmation after adding or removing is a snackbar; removing offers Undo
   instead of a confirmation dialog.
