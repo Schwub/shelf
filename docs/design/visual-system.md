@@ -117,6 +117,25 @@ Five sizes only: 24, 15, 14, 13, 12.
   pulls it up 8 px with a signal light at its foot and shows its details
   below; tapping again opens it.
 
+## Supporting elements
+All M1 screens and states in this system: [visual/screens/](visual/screens/)
+(sign-in, shelf, search, entry). Elements those screens add, built from the
+same rules:
+- **Wordmark:** "shelf" in Archivo Expanded 800, 34, sign-in only.
+- **Disabled key:** the key at 45 % opacity, no press.
+- **Note** (inline message): surface fill, 1 px line, 4 px corners, a
+  signal-coloured warning icon, 13 px text. Errors use the note or a help
+  line with the icon; there is no separate error colour.
+- **Progress:** a 3 px track in off colour with a moving segment in the
+  amber gradient; skeletons are surface-coloured blocks and lines.
+- **Dialog:** background colour, 1 px line, 4 px corners, title in Archivo
+  18, two keys (secondary, primary) side by side; the screen behind is
+  dimmed to 55 %.
+- **Snackbar:** always dark (#2A1D16, cream text, hairline outline) with
+  the action in amber, 20 px from the sides, above the bottom bar.
+- **Search field:** a recessed field like the comment field, with a 18 px
+  search icon in muted colour.
+
 ## Motion
 Short and functional only: keys press in 100 ms (the face slides down and right as the sides shrink); a pulled spine slides
 150 ms. No looping or decorative animation.
