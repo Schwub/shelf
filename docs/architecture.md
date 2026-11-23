@@ -12,9 +12,8 @@
   - Auth for accounts.
   - Row-level security decides who sees what: your own shelf, and your
     friends' shelves and activity.
-  - Edge functions (TypeScript) for work the app can't do itself: Spotify
-    OAuth and import, and resolving a shared link (Spotify, Bandcamp) to
-    album data.
+  - Edge functions (TypeScript) for work the app can't do itself:
+    resolving a shared link (Spotify, Bandcamp) to album data.
 
 ## Share-to-add
 - `app/lib/share/share_receiver.dart` is the only code that imports the
