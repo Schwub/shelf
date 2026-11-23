@@ -109,7 +109,10 @@ Five sizes only: 24, 15, 14, 13, 12.
   S2): the labels are printed on the panel above the keys (Archivo 12/600,
   muted, centred over each key); below them five equal C4 keys, 44 px
   high, 6 px apart, across the full width, each with its light window
-  at the start and its count (13/600) centred in the rest. No scrolling. The selected filter is a pressed key
+  at the start and its count (13/600) centred in the rest. Up to five
+  filters fill the width in equal keys; with more, keys keep the width of
+  five and the row (labels with it) scrolls sideways, fading out over the
+  last 32 px. Labels that don't fit their key end in an ellipsis. The selected filter is a pressed key
   (state B) with its light on. The row stands on a teak board that casts
   the usual 10 px shadow.
 - **Shelf board:** a 4 px teak line (1 px lighter top edge) across the

@@ -10,9 +10,14 @@ Flows are in [flows.md](flows.md), wireframes in [wireframes/](wireframes/).
 | Check your email | Tell the user where the link went; resend or change email | Sign in | sent (resend countdown), resend available |
 | My shelf | The user's albums; start adding | all | loading, empty, filled grid, filled list, filter with no matches, error |
 | Search | Find an album on MusicBrainz | Add by search | idle, loading, results (some already on shelf), no results, error |
-| Album entry | Add an album or edit its entry: status, rating, comment | Add by search, Add by sharing, Status/rating/comment | resolving (shared link), add, edit, already on shelf, not an album, not found, load error, save error |
+| Album entry | Add an album or edit its entry: tags, rating, comment | Add by search, Add by sharing, Tags/rating/comment | resolving (shared link), add, edit, already on shelf, not an album, not found, load error, save error |
+| Add tags (sheet) | Pick tags of a large group, search, create a new tag | Tags/rating/comment | list, search with matches, no match (offer Create), save error |
+| Tags | The user's tag groups; open the editor for one | Tag editor | loading, list, error |
+| Tag group | Edit a group: name, one or several per album, its tags, sub-groups, hide or delete | Tag editor | new, existing, built-in, delete confirmation, can't make exclusive, duplicate name, save error |
+| Filters | Choose and order the filters of the shelf's filter bar | Filters | loading, list, empty (only All), add picker, error |
+| Import tags (sheet, M2) | After adding an album from a friend: copy their tags you don't have | Add from a friend | missing tags, nothing missing (not shown), save error |
 
-One screen, **Album entry**, serves both adding and editing, so status,
+One screen, **Album entry**, serves both adding and editing, so tags,
 rating and comment work the same everywhere. In add mode the primary action
 is "Add to shelf"; in edit mode it is "Save" and "Remove from shelf" is
 offered.
@@ -29,6 +34,13 @@ flowchart LR
   share([Share from Spotify / Bandcamp]) --> entry
   entry -- Search instead --> search
   entry -- saved --> shelf
+  entry -- + Add genre --> addtags[Add tags sheet]
+  entry -- Edit tags --> group[Tag group]
+  shelf -- ⋮ Tags --> tags[Tags]
+  tags -- group --> group
+  shelf -- ⋮ Filters --> filters[Filters]
+  friend([Friend's shelf, M2]) -- Add to my shelf --> entry
+  entry -- missing tags --> import[Import tags sheet]
 ```
 
 - My shelf is the only top-level screen in M1, so there is no bottom
@@ -36,15 +48,30 @@ flowchart LR
   with Shelf, Feed and Friends replaces the single screen.
 - Back follows the platform: system back / swipe on phones, the app bar back
   arrow everywhere. Back from Album entry after a share goes to My shelf.
-- Sign out: overflow menu (⋮) on My shelf, with a confirmation dialog.
+- Overflow menu (⋮) on My shelf: Tags, Filters, Sign out (with a
+  confirmation dialog).
 
 ## Interaction decisions
-- **Status** has two independent parts:
-  - **Listening:** Want to listen | Listened.
-  - **Collection:** Want | Own. With Own, format chips appear: Vinyl, CD,
-    Cassette, Digital file (several can be selected; none is fine).
-  Tapping the selected option again clears it. Adding needs at least one of
-  the two; "Add to shelf" stays disabled until then.
+- **Tags** (design in [../features/tags.md](../features/tags.md)): the album
+  entry lists the user's visible tag groups in their order.
+  - A group with up to six tags shows all of them as keys; one per album
+    (exclusive) or several. Tapping a pressed key releases it.
+  - A larger group shows only this album's tags plus a "+ Add <group>" key
+    that opens the Add tags sheet: search, tick tags, and "Create “…”" when
+    nothing matches. New groups are made in the editor.
+  - A sub-group appears under its parent tag only while that tag is
+    pressed (Format under Own); releasing the parent removes its sub-tags.
+  - No tag is required: "Add to shelf" is always available.
+  - "Edit tags" at the end of the section opens the editor.
+- **Tag editor:** Tags lists the groups (built-in ones marked); Tag group
+  edits one. Built-in groups can be renamed and hidden, not deleted; the
+  delete action is replaced by a note saying why. Hiding a group hides its
+  tags on the album entry and its filters, without removing them from
+  albums. Deleting a tag or group that's on albums asks first and says how
+  many albums it affects; making a group "one per album" while albums have
+  several of its tags is refused with the list of those albums.
+- **Filters:** chosen from ⋮ → Filters; "All" is always first. The bar shows
+  them in order and scrolls sideways after five.
 - **Rating** is optional: five 44 px keys, each a bar of the rating meter.
   Tapping a key sets that many stars, tapping the same key again makes it a
   half, tapping it a third time clears the rating. Screen readers get
@@ -52,7 +79,8 @@ flowchart LR
   steps.
 - **Comment** is an optional multi-line field labelled "Comment (optional)".
 - **Covers / spines** toggle in the bottom bar next to "Add album"; the
-  choice is remembered on the device. A filter bar (labels All, Own, Want, To listen, Listened above five keys,
-  each key showing its count) sits above the albums; all five always fit. Look and components: [visual-system.md](visual-system.md).
-- Confirmation after adding or removing is a snackbar; removing offers Undo
-  instead of a confirmation dialog.
+  choice is remembered on the device. A filter bar (labels above keys, each key showing its count) sits above
+  the albums; it starts with All, Own, Want, Want to listen, Listened. Look and components: [visual-system.md](visual-system.md).
+- Confirmation after adding or removing an album is a snackbar; removing
+  offers Undo instead of a confirmation dialog. Deletes that affect many
+  albums (a tag or group in the editor) ask first with a dialog instead.
