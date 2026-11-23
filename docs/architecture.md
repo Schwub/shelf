@@ -12,9 +12,8 @@
   - Auth for accounts.
   - Row-level security decides who sees what: your own shelf, and your
     friends' shelves and activity.
-  - Edge functions (TypeScript) for work the app can't do itself: Spotify
-    OAuth and import, and resolving a shared link (Spotify, Bandcamp) to
-    album data.
+  - Edge functions (TypeScript) for work the app can't do itself:
+    resolving a shared link (Spotify, Bandcamp) to album data.
 
 ## Share-to-add
 - `app/lib/share/share_receiver.dart` is the only code that imports the
@@ -36,6 +35,39 @@
   extension and show a confirmation instead of switching apps.
 - On a real iPhone the App Group must be registered under the Apple team.
 
+## Data model
+- `albums`: shared catalog; `musicbrainz_id` (release group) is unique and
+  nullable for links that don't resolve. Signed-in users read and add;
+  no client edits or deletes.
+- `shelf_entries`: one per user and album. Two independent statuses, at
+  least one set: `listening` (want_to_listen, listened) and `owning` (want,
+  own); `formats` (vinyl, cd, cassette, digital; several allowed, only when
+  owned). Optional `rating` 1–10 (half stars), `comment`, `updated_at`
+  set by a trigger. RLS: only the owner reads and writes; friends' read
+  access comes with M2.
+- pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
+  workflow (only Postgres is started).
+
+## Web deploys
+- The `web` workflow builds `flutter build web` in GitHub Actions and
+  uploads it to Cloudflare Pages (project `shelf`) with Wrangler: `main`
+  deploys to production, every PR to a preview alias
+  (`<branch>.<project>.pages.dev`) that the workflow posts on the PR.
+- Pages serves `index.html` for unknown paths (no `404.html`), so app
+  routes and auth redirects work without extra config.
+- The web build has no share target; sharing stays a phone feature.
+- Until the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository
+  secrets exist, the workflow skips the deploy. One-time setup:
+  1. Cloudflare dashboard → Workers & Pages → Create → Pages → Direct
+     Upload, project name `shelf`.
+  2. My Profile → API Tokens → Create Token → Custom, permission
+     Account · Cloudflare Pages · Edit.
+  3. GitHub → repository Settings → Secrets and variables → Actions: add
+     both secrets (the account ID is on the dashboard's overview page).
+- With sign-in (TASK-6), the hosted Supabase project's Auth URL
+  configuration needs the production URL as Site URL and
+  `https://*.<project>.pages.dev/**` as a redirect URL for previews.
+
 ## Decisions
 - **2026-11-22 – Flutter for the app.** One codebase for iOS, Android and
   web; the author knows Dart; mature share-intent plugins.
@@ -55,6 +87,27 @@
   (the app has no CocoaPods); Apache-2.0, maintained. Considered: own native
   code (same Xcode setup, ~150 lines of Kotlin/Swift more), `share_handler`
   (CocoaPods only, last release 2025).
+- **2026-11-23 – Visual system "subtle 80s".** Warm surfaces with a few
+  cues (teak shelf lines, cassette-recorder keys in 3D seen from the bottom
+  right, a filter bar with labels above its keys, wide Archivo type, light
+  windows, five-bar rating meter, amber-to-coral accent), one control (the
+  44 px key, 4 px corners; pressed keys sit lower, never sunk in), evening
+  and daylight themes; see `docs/design/visual-system.md`. Considered: a
+  top-down flat key (calmer, but loses the tactile feel), piano keys seen
+  from the front (inconsistent with the other keys). Considered: five
+  earlier directions in `docs/design/visual/` (staff picks, crate digging,
+  inner sleeve, cover light, literal 80s hi-fi): too playful, too modern or
+  too literal.
+- **2026-11-23 – Cloudflare Pages for the web app.** Free, unlimited
+  static bandwidth with no usage cap that pauses the site, a preview URL per
+  branch, and the build stays in GitHub Actions so the host is replaceable.
+  Pages rather than Workers static assets (Cloudflare's suggestion for new
+  projects): Pages' branch preview aliases are mature and the deploy action
+  returns them; moving a static site to Workers later is small.
+  Considered: Firebase Hosting (PR previews built in, but ~360 MB/day
+  transfer on the free plan), Netlify (free credits run out and pause the
+  site), Vercel (Hobby is non-commercial), GitHub Pages (needs a paid plan
+  for a private repository, no previews).
 - **2026-11-22 – Backlog.md for tasks.** Markdown files in `backlog/`, a CLI
   that works offline in the agent sandbox, no auto-commits. Considered: the
   First steps list in project.md (too thin for three milestones), GitHub
@@ -64,6 +117,6 @@
 - Visibility rules live in row-level security, not duplicated in app code.
 - Model albums only; generalize the schema when the second media type
   arrives, not before.
-- Edge functions only for what the client can't do (secrets, CORS, OAuth).
+- Edge functions only for what the client can't do (secrets, CORS).
 - The feed is a query over friends' recent shelf changes; no separate
   event system until it is needed.

@@ -19,3 +19,19 @@ Only what would help other projects; project-specific fixes go in AGENTS.md.
   Suggestion: drop Install and Run all tests from the template when checks
   are mise tasks, and have the skill apply the guide's test ("would an agent
   get this wrong without it?") to each line before showing AGENTS.md.
+- 2026-11-23 – `.github/workflows/check.yml` is managed, so a project can't
+  add a CI job to it (the deliver review caught one that `agentic:update`
+  would have deleted). Suggestion: say in project-setup that project CI jobs
+  go in their own workflow file, or keep check.yml out of managed.txt.
+- 2026-11-23 – Cloud sessions: `mise.run` is blocked by the network policy,
+  and mise can't install aqua/GitHub tools (api.github.com 403) or verify npm
+  provenance (sigstore blocked). Worked around with `npm i -g @jdxcode/mise`,
+  the Supabase binary from its GitHub release URL, and
+  `MISE_DISABLE_TOOLS` for `mise run`. Suggestion: a cloud-session note in
+  AGENTS.md or project-setup, or a setup script for the environment.
+- 2026-11-23 – frontend-design: the self-critique step has no explicit
+  consistency audit, and a mock shipped with mixed corner radii (connected
+  button group, squarish thumb in a round track) that the user saw as
+  mistakes. Suggestion: before showing a design, define a radius and
+  spacing scale and check every element against it (shape, 4/8 px grid,
+  shared left edge), and avoid asymmetric control shapes unless asked.
