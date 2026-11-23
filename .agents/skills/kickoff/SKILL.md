@@ -1,6 +1,6 @@
 ---
 name: kickoff
-description: Clarify what a new project is about by interviewing the user, then write docs/project.md (and docs/architecture.md for larger projects). Use at the start of a project, or when its goal, scope or stack is unclear or changes. Writes docs only, no code.
+description: Interview the user about a project and write docs/project.md and docs/architecture.md - goal, users, scope, constraints, stack. Docs only, no code. Use when setup calls it or the user asks to revisit goal or scope.
 ---
 
 # Kickoff
@@ -71,7 +71,8 @@ drop any that have nothing to say.
 - Product only: **Problem and alternatives**, **Core use cases**,
   **Success measures**, **Risks and assumptions**, **Milestones**.
 
-`docs/architecture.md` (product only, or when there is more than one part):
+`docs/architecture.md` (always; a few lines for small projects, since the
+software-design and tech-debt skills judge the code against it):
 - **Intended structure:** the main parts and how they talk to each other.
 - **Decisions:** one entry per decision with date, choice, reason and the
   alternatives considered.
@@ -81,6 +82,5 @@ Show the user a short summary of what you wrote and ask for corrections.
 Don't edit `AGENTS.md` or create code; that is the project-setup skill's job.
 
 ## 5. Finish
-- Next step for the user: run the project-setup skill.
 - If anything in this skill was wrong, missing or slowed you down, add a
   note to `docs/blueprint-feedback.md`.
