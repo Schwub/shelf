@@ -8,8 +8,10 @@ aliased to fvm with a different version.
 - Full check before finishing: `mise run check` (format, analyze, tests,
   web build; ~30 s)
 - Native builds (not in CI; run after changing `app/ios` or `app/android`):
-  `mise exec -- flutter build ios --debug --no-codesign` (~1 min) and
+  `mise exec -- flutter build ios --debug --no-codesign` and
   `mise exec -- flutter build apk --debug` (~2.5 min), both in `app/`.
+  iOS builds take 3–18 min here, mostly idle in Xcode's package resolution;
+  run them in the background.
 - Tasks live in `backlog/` (Backlog.md): `mise exec -- backlog task list --plain`,
   `backlog task view <id> --plain`, `backlog task edit <id> -s "In Progress"`,
   `backlog task edit <id> --check-ac <n> -s Done`,
