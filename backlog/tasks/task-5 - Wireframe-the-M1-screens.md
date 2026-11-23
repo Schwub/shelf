@@ -1,9 +1,10 @@
 ---
 id: TASK-5
 title: Wireframe the M1 screens
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-23T17:42:00Z'
+updated_date: '2026-11-23T17:45:00Z'
 labels: []
 dependencies: []
 ordinal: 5000
