@@ -38,12 +38,11 @@ in both themes (daylight signal #B06A00: 3.7:1 on bg, 4.0:1 on surface);
 bright amber is only used as a fill under dark text (8:1).
 
 ## Type
-Four sizes only: 24, 15, 13, 12.
+Five sizes only: 24, 15, 14, 13, 12.
 - **Archivo** width 125 (Expanded) 700, 24: screen and album titles.
   Width 112, 600, 13: keys, tabs and tab counts (tabular figures).
-- **IBM Plex Sans**: 15/600 pulled-spine title; 13/600 cover titles; 14
-  body and fields (counts as 13 + line height); 12 artist, labels (600)
-  and spine text.
+- **IBM Plex Sans**: 15/600 pulled-spine title; 14 body and fields;
+  13/600 cover titles; 12 artist, labels (600) and spine text.
 - Sentence case everywhere; no all-caps labels.
 
 ## Shape and space
