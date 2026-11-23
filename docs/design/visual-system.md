@@ -76,7 +76,8 @@ Five sizes only: 24, 15, 14, 13, 12.
   - **Selected = pressed down:** the face moves the full side depth (5 px
     right, 6 px down), so the sides disappear; a dark band at top and left
     shows the opening (#0B0705 / #CDBCA6) with a soft shadow inside. A 1 px
-    signal line runs around the whole key. Backlit: a warm glow rises from
+    signal line frames the whole face inside the opening (the dark band
+    stays outside it). Backlit: a warm glow rises from
     the bottom of the face, and the light window glows amber.
   - **Primary:** the same key with the amber gradient face (#F2B13A →
     #E8743A), a coral side (#B4501E), a dark contact line (#7A3010),
