@@ -96,11 +96,14 @@ Five sizes only: 24, 15, 14, 13, 12.
     gives a light haptic click (`HapticFeedback.selectionClick`).
   - Used for every choice (each option a key), formats, toolbar,
     Save/Cancel, close and the rating keys.
-- **Divider tabs** (shelf filters): 44 px keys standing on a 4 px teak
-  baseline, bottom tucked 8 px behind it, label plus count. The baseline
-  is a shelf board: it casts the same 10 px soft shadow below it. Selected: a
-  pressed key, like every other selection. The row scrolls sideways and
-  fades out over the last 32 px.
+- **Filter bar** (shelf filters: All, Own, Want, To listen, Listened;
+  mockup [visual/variations/tabbar-c4.html](visual/variations/tabbar-c4.html),
+  S2): the labels are printed on the panel above the keys (Archivo 12/600,
+  muted, centred over each key); below them five equal C4 keys, 44 px
+  high, 6 px apart, across the full width, each with its light window and
+  count (13/600). No scrolling. The selected filter is a pressed key
+  (state B) with its light on. The row stands on a teak board that casts
+  the usual 10 px shadow.
 - **Shelf board:** a 4 px teak line (1 px lighter top edge) across the
   full width under each row of three covers, a 10 px soft shadow below,
   and a 2 px contact shadow under each cover; title, artist and meter
