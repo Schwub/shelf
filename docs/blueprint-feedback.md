@@ -29,3 +29,9 @@ Only what would help other projects; project-specific fixes go in AGENTS.md.
   the Supabase binary from its GitHub release URL, and
   `MISE_DISABLE_TOOLS` for `mise run`. Suggestion: a cloud-session note in
   AGENTS.md or project-setup, or a setup script for the environment.
+- 2026-11-23 – frontend-design: the self-critique step has no explicit
+  consistency audit, and a mock shipped with mixed corner radii (connected
+  button group, squarish thumb in a round track) that the user saw as
+  mistakes. Suggestion: before showing a design, define a radius and
+  spacing scale and check every element against it (shape, 4/8 px grid,
+  shared left edge), and avoid asymmetric control shapes unless asked.
