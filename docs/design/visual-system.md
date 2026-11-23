@@ -157,6 +157,21 @@ same rules:
   the action in amber, 20 px from the sides, above the bottom bar.
 - **Search field:** a recessed field like the comment field, with a 18 px
   search icon in muted colour.
+- **Tag groups on the album entry:** each group has a label line (12/600,
+  muted); multiple-choice groups add an "Add" action on the right of it
+  (13/600, underlined, 44 px tall). Built-in two-tag groups fill the row
+  with equal keys; other tags keep their natural width and wrap. A
+  sub-group is indented 12 px with a 2 px line on its left. "Edit tags" is
+  an underlined text link (13/600, muted).
+- **List rows** (editor, filters, sheets): 56 px, 1 px line below, title
+  15/600 and a 12 px muted second line; 44 × 44 icons for reorder (≡),
+  more (⋯), remove (✕) and open (›); "Built-in" as muted 12/600 text.
+  Selection in a list uses the light window (lit = chosen).
+- **Screen bar:** a 44 px back key and the title in Archivo 24.
+- **Bottom sheet:** background colour, 4 px top corners, a hairline on top,
+  a grab bar, title in Archivo 18; the screen behind is dimmed to 45 %.
+- **Menu:** surface colour, 1 px line, 4 px corners, 48 px rows, under the
+  ⋮ key.
 
 ## Motion
 Short and functional only: keys press in 100 ms (the face slides down and right as the sides shrink); a pulled spine slides

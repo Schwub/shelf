@@ -2,7 +2,8 @@
 
 **Final** (what the app is built from):
 - `screens/` – every M1 screen and state, evening and daylight
-  (`shelf.html`, `entry.html`, `search.html`, `signin.html`).
+  (`shelf.html`, `entry.html`, `search.html`, `signin.html`, `tags.html`,
+  `filters.html`, `import.html`).
 - `variations/c4-final-sheet.html` – the key in close-up; option B is
   final.
 - Rules and values: `../visual-system.md`.

@@ -4,6 +4,7 @@ title: Show and edit my shelf
 status: To Do
 assignee: []
 created_date: '2026-11-23T17:42:00Z'
+updated_date: '2026-11-23T23:51:00Z'
 labels: []
 dependencies:
   - TASK-5
@@ -14,7 +15,7 @@ ordinal: 9000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-List the signed-in user's shelf entries and edit status, half-star rating and comment.
+List the signed-in user's shelf entries and edit an entry's rating and comment. Tags on the entry are TASK-16; design in docs/design/visual/screens/ and docs/features/tags.md.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria

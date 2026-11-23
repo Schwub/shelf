@@ -1,6 +1,6 @@
 # Tags
 
-Status: data model and schema done (56 pgTAP checks); wireframes in review; screens not built.
+Status: data model and schema done (56 pgTAP checks); wireframes and visual mockups done; screens not built (TASK-16 to TASK-19).
 
 ## Goal
 One tag system for every media type. Tags live in groups; a group is
@@ -89,8 +89,10 @@ rewrites every item, breaks the editor).
   access comes in M2.
 
 ## Plan
-1. Migration and pgTAP tests (this round).
-2. Wireframes (`docs/design/`) and visual mockups (`docs/design/visual/`)
-   for the four screens above; user review.
-3. Backlog tasks: album entry from tag groups, tag editor, filter menu,
-   import prompt (M2).
+1. Migration and pgTAP tests. Done.
+2. Wireframes (`docs/design/wireframes/`: album-entry, tags, filters,
+   import-tags) and visual mockups (`docs/design/visual/screens/`: entry,
+   tags, filters, import). Done.
+3. Screens: TASK-16 (album entry tags), TASK-17 (tag editor), TASK-18
+   (filters), TASK-19 (import, M2). They need TASK-14 (theme) and TASK-6
+   (sign-in).
