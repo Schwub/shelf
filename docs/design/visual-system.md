@@ -78,8 +78,13 @@ Five sizes only: 24, 15, 14, 13, 12.
     panel. Outline 1 px line, under the sides. Shadow 3 px right, 4 px down,
     5 px blur.
   - **Label:** Archivo 13/600, engraved (1 px shadow below, faint
-    highlight above). Options carry a light window before the label: 10 × 6
-    px, 2 px corners, recessed (#0E0907 / #E4D8C8).
+    highlight above). Options carry a light window: 10 × 6
+    px, 2 px corners, recessed (#0E0907 / #E4D8C8), always at the same spot
+    at the start of the key: 10 px from the face's left edge, on the face's
+    vertical centre, whatever the label. The label (or count) is centred in
+    the space to the right of it. When pressed, the window moves with the
+    face. Keys without a window (Save, Cancel, close, rating) centre their
+    content on the face.
   - **Selected = pressed down, not sunk in:** the key gets lower but keeps
     standing on the panel; no opening around it. It loses 60 % of its
     height: sides 2 px right, 2.4 px front (the 5:6 ratio of the resting
@@ -103,8 +108,8 @@ Five sizes only: 24, 15, 14, 13, 12.
   mockup [visual/variations/tabbar-c4.html](visual/variations/tabbar-c4.html),
   S2): the labels are printed on the panel above the keys (Archivo 12/600,
   muted, centred over each key); below them five equal C4 keys, 44 px
-  high, 6 px apart, across the full width, each with its light window and
-  count (13/600). No scrolling. The selected filter is a pressed key
+  high, 6 px apart, across the full width, each with its light window
+  at the start and its count (13/600) centred in the rest. No scrolling. The selected filter is a pressed key
   (state B) with its light on. The row stands on a teak board that casts
   the usual 10 px shadow.
 - **Shelf board:** a 4 px teak line (1 px lighter top edge) across the
