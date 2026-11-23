@@ -1,8 +1,8 @@
 # Visual system
 
 Locked 2026-11-23, colours and keys updated the same day (colours V3, key
-C4). Mockups: [visual/variations/v3-cassette.html](visual/variations/v3-cassette.html)
-for screens and [visual/variations/depth-sheet.html](visual/variations/depth-sheet.html) (C4) for the key
+C4). Mockups: [visual/variations/key-c4-layered.html](visual/variations/key-c4-layered.html)
+for the key and screens; [visual/system.html](visual/system.html) for the spines view
 and, for layout, [visual/system.html](visual/system.html)
 (earlier directions A–B5 are kept next to it for reference). Screens and
 states are in [screens.md](screens.md); this file decides how they look.
@@ -62,7 +62,11 @@ Five sizes only: 24, 15, 14, 13, 12.
 ## Components
 - **Key** (the only control), modelled on a cassette recorder's piano
   key, seen from the bottom right with light from the top left (mockup:
-  C4 in [visual/variations/depth-sheet.html](visual/variations/depth-sheet.html)):
+  [visual/variations/key-c4-layered.html](visual/variations/key-c4-layered.html)):
+  - **Construction:** two layers, each a rounded rectangle with 4 px
+    corners: the edge (the full key, side colour) and the face on top of
+    it, inset 5 px from the right and 6 px from the bottom. Never draw the
+    sides as inset shadows: their inner corners come out square.
   - **Shape:** 44 px high, 4 px corners. A slightly curved face (evening
     #3A2A20 → #2A1D16, daylight #FFFFFF → #F1E9DE, 160°) with a 1 px
     highlight on the top and left edges. Two visible sides: 5 px on the
@@ -76,8 +80,7 @@ Five sizes only: 24, 15, 14, 13, 12.
   - **Selected = pressed down:** the face moves the full side depth (5 px
     right, 6 px down), so the sides disappear; a dark band at top and left
     shows the opening (#0B0705 / #CDBCA6) with a soft shadow inside. A 1 px
-    signal line frames the whole face inside the opening (the dark band
-    stays outside it). Backlit: a warm glow rises from
+    signal line runs along the face's bottom and right edges. Backlit: a warm glow rises from
     the bottom of the face, and the light window glows amber.
   - **Primary:** the same key with the amber gradient face (#F2B13A →
     #E8743A), a coral side (#B4501E), a dark contact line (#7A3010),
