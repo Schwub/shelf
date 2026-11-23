@@ -39,8 +39,10 @@
 - `albums`: shared catalog; `musicbrainz_id` (release group) is unique and
   nullable for links that don't resolve. Signed-in users read and add;
   no client edits or deletes.
-- `shelf_entries`: one per user and album; `status` enum (own, want,
-  listened), optional `rating` 1–10 (half stars), `comment`, `updated_at`
+- `shelf_entries`: one per user and album. Two independent statuses, at
+  least one set: `listening` (want_to_listen, listened) and `owning` (want,
+  own); `formats` (vinyl, cd, cassette, digital; several allowed, only when
+  owned). Optional `rating` 1–10 (half stars), `comment`, `updated_at`
   set by a trigger. RLS: only the owner reads and writes; friends' read
   access comes with M2.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`

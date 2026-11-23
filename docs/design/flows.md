@@ -1,7 +1,8 @@
 # User flows (M1)
 
 M1 covers core use cases 1 and 2 from `docs/project.md`: add an album by
-search or by sharing a link, and give it a status, rating and comment.
+search or by sharing a link, and give it a listening and/or collection
+status (with formats when owned), a rating and a comment.
 Screens are listed in [screens.md](screens.md).
 
 ## Sign in (email magic link)
@@ -50,7 +51,7 @@ flowchart TD
   none -- edits query --> loading
   results -- taps album already on shelf --> edit([Album entry: edit])
   results -- taps album --> add[Album entry: add]
-  add -- chooses status, optional rating and comment --> save{Saved?}
+  add -- chooses listening and/or collection status, optional formats, rating and comment --> save{Saved?}
   save -- yes --> back([My shelf + snackbar: Added to your shelf · View])
   save -- error --> saveErr[Error on the entry screen: Couldn't save. Try again.] --> add
   add -- back / cancel --> results
@@ -74,7 +75,7 @@ flowchart TD
   kind -- track, playlist or artist link --> notAlbum[That's a track link. shelf adds whole albums: share the album instead, or search.] -- Search --> search([Search, prefilled when the title is known])
   kind -- not found --> notFound[Couldn't find this album. Search for it instead?] -- Search --> search
   kind -- error / offline --> err[Couldn't load the album. Check your connection.] -- Try again --> resolving
-  add -- chooses status, optional rating and comment → Save --> done([My shelf + snackbar: Added to your shelf])
+  add -- chooses listening and/or collection status, optional formats, rating and comment → Save --> done([My shelf + snackbar: Added to your shelf])
   add -- Cancel --> shelf([My shelf])
 ```
 
@@ -105,7 +106,7 @@ flowchart TD
   state -- none --> empty[Empty: Your shelf is empty. Search for an album or share one from Spotify or Bandcamp.]
   state -- error --> err[Couldn't load your shelf. Try again.]
   state -- some --> view[Grid or list, as last chosen]
-  view -- filter chip Own / Want / Listened --> filtered{Matches?}
+  view -- filter chip Own / Want / Want to listen / Listened --> filtered{Matches?}
   filtered -- none --> fempty[No albums marked Want yet. Show all]
   filtered -- some --> view
   view -- grid / list toggle --> view

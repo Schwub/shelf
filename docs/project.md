@@ -21,7 +21,8 @@ discovery is the core feature, not an extra.
 ## Core use cases
 1. Add an album by searching or by sharing a link (Spotify, Bandcamp) from
    another app.
-2. Give an album a status (e.g. own, want, listened), a rating and a comment.
+2. Mark an album as want to listen or listened, and as wanted or owned (on
+   vinyl, CD, cassette or as a digital file); give it a rating and a comment.
 3. Invite a friend with a link and view their shelf.
 4. See a feed of what friends add and rate.
 5. Import a Bandcamp collection.
@@ -87,8 +88,3 @@ or more albums and look at the feed every week.
   First version done.
 - **M3 – imports:** Bandcamp collection.
 - **Later:** public launch, then other media types.
-
-## Open questions
-- Record the format (vinyl, CD, digital) per album?
-- Which statuses exactly (own, want, listened, …)?
-- Rating scale (e.g. 1–5, half steps)?

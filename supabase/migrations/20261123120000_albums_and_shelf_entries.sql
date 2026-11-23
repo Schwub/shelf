@@ -1,6 +1,8 @@
 create extension if not exists moddatetime schema extensions;
 
-create type public.shelf_status as enum ('own', 'want', 'listened');
+create type public.listening_status as enum ('want_to_listen', 'listened');
+create type public.owning_status as enum ('want', 'own');
+create type public.album_format as enum ('vinyl', 'cd', 'cassette', 'digital');
 
 create table public.albums (
   id uuid primary key default gen_random_uuid(),
@@ -28,13 +30,18 @@ create table public.shelf_entries (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users on delete cascade,
   album_id uuid not null references public.albums,
-  status public.shelf_status not null,
+  -- Listening and collection are independent; an entry needs at least one.
+  listening public.listening_status,
+  owning public.owning_status,
+  formats public.album_format[] not null default '{}',
   -- Half stars: 1 = 0.5 stars, 10 = 5 stars.
   rating smallint check (rating between 1 and 10),
   comment text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (user_id, album_id)
+  unique (user_id, album_id),
+  check (listening is not null or owning is not null),
+  check (owning = 'own' or formats = '{}')
 );
 
 create index on public.shelf_entries (album_id);

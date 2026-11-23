@@ -17,21 +17,21 @@ figcaption{font-weight:600;margin:0 0 8px;font-size:14px}
 label{display:block;font-size:13px;color:#444;margin:0 0 4px}
 .field{height:56px;border:1px solid #888;border-radius:4px;padding:16px 12px;color:#222;background:#fff}
 .field.placeholder{color:#888}.field.error{border:2px solid #222}
-.field.multi{height:96px}
+.field.multi{height:72px}
 .help{font-size:13px;color:#555;margin:4px 0 16px}.help.error{color:#111;font-weight:600}
 .btn{height:48px;min-width:64px;border-radius:24px;display:inline-flex;align-items:center;justify-content:center;padding:0 24px;font-weight:600;border:1px solid #777;background:#fff;color:#222}
 .btn.primary{background:#444;color:#fff;border-color:#444}
 .btn.disabled{background:#ddd;color:#999;border-color:#ddd}
 .btn.text{border:none;padding:0 12px}
 .btn.block{display:flex;width:100%}
-.chips{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+.chips{display:flex;gap:8px;margin:0 -16px 12px 0;overflow:hidden;white-space:nowrap}.chip{flex:none}
 .chip{height:32px;padding:0 14px;border:1px solid #888;border-radius:8px;display:flex;align-items:center;font-size:14px}
 .chip.on{background:#ccc;border-color:#ccc;font-weight:600}
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .tile .cover{aspect-ratio:1;background:#bbb;border-radius:4px;position:relative}
 .tile .t{font-size:13px;font-weight:600;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .a{font-size:12px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.badge{position:absolute;left:4px;bottom:4px;background:#fff;border:1px solid #777;border-radius:4px;font-size:11px;padding:1px 5px}
+.badge{position:absolute;left:4px;bottom:4px;right:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff;border:1px solid #777;border-radius:4px;font-size:11px;padding:1px 5px}
 .skel{background:#e3e3e3!important}
 .skel-line{height:10px;background:#e3e3e3;border-radius:4px;margin-top:6px}
 .list .item{display:flex;gap:12px;align-items:center;min-height:72px;border-bottom:1px solid #eee;padding:8px 0}
@@ -48,8 +48,8 @@ label{display:block;font-size:13px;color:#444;margin:0 0 4px}
 .stars{display:flex;align-items:center}
 .star{width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:30px;color:#444}.star.off{color:#ccc}.star.half span{background:linear-gradient(90deg,#444 50%,#ccc 50%);-webkit-background-clip:text;background-clip:text;color:transparent}
 .tile .r{font-size:12px;color:#444}
-.album{display:flex;gap:16px;margin:0 0 20px}
-.album .cover{width:120px;height:120px;background:#bbb;border-radius:4px;flex:none}
+.album{display:flex;gap:16px;margin:0 0 4px}
+.album .cover{width:88px;height:88px;background:#bbb;border-radius:4px;flex:none}
 .album .t{font-size:20px;font-weight:600}.album .a{color:#444}.album .y{color:#666;font-size:13px}
 .section{font-size:13px;font-weight:600;color:#444;margin:16px 0 8px}
 .note{background:#eee;border-radius:8px;padding:12px;font-size:14px;margin:0 0 16px}

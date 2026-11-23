@@ -39,14 +39,19 @@ flowchart LR
 - Sign out: overflow menu (⋮) on My shelf, with a confirmation dialog.
 
 ## Interaction decisions
-- **Status** is a three-way segmented button: Own, Want, Listened. Adding
-  needs a status; "Add to shelf" stays disabled until one is chosen.
+- **Status** has two independent parts:
+  - **Listening:** Want to listen | Listened.
+  - **Collection:** Want | Own. With Own, format chips appear: Vinyl, CD,
+    Cassette, Digital file (several can be selected; none is fine).
+  Tapping the selected option again clears it. Adding needs at least one of
+  the two; "Add to shelf" stays disabled until then.
 - **Rating** is optional: five 48 px stars. Tapping a star sets that many
   stars, tapping the same star again makes it a half star, "Clear" removes
   the rating. Screen readers get "Rating, 3.5 of 5 stars" with increase /
   decrease actions in half-star steps.
 - **Comment** is an optional multi-line field labelled "Comment (optional)".
 - **Grid / list** toggle in the shelf's app bar; the choice is remembered on
-  the device. Filter chips (All, Own, Want, Listened) sit above the albums.
+  the device. Filter chips (All, Own, Want, Want to listen, Listened) sit
+  above the albums and scroll sideways.
 - Confirmation after adding or removing is a snackbar; removing offers Undo
   instead of a confirmation dialog.
