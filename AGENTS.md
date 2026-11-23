@@ -7,6 +7,7 @@ aliased to fvm with a different version.
 - Run one test: `cd app && mise exec -- flutter test test/widget_test.dart`
 - Full check before finishing: `mise run check` (format, analyze, tests,
   web build; ~30 s)
+- Database tests (Docker; run after changing `supabase/`): `mise run test:db`
 - Native builds (not in CI; run after changing `app/ios` or `app/android`):
   `mise exec -- flutter build ios --debug --no-codesign` and
   `mise exec -- flutter build apk --debug` (~2.5 min), both in `app/`.
