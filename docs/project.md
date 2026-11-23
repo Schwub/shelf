@@ -62,11 +62,17 @@ One month after friends get access: at least 5 friends have each added 20
 or more albums and look at the feed every week.
 
 ## Risks and assumptions
-- **Spotify API access.** Assumption: development mode (a small allowlist of
-  users, about 25) is enough for friends. It may block a public launch,
-  since wider access is mostly reserved for established companies. Test:
-  check the current rules and build the saved-albums import in M3 against
-  development mode; resolving shared Spotify links should not need it.
+- **Spotify API access** (rules checked 2026-11-23). Development mode now
+  allows only 5 allowlisted users per app (down from 25 since February
+  2026), and the app owner needs Spotify Premium; other users get 403.
+  Extended quota is reserved for established businesses with large user
+  numbers (forum reports say 250k monthly users), so it is out of reach.
+  `GET /me/albums` (saved albums) is still allowed in development mode;
+  quota is shared across a developer's apps (up to 25 Client IDs).
+  Consequence: the M3 saved-albums import works for the author and at most
+  four friends; the others add albums by search or share. Assumption to
+  test in M1: resolving a shared Spotify link needs no user login (client
+  credentials or the public oEmbed endpoint), so the user cap doesn't apply.
 - **Bandcamp has no public API for a fan's collection.** Assumption: a shared
   album link can be resolved from the page's metadata (title, artist,
   artwork). Importing a whole collection means reading the public
