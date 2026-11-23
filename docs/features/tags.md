@@ -1,6 +1,6 @@
 # Tags
 
-Status: design agreed 2026-11-23; schema in progress, screens not built.
+Status: data model and schema done (56 pgTAP checks); wireframes in review; screens not built.
 
 ## Goal
 One tag system for every media type. Tags live in groups; a group is
@@ -45,6 +45,16 @@ menu.
   asked about. Other tags match by group and tag name; for missing ones the
   app asks (all, pick, or skip) and creates copies in the user's own groups.
   Copies have no link back and are freely editable.
+- Album entry: groups with up to six tags show them all as keys;
+  multiple-choice groups always end with "+ Add …", which searches and can
+  create a tag. "Edit tags" opens the Tags list and keeps the album draft.
+- Editor: changes save immediately; deletes ask first (with the albums,
+  sub-groups and filters affected) and take effect at once. Sub-groups go
+  one level deep in the editor (the model allows deeper). Only built-in
+  groups can be hidden (enforced by a check constraint); hidden groups'
+  tags leave the album entry, the filter bar and the filter picker.
+- Import: a copied new group takes the friend's type; copies stay if the
+  album add is cancelled.
 - Rating and comment stay columns on `shelf_entries`; rating is not a tag.
 - Tags attach to the shelf entry, so the model works for any media type.
   Different suggested sets per media type (books: Read / To read) come with

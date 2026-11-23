@@ -123,32 +123,34 @@ screen and filter reflects the change.
 
 ```mermaid
 flowchart TD
-  menu([⋮ Tags, or Edit tags on an album]) --> list[Tags: groups in order, built-ins marked]
+  menu([⋮ Tags, or Edit tags on an album: its unsaved changes are kept]) --> list[Tags: groups in order, built-ins marked]
   list -- loading --> lskel[Placeholder rows]
   list -- error --> lerr[Couldn't load your tags. Try again.]
   list -- New group --> newg[Tag group: new, name empty]
   list -- group --> group[Tag group]
-  newg -- name, one or several per album, tags → Save --> saved{Saved?}
-  group -- rename / reorder / add tag / change type --> saved
+  newg -- name, one or several per album, tags → Create group --> saved{Saved?}
+  group -- rename / reorder / add tag / change type, saved at once --> saved
   saved -- yes --> list
   saved -- empty name --> nameErr[Give the group a name.] --> group
   saved -- name already used --> dupErr[You already have a group called “Mood”.] --> group
   saved -- error --> sErr[Couldn't save. Try again.] --> group
   group -- One per album, but albums have several --> exErr[3 albums have more than one Mood tag: list. Change them first.] --> group
   group -- tag → Add sub-group --> sub[Tag group: new, under that tag] --> saved
-  group -- tag → Delete --> tdel{Delete “Rock”? It's on 23 albums and will be removed from them.}
+  group -- tag → Delete --> tdel{Delete “Rock”? Says how many albums, and any sub-group and filters that go too}
   tdel -- Delete --> group
   tdel -- Cancel --> group
-  group -- Delete group --> gdel{Delete “Mood” and its 6 tags? They're on 41 albums.}
+  group -- Delete group --> gdel{Delete “Mood”? Its 6 tags are on 41 albums; 1 filter goes too}
   gdel -- Delete --> list
   gdel -- Cancel --> group
   group -- built-in --> builtin[No delete; note: Built-in groups can be renamed or hidden. Friends' shelves use them to compare.]
   builtin -- Hide --> list
 ```
 
-Notes: tag names are unique within a group, ignoring case, and can't be
-empty; the same inline errors apply to tags. Deleting a tag also deletes
-the sub-groups under it and any filter on it.
+Notes: changes save immediately; deletes ask first and take effect at once.
+Tag names are unique within a group, ignoring case, and can't be empty;
+the same inline errors apply to tags. Deleting a tag also deletes the
+sub-group under it and any filter on it. Sub-groups go one level deep.
+Only built-in groups can be hidden.
 
 ## Filters
 
@@ -192,4 +194,5 @@ Notes:
 - A tag in a sub-group whose parent tag you don't have brings the parent
   along, ticked together.
 - A match in a hidden built-in group is applied and stays hidden.
-- Only built-in groups can be hidden; other groups are deleted instead.
+- A copied new group takes the friend's type (one or several per album).
+- Copies stay even if the user then cancels adding the album.

@@ -54,24 +54,31 @@ flowchart LR
 ## Interaction decisions
 - **Tags** (design in [../features/tags.md](../features/tags.md)): the album
   entry lists the user's visible tag groups in their order.
-  - A group with up to six tags shows all of them as keys; one per album
-    (exclusive) or several. Tapping a pressed key releases it.
-  - A larger group shows only this album's tags plus a "+ Add <group>" key
-    that opens the Add tags sheet: search, tick tags, and "Create “…”" when
-    nothing matches. New groups are made in the editor.
+  - A group with up to six tags shows all of them as keys; a larger group
+    shows only this album's tags. Tapping a pressed key releases it.
+  - Multiple-choice groups always end with "+ Add <group>", which opens the
+    Add tags sheet: search, tick tags, and "Create “…”" when nothing
+    matches. New groups are made in the editor.
   - A sub-group appears under its parent tag only while that tag is
     pressed (Format under Own); releasing the parent removes its sub-tags.
   - No tag is required: "Add to shelf" is always available.
-  - "Edit tags" at the end of the section opens the editor.
+  - "Edit tags" at the end of the section opens the Tags list; the album's
+    unsaved changes are kept for when the user comes back.
 - **Tag editor:** Tags lists the groups (built-in ones marked); Tag group
-  edits one. Built-in groups can be renamed and hidden, not deleted; the
+  edits one. Changes save immediately (no Save or Cancel), except a new
+  group, which is created with "Create group". Tapping a tag opens its
+  actions: rename, add or edit its sub-group, delete. Sub-groups go one
+  level deep (like Format under Own); the data model allows deeper, the
+  editor doesn't offer it. Only built-in groups can be hidden. Built-in groups can be renamed and hidden, not deleted; the
   delete action is replaced by a note saying why. Hiding a group hides its
   tags on the album entry and its filters, without removing them from
-  albums. Deleting a tag or group that's on albums asks first and says how
-  many albums it affects; making a group "one per album" while albums have
+  albums; a hidden group is shown again from its own screen. Deleting a tag
+  or group asks first, says how many albums, sub-groups and filters it
+  affects, and takes effect at once; making a group "one per album" while albums have
   several of its tags is refused with the list of those albums.
-- **Filters:** chosen from ⋮ → Filters; "All" is always first. The bar shows
-  them in order and scrolls sideways after five.
+- **Filters:** chosen from ⋮ → Filters; changes save immediately; "All" is
+  always first. The bar shows them in order and scrolls sideways after
+  five. Tags of hidden groups aren't offered.
 - **Rating** is optional: five 44 px keys, each a bar of the rating meter.
   Tapping a key sets that many stars, tapping the same key again makes it a
   half, tapping it a third time clears the rating. Screen readers get

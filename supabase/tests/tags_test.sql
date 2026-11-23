@@ -1,5 +1,5 @@
 begin;
-select plan(34);
+select plan(35);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -116,6 +116,9 @@ select results_eq(
 select throws_ok(
   $$update public.tag_groups set exclusive = false where builtin = 'listening'$$,
   '23514', null, 'built-in groups stay exclusive');
+select throws_ok(
+  $$update public.tag_groups set hidden = true where name = 'Mood'$$,
+  '23514', null, 'only built-in groups can be hidden');
 select throws_ok(
   $$insert into public.tag_groups (name, builtin) values ('Fake', 'collection')$$,
   '42501', null, 'users cannot create built-in groups');

@@ -26,7 +26,9 @@ create table public.tag_groups (
   unique (user_id, builtin),
   unique (id, user_id),
   unique (id, exclusive),
-  check (builtin is null or (exclusive and parent_tag_id is null))
+  check (builtin is null or (exclusive and parent_tag_id is null)),
+  -- Only built-in groups can be hidden; other groups are deleted instead.
+  check (builtin is not null or not hidden)
 );
 
 create table public.tags (
