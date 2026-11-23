@@ -63,7 +63,8 @@ Five sizes only: 24, 15, 14, 13, 12.
   spines.
 
 ## Components
-- **Key** (the only control), modelled on a cassette recorder's piano
+- **Key** (the only control besides two text links: "Add" on a tag
+  group's label line and "Edit tags"), modelled on a cassette recorder's piano
   key, seen from the bottom right with light from the top left (mockup:
   [visual/variations/c4-final-sheet.html](visual/variations/c4-final-sheet.html), option B):
   - **Construction:** two layers, each a rounded rectangle with 4 px

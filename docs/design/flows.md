@@ -88,7 +88,7 @@ Done: the change is saved and visible on the shelf.
 flowchart TD
   shelf([My shelf]) -- taps album --> edit[Album entry: edit, current values filled in]
   edit -- changes tags, rating or comment → Save --> saved{Saved?}
-  edit -- + Add genre --> sheet[Add tags: search, tick] -- no match → Create “…” --> sheet
+  edit -- Genre: Add --> sheet[Add tags: search, tick] -- no match → Create “…” --> sheet
   sheet -- Done --> edit
   edit -- Edit tags --> editor([Tag group])
   saved -- yes --> back([My shelf, updated])

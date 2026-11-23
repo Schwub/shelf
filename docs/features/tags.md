@@ -46,8 +46,8 @@ menu.
   app asks (all, pick, or skip) and creates copies in the user's own groups.
   Copies have no link back and are freely editable.
 - Album entry: groups with up to six tags show them all as keys;
-  multiple-choice groups always end with "+ Add …", which searches and can
-  create a tag. "Edit tags" opens the Tags list and keeps the album draft.
+  multiple-choice groups have an "Add" action on their label line, which
+  searches and can create a tag. "Edit tags" opens the Tags list and keeps the album draft.
 - Editor: changes save immediately; deletes ask first (with the albums,
   sub-groups and filters affected) and take effect at once. Sub-groups go
   one level deep in the editor (the model allows deeper). Only built-in

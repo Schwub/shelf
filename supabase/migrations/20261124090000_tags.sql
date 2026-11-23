@@ -49,6 +49,10 @@ create unique index on public.tags (user_id, builtin);
 
 alter table public.tag_groups
   add foreign key (parent_tag_id, user_id) references public.tags (id, user_id) on delete cascade;
+-- Group names are unique per level (top level, or under the same tag), ignoring case;
+-- importing from friends matches groups by name.
+create unique index on public.tag_groups
+  (user_id, coalesce(parent_tag_id, '00000000-0000-0000-0000-000000000000'::uuid), lower(name));
 create index on public.tag_groups (parent_tag_id);
 
 create table public.entry_tags (

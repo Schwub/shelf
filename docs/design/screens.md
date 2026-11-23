@@ -34,7 +34,7 @@ flowchart LR
   share([Share from Spotify / Bandcamp]) --> entry
   entry -- Search instead --> search
   entry -- saved --> shelf
-  entry -- + Add genre --> addtags[Add tags sheet]
+  entry -- Genre: Add --> addtags[Add tags sheet]
   entry -- Edit tags --> group[Tag group]
   shelf -- ⋮ Tags --> tags[Tags]
   tags -- group --> group
@@ -56,9 +56,9 @@ flowchart LR
   entry lists the user's visible tag groups in their order.
   - A group with up to six tags shows all of them as keys; a larger group
     shows only this album's tags. Tapping a pressed key releases it.
-  - Multiple-choice groups always end with "+ Add <group>", which opens the
-    Add tags sheet: search, tick tags, and "Create “…”" when nothing
-    matches. New groups are made in the editor.
+  - Multiple-choice groups have an "Add" action on the right of their
+    label line, which opens the Add tags sheet: search, tick tags, and
+    "Create “…”" when nothing matches. New groups are made in the editor.
   - A sub-group appears under its parent tag only while that tag is
     pressed (Format under Own); releasing the parent removes its sub-tags.
   - No tag is required: "Add to shelf" is always available.

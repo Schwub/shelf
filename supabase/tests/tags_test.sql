@@ -1,5 +1,5 @@
 begin;
-select plan(35);
+select plan(37);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -99,6 +99,12 @@ select lives_ok(
 select lives_ok(
   $$insert into public.tag_groups (name, exclusive, parent_tag_id) values ('Pressing', true, pg_temp.tag('Format', 'Vinyl'))$$,
   'users create sub-groups under any tag');
+select throws_ok(
+  $$insert into public.tag_groups (name) values ('mood')$$,
+  '23505', null, 'group names are unique, ignoring case');
+select lives_ok(
+  $$insert into public.tag_groups (name, parent_tag_id) values ('Mood', pg_temp.tag('Format', 'Vinyl'))$$,
+  'the same name can be used at another level');
 select lives_ok(
   $$update public.tag_groups set name = 'In my collection', hidden = true where builtin = 'collection'$$,
   'built-in groups can be renamed and hidden');
