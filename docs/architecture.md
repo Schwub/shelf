@@ -74,6 +74,6 @@
 - Visibility rules live in row-level security, not duplicated in app code.
 - Model albums only; generalize the schema when the second media type
   arrives, not before.
-- Edge functions only for what the client can't do (secrets, CORS, OAuth).
+- Edge functions only for what the client can't do (secrets, CORS).
 - The feed is a query over friends' recent shelf changes; no separate
   event system until it is needed.

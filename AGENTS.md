@@ -6,7 +6,7 @@ mise isn't activated in the shell, and `flutter`/`dart` there may be
 aliased to fvm with a different version.
 - Run one test: `cd app && mise exec -- flutter test test/widget_test.dart`
 - Full check before finishing: `mise run check` (format, analyze, tests,
-  web build; ~30 s)
+  web build; ~30 s warm, a few minutes cold)
 - Database tests (Docker; run after changing `supabase/`): `mise run test:db`
 - Native builds (not in CI; run after changing `app/ios` or `app/android`):
   `mise exec -- flutter build ios --debug --no-codesign` and
