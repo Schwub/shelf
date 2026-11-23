@@ -20,7 +20,7 @@ List the signed-in user's shelf entries and edit an entry's rating and comment. 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The shelf lists entries with cover, title, artist, status and rating, with an empty state
-- [ ] #2 Status, rating and comment can be changed and are saved
-- [ ] #3 Widget tests cover the list, the empty state and editing
+- [ ] #1 Widget tests cover the list, the empty state and editing
+- [ ] #2 The shelf lists entries with cover, title, artist and rating (no tags on the tiles), with an empty state
+- [ ] #3 Rating and comment can be changed and are saved
 <!-- AC:END -->
