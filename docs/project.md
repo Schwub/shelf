@@ -24,7 +24,7 @@ discovery is the core feature, not an extra.
 2. Give an album a status (e.g. own, want, listened), a rating and a comment.
 3. Invite a friend with a link and view their shelf.
 4. See a feed of what friends add and rate.
-5. Import saved albums from Spotify, then from Bandcamp.
+5. Import a Bandcamp collection.
 
 ## Done means
 The first version is done when M2 works: on iPhone and Android, users can
@@ -36,7 +36,9 @@ For the first version:
 - Media other than albums (no tracks, artists, playlists, movies, books, games).
 - Likes, replies, recommendations, notifications.
 - Public profiles, user search, a public launch.
-- Imports other than Spotify and Bandcamp.
+- Imports other than Bandcamp. A Spotify import was dropped on 2026-11-23:
+  development mode caps it at 5 users, and sharing from Spotify covers the
+  need.
 
 ## Constraints
 - Private hobby project, no deadline.
@@ -62,17 +64,13 @@ One month after friends get access: at least 5 friends have each added 20
 or more albums and look at the feed every week.
 
 ## Risks and assumptions
-- **Spotify API access** (rules checked 2026-11-23). Development mode now
-  allows only 5 allowlisted users per app (down from 25 since February
-  2026), and the app owner needs Spotify Premium; other users get 403.
-  Extended quota is reserved for established businesses with large user
-  numbers (forum reports say 250k monthly users), so it is out of reach.
-  `GET /me/albums` (saved albums) is still allowed in development mode;
-  quota is shared across a developer's apps (up to 25 Client IDs).
-  Consequence: the M3 saved-albums import works for the author and at most
-  four friends; the others add albums by search or share. Assumption to
-  test in M1: resolving a shared Spotify link needs no user login (client
-  credentials or the public oEmbed endpoint), so the user cap doesn't apply.
+- **Resolving shared Spotify links.** Share-to-shelf from Spotify is the
+  most important way to add albums. Assumption: a shared link resolves
+  without a Spotify developer app, through MusicBrainz's URL lookup (it
+  stores Spotify album links) with Spotify's public oEmbed or page metadata
+  as a fallback. Test: look up a few real shared links in M1 and measure how
+  many MusicBrainz finds. The Web API is the last resort: its development
+  mode (checked 2026-11-23) allows only 5 users and needs a Premium owner.
 - **Bandcamp has no public API for a fan's collection.** Assumption: a shared
   album link can be resolved from the page's metadata (title, artist,
   artwork). Importing a whole collection means reading the public
@@ -87,7 +85,7 @@ or more albums and look at the feed every week.
   on iPhone and Android.
 - **M2 – friends:** invite links, friends' shelves, activity feed.
   First version done.
-- **M3 – imports:** Spotify saved albums, then Bandcamp.
+- **M3 – imports:** Bandcamp collection.
 - **Later:** public launch, then other media types.
 
 ## Open questions
