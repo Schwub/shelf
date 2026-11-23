@@ -97,7 +97,8 @@ Five sizes only: 24, 15, 14, 13, 12.
   - Used for every choice (each option a key), formats, toolbar,
     Save/Cancel, close and the rating keys.
 - **Divider tabs** (shelf filters): 44 px keys standing on a 4 px teak
-  baseline, bottom tucked 8 px behind it, label plus count. Selected: a
+  baseline, bottom tucked 8 px behind it, label plus count. The baseline
+  is a shelf board: it casts the same 10 px soft shadow below it. Selected: a
   pressed key, like every other selection. The row scrolls sideways and
   fades out over the last 32 px.
 - **Shelf board:** a 4 px teak line (1 px lighter top edge) across the
