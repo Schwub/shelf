@@ -8,7 +8,11 @@ aliased to fvm with a different version.
 - Full check before finishing: `mise run check` (format, analyze, tests,
   web build; ~30 s warm, a few minutes cold)
 - Database tests (Docker; run after changing `supabase/`): `mise run test:db`
-- Native builds (not in CI; run after changing `app/ios` or `app/android`):
+- Web deploys run in CI (`web` workflow, Cloudflare Pages): `main` goes to
+  production, each PR gets a preview URL posted on the PR. No local deploy
+  command; setup in `docs/architecture.md`, "Web deploys".
+- Native builds (iOS not in CI; Android also built by the `android` workflow;
+  run after changing `app/ios` or `app/android`):
   `mise exec -- flutter build ios --debug --no-codesign` and
   `mise exec -- flutter build apk --debug` (~2.5 min), both in `app/`.
   iOS builds take 3–18 min here, mostly idle in Xcode's package resolution;

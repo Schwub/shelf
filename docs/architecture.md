@@ -48,6 +48,26 @@
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 
+## Web deploys
+- The `web` workflow builds `flutter build web` in GitHub Actions and
+  uploads it to Cloudflare Pages (project `shelf`) with Wrangler: `main`
+  deploys to production, every PR to a preview alias
+  (`<branch>.<project>.pages.dev`) that the workflow posts on the PR.
+- Pages serves `index.html` for unknown paths (no `404.html`), so app
+  routes and auth redirects work without extra config.
+- The web build has no share target; sharing stays a phone feature.
+- Until the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository
+  secrets exist, the workflow skips the deploy. One-time setup:
+  1. Cloudflare dashboard → Workers & Pages → Create → Pages → Direct
+     Upload, project name `shelf`.
+  2. My Profile → API Tokens → Create Token → Custom, permission
+     Account · Cloudflare Pages · Edit.
+  3. GitHub → repository Settings → Secrets and variables → Actions: add
+     both secrets (the account ID is on the dashboard's overview page).
+- With sign-in (TASK-6), the hosted Supabase project's Auth URL
+  configuration needs the production URL as Site URL and
+  `https://*.<project>.pages.dev/**` as a redirect URL for previews.
+
 ## Decisions
 - **2026-11-22 – Flutter for the app.** One codebase for iOS, Android and
   web; the author knows Dart; mature share-intent plugins.
@@ -67,6 +87,16 @@
   (the app has no CocoaPods); Apache-2.0, maintained. Considered: own native
   code (same Xcode setup, ~150 lines of Kotlin/Swift more), `share_handler`
   (CocoaPods only, last release 2025).
+- **2026-11-23 – Cloudflare Pages for the web app.** Free, unlimited
+  static bandwidth with no usage cap that pauses the site, a preview URL per
+  branch, and the build stays in GitHub Actions so the host is replaceable.
+  Pages rather than Workers static assets (Cloudflare's suggestion for new
+  projects): Pages' branch preview aliases are mature and the deploy action
+  returns them; moving a static site to Workers later is small.
+  Considered: Firebase Hosting (PR previews built in, but ~360 MB/day
+  transfer on the free plan), Netlify (free credits run out and pause the
+  site), Vercel (Hobby is non-commercial), GitHub Pages (needs a paid plan
+  for a private repository, no previews).
 - **2026-11-22 – Backlog.md for tasks.** Markdown files in `backlog/`, a CLI
   that works offline in the agent sandbox, no auto-commits. Considered: the
   First steps list in project.md (too thin for three milestones), GitHub
