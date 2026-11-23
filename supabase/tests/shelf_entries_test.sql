@@ -1,5 +1,5 @@
 begin;
-select plan(19);
+select plan(23);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -18,6 +18,12 @@ select is_empty('select * from public.shelf_entries', 'anon cannot read shelf en
 select throws_ok(
   $$insert into public.albums (title, artist) values ('X', 'Y')$$,
   '42501', null, 'anon cannot add albums');
+select throws_ok(
+  $$insert into public.shelf_entries (user_id, album_id, status)
+    values ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'want')$$,
+  '42501', null, 'anon cannot add shelf entries');
+update public.shelf_entries set status = 'want';
+delete from public.shelf_entries;
 
 -- Alice is signed in.
 reset role;
@@ -58,6 +64,15 @@ select throws_ok(
   $$insert into public.shelf_entries (album_id, status)
     values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'want')$$,
   '23505', null, 'one entry per user and album');
+select lives_ok(
+  $$insert into public.shelf_entries (album_id, status, rating)
+    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'own', 1)$$,
+  'rating 1 is accepted');
+select lives_ok(
+  $$update public.shelf_entries set rating = null
+    where album_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'$$,
+  'rating is optional');
+delete from public.shelf_entries where album_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 select throws_ok(
   $$insert into public.shelf_entries (album_id, status, rating)
     values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'own', 11)$$,
@@ -76,12 +91,15 @@ update public.shelf_entries set status = 'want'
 delete from public.shelf_entries
   where user_id = '22222222-2222-2222-2222-222222222222';
 
-select lives_ok(
-  $$update public.shelf_entries set rating = 10, updated_at = now() - interval '1 day'$$,
+update public.shelf_entries set rating = 10, updated_at = now() - interval '1 day';
+select results_eq('select rating from public.shelf_entries', array[10::smallint],
   'users update their own shelf entries');
 select ok(
   (select updated_at > now() - interval '1 minute' from public.shelf_entries),
   'updated_at is set on update');
+select throws_ok(
+  $$update public.shelf_entries set user_id = '22222222-2222-2222-2222-222222222222'$$,
+  '42501', null, 'users cannot move their entries to others');
 
 select lives_ok('delete from public.shelf_entries', 'users delete their own shelf entries');
 select is_empty('select * from public.shelf_entries', 'own entry is gone');

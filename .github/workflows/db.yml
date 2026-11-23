@@ -1,0 +1,23 @@
+name: db
+
+on:
+  push:
+    paths: [supabase/**, mise.toml, .github/workflows/db.yml]
+  pull_request:
+    paths: [supabase/**, mise.toml, .github/workflows/db.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  test-db:
+    runs-on: ubuntu-latest
+    env:
+      # Only the Supabase CLI is needed; skip installing Flutter for the task.
+      MISE_TASK_RUN_AUTO_INSTALL: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v3
+        with:
+          install_args: supabase
+      - run: mise run test:db
