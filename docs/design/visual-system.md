@@ -1,7 +1,8 @@
 # Visual system
 
-Locked 2026-11-23, colours and keys updated the same day (variation V3 with
-cassette keys). Mockups: [visual/variations/v3-cassette.html](visual/variations/v3-cassette.html)
+Locked 2026-11-23, colours and keys updated the same day (colours V3, key
+C4). Mockups: [visual/variations/v3-cassette.html](visual/variations/v3-cassette.html)
+for screens and [visual/variations/depth-sheet.html](visual/variations/depth-sheet.html) (C4) for the key
 and, for layout, [visual/system.html](visual/system.html)
 (earlier directions A–B5 are kept next to it for reference). Screens and
 states are in [screens.md](screens.md); this file decides how they look.
@@ -60,18 +61,30 @@ Five sizes only: 24, 15, 14, 13, 12.
 
 ## Components
 - **Key** (the only control), modelled on a cassette recorder's piano
-  keys: 44 px, 4 px corners, a lit top face (evening #36271D → #2A1D16,
-  daylight #FFFFFF → #F3ECE2), a 4 px front lip (#130C08 / #D2C2AE), a
-  1 px line outline and a hairline shadow below. Options carry an 8 px
-  square light before the label, unlit as a 1 px off outline.
-  **Selected = pressed down:** the face darkens (#241811 → #2D2017 /
-  #E8DCCA → #F1E7D8), the content sinks 3 px, the lip shrinks to 1 px, a
-  soft shadow falls in at the top, the outline turns 1.5 px signal and the
-  light comes on. **Primary:** the amber gradient face with a coral lip,
-  onAmber text, no light. Cancel and close are plain keys without a light.
-  Every press gives a light haptic click (`HapticFeedback.selectionClick`).
-  Used for every choice (each option a key), formats, toolbar,
-  Save/Cancel, close.
+  key, seen from the bottom right with light from the top left (mockup:
+  C4 in [visual/variations/depth-sheet.html](visual/variations/depth-sheet.html)):
+  - **Shape:** 44 px high, 4 px corners. A slightly curved face (evening
+    #3A2A20 → #2A1D16, daylight #FFFFFF → #F1E9DE, 160°) with a 1 px
+    highlight on the top and left edges. Two visible sides: 5 px on the
+    right, 6 px at the front (evening #1A110C, daylight #DCCFBE), ending in
+    a 1 px dark contact line (#060403 / #A8957D) where the key meets the
+    panel. Outline 1 px line, under the sides. Shadow 3 px right, 4 px down,
+    5 px blur.
+  - **Label:** Archivo 13/600, engraved (1 px shadow below, faint
+    highlight above). Options carry a light window before the label: 10 × 6
+    px, 2 px corners, recessed (#0E0907 / #E4D8C8).
+  - **Selected = pressed down:** the face moves the full side depth (5 px
+    right, 6 px down), so the sides disappear; a dark band at top and left
+    shows the opening (#0B0705 / #CDBCA6) with a soft shadow inside. A 1 px
+    signal line runs around the whole key. Backlit: a warm glow rises from
+    the bottom of the face, and the light window glows amber.
+  - **Primary:** the same key with the amber gradient face (#F2B13A →
+    #E8743A), a coral side (#B4501E), a dark contact line (#7A3010),
+    onAmber text, no light window.
+  - Cancel and close are plain keys without a light window. Every press
+    gives a light haptic click (`HapticFeedback.selectionClick`).
+  - Used for every choice (each option a key), formats, toolbar,
+    Save/Cancel, close and the rating keys.
 - **Divider tabs** (shelf filters): 44 px keys standing on a 4 px teak
   baseline, bottom tucked 8 px behind it, label plus count. Selected: a
   pressed key, like every other selection. The row scrolls sideways and
@@ -94,7 +107,7 @@ Five sizes only: 24, 15, 14, 13, 12.
   below; tapping again opens it.
 
 ## Motion
-Short and functional only: keys press in 100 ms (sink, lip shrinks); a pulled spine slides
+Short and functional only: keys press in 100 ms (the face slides into the opening); a pulled spine slides
 150 ms. No looping or decorative animation.
 
 ## Later ideas (not in M1)
