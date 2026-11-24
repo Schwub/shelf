@@ -12,6 +12,9 @@ class ShelfField extends StatelessWidget {
     this.icon,
     this.minLines,
     this.maxLines = 1,
+    this.keyboardType,
+    this.autofillHints,
+    this.onSubmitted,
   });
 
   final String hintText;
@@ -21,6 +24,9 @@ class ShelfField extends StatelessWidget {
   final IconData? icon;
   final int? minLines;
   final int? maxLines;
+  final TextInputType? keyboardType;
+  final Iterable<String>? autofillHints;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +43,9 @@ class ShelfField extends StatelessWidget {
             controller: controller,
             minLines: minLines,
             maxLines: maxLines,
+            keyboardType: keyboardType,
+            autofillHints: autofillHints,
+            onSubmitted: onSubmitted,
             style: Theme.of(context).textTheme.bodyMedium,
             cursorColor: c.signal,
             decoration: InputDecoration(

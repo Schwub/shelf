@@ -6,10 +6,10 @@ Tags are designed in [../features/tags.md](../features/tags.md); their
 flows are at the end of this file.
 Screens are listed in [screens.md](screens.md).
 
-## Sign in (email magic link)
+## Sign in (emailed code or link)
 
 Done: the user is signed in and sees their shelf; they stay signed in
-across app restarts.
+across app restarts. A new email signs up in the same way.
 
 ```mermaid
 flowchart TD
@@ -18,20 +18,24 @@ flowchart TD
   session -- no --> signin[Sign in: enter email]
   signin --> valid{Valid email?}
   valid -- no --> invalidErr[Inline error: Enter a valid email address] --> signin
-  valid -- yes --> send[Send link: button shows progress]
+  valid -- yes --> send[Send sign-in code: button shows progress]
   send --> sent{Sent?}
-  sent -- no network / server error --> sendErr[Error: Couldn't send the link. Check your connection and try again.] --> signin
-  sent -- yes --> check[Check your email]
-  check -- Resend, after 60 s countdown --> send
-  check -- Use a different email --> signin
-  check -- taps link in email --> deep{Link valid?}
-  deep -- yes --> shelf
-  deep -- expired or used --> linkErr[Sign in: This link has expired. Send a new one.] --> signin
+  sent -- no network / server error --> sendErr[Error: Couldn't send the email. Check your connection and try again.] --> signin
+  sent -- too many emails --> limitErr[Error: Too many sign-in emails. Wait a few minutes and try again.] --> signin
+  sent -- yes --> check[Check your email: enter the 6-digit code]
+  check -- Sign in --> code{Code right?}
+  code -- yes --> shelf
+  code -- not 6 digits --> digitsErr[Enter the 6-digit code from the email.] --> check
+  code -- wrong or expired --> codeErr[That code isn't right or has expired. Check it, or send a new one.] --> check
+  check -- Resend code, after 60 s countdown --> send
+  check -- Use a different email / back --> signin
+  check -- taps the link in the email, web --> shelf
 ```
 
 Notes:
-- The link signs in on the device where it is tapped. If the user opens the
-  mail on another device, they sign in there; the check-email screen says so.
+- The email carries both the code and the link. The code works on any
+  device; the link signs in where it is opened (web now, phones once app
+  links are set up, TASK-20).
 - A pending shared link (see "Add by sharing") survives the sign-in and
   continues afterwards.
 - Sign out lives in the shelf's overflow menu and asks for confirmation.

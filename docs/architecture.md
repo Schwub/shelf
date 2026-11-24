@@ -9,7 +9,10 @@
   hand it to the app.
 - **Supabase** in `supabase/` (config, migrations, edge functions):
   - Postgres for users, albums, shelf entries, friendships and the feed.
-  - Auth for accounts.
+  - Auth for accounts: email sign-in with a 6-digit code or the link in
+    the same email; no passwords. The app reads `SUPABASE_URL` and
+    `SUPABASE_PUBLISHABLE_KEY` from `--dart-define` and defaults to the
+    local Supabase (`supabase start`).
   - Row-level security decides who sees what: your own shelf, and your
     friends' shelves and activity.
   - Edge functions (TypeScript) for work the app can't do itself:
@@ -67,11 +70,23 @@
      Account · Cloudflare Pages · Edit.
   3. GitHub → repository Settings → Secrets and variables → Actions: add
      both secrets (the account ID is on the dashboard's overview page).
-- With sign-in (TASK-6), the hosted Supabase project's Auth URL
-  configuration needs the production URL as Site URL and
-  `https://*.<project>.pages.dev/**` as a redirect URL for previews.
+- Before the first deploy with sign-in, the hosted Supabase project
+  needs (dashboard, Authentication):
+  1. URL Configuration: the production URL as Site URL and
+     `https://*.<project>.pages.dev/**` as a redirect URL for previews.
+  2. Email Templates: "Magic Link" and "Confirm signup" with the content
+     of `supabase/templates/sign_in.html`, so the email carries the code.
+  3. GitHub repository variables `SUPABASE_URL` and
+     `SUPABASE_PUBLISHABLE_KEY` (Project Settings → API keys); the web
+     build reads them. Without them the build talks to a local Supabase.
 
 ## Decisions
+- **2026-11-24 – Sign in with an emailed code and link.** The email
+  carries a 6-digit code and a link. The code works on any device from
+  day one, including when the mail is read on another device; the link
+  works on the web now, and on phones once app links are set up.
+  Considered: link only (needs app links on iOS and Android and signs in
+  wherever the mail is opened), passwords (more to build and forget).
 - **2026-11-22 – Flutter for the app.** One codebase for iOS, Android and
   web; the author knows Dart; mature share-intent plugins.
   Considered: Compose Multiplatform (web still beta, community Supabase

@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/preview/preview_page.dart';
+
+import '../auth/fake_auth.dart';
+
 import 'package:shelf_app/theme/shelf_theme.dart';
 
 void main() {
@@ -16,7 +19,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: shelfTheme(Brightness.light),
-          home: const PreviewPage(links: Stream.empty()),
+          home: PreviewPage(auth: FakeAuth(), links: const Stream.empty()),
         ),
       );
 

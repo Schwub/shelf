@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../auth/auth.dart';
+import '../auth/sign_out.dart';
 import '../theme/shelf_colors.dart';
 import '../theme/shelf_theme.dart';
 import '../widgets/filter_bar.dart';
@@ -8,12 +10,42 @@ import '../widgets/shelf_board.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
 
-/// Start screen until sign-in exists: every component in both themes, and
-/// the last link shared into the app.
+/// Start screen until the shelf exists: every component in both themes,
+/// the last link shared into the app, and signing out.
 class PreviewPage extends StatelessWidget {
-  const PreviewPage({super.key, required this.links});
+  const PreviewPage({super.key, required this.auth, required this.links});
 
+  final Auth auth;
   final Stream<Uri> links;
+
+  Future<void> _menu(BuildContext context) async {
+    final c = context.shelf;
+    final key = context.findRenderObject()! as RenderBox;
+    final corner = key.localToGlobal(key.size.bottomRight(Offset.zero));
+    final choice = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(corner.dx, corner.dy + 4, 20, 0),
+      color: c.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(4),
+        side: BorderSide(color: c.line),
+      ),
+      items: [
+        PopupMenuItem(
+          value: 'sign out',
+          height: 48,
+          child: Text(
+            'Sign out',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+      ],
+    );
+    if (choice == 'sign out' && context.mounted) {
+      await confirmSignOut(context, auth);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +53,27 @@ class PreviewPage extends StatelessWidget {
       body: SafeArea(
         child: ListView(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'My shelf',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ),
+                  Builder(
+                    builder: (context) => ShelfKey(
+                      semanticLabel: 'Menu',
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _menu(context),
+                      child: const Icon(Icons.more_vert),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
               child: StreamBuilder<Uri>(

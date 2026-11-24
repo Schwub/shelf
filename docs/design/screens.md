@@ -6,8 +6,8 @@ Flows are in [flows.md](flows.md), wireframes in [wireframes/](wireframes/).
 
 | Screen | Purpose | Flows | States |
 |---|---|---|---|
-| Sign in | Enter an email to get a sign-in link | Sign in | default, sending, invalid email, send error, link expired |
-| Check your email | Tell the user where the link went; resend or change email | Sign in | sent (resend countdown), resend available |
+| Sign in | Enter an email to get a sign-in code and link | Sign in | default, sending, invalid email, send error, too many emails |
+| Check your email | Enter the emailed code; resend it or change the email | Sign in | sent (resend countdown), resend available, code not 6 digits, wrong or expired code, resent |
 | My shelf | The user's albums; start adding | all | loading, empty, filled grid, filled list, filter with no matches, error |
 | Search | Find an album on MusicBrainz | Add by search | idle, loading, results (some already on shelf), no results, error |
 | Album entry | Add an album or edit its entry: tags, rating, comment | Add by search, Add by sharing, Tags/rating/comment | resolving (shared link), add, edit, already on shelf, not an album, not found, load error, save error |
@@ -27,7 +27,7 @@ offered.
 ```mermaid
 flowchart LR
   signin[Sign in] --> check[Check your email]
-  check -- magic link --> shelf[My shelf]
+  check -- code or link --> shelf[My shelf]
   shelf -- Add album --> search[Search]
   search -- album --> entry[Album entry]
   shelf -- album --> entry
