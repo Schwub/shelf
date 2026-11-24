@@ -254,6 +254,10 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 # Sign-in and sign-up emails carry both the code and the link.
+# The staging workflow drops this block: the free plan's built-in sender
+# doesn't allow custom templates, so staging keeps Supabase's own until it
+# has an SMTP sender.
+# BEGIN email templates
 [auth.email.template.magic_link]
 subject = "Your shelf sign-in code"
 content_path = "./supabase/templates/sign_in.html"
@@ -261,6 +265,7 @@ content_path = "./supabase/templates/sign_in.html"
 [auth.email.template.confirmation]
 subject = "Your shelf sign-in code"
 content_path = "./supabase/templates/sign_in.html"
+# END email templates
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

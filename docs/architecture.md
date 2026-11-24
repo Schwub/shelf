@@ -63,6 +63,11 @@
   `supabase/config.toml` holds its project ID and overrides the local
   URLs. The web app on `main` (TASK-22) and Android test builds (TASK-23)
   use it.
+- Staging sends Supabase's own sign-in emails: the free plan's built-in
+  sender doesn't allow custom templates, so the workflow leaves ours out.
+  The built-in sender only reaches members of the Supabase organization,
+  a few emails an hour. Other testers and production need an SMTP sender
+  (then the workflow pushes our template again).
 - **Production:** later, a second hosted project the same way.
 
 One-time staging setup (TASK-21):

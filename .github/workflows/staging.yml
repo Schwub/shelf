@@ -61,4 +61,7 @@ jobs:
             echo "::error::Add [remotes.staging] with project_id = \"$PROJECT\" to supabase/config.toml"
             exit 1
           }
+          # Supabase's own email templates until staging has an SMTP sender
+          # (see config.toml).
+          sed -i '/^# BEGIN email templates/,/^# END email templates/d' supabase/config.toml
           mise exec -- supabase config push --yes
