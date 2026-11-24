@@ -40,7 +40,9 @@
   nullable for links that don't resolve. Signed-in users read and add;
   no client edits or deletes.
 - `shelf_entries`: one per user and album. Optional `rating` 1–10 (half
-  stars), `comment`, `updated_at` set by a trigger. RLS: only the owner
+  stars), `comment`, `updated_at` set by a trigger; for albums added from a
+  friend's shelf (M2), `added_from_user_id` (cleared if that account is
+  deleted) and `added_from_name` (kept). RLS: only the owner
   reads and writes; friends' read access comes with M2.
 - Tags (`tag_groups`, `tags`, `entry_tags`, `shelf_filters`): user-defined
   groups, exclusive or multiple choice, sub-groups under a tag, built-in

@@ -1,5 +1,5 @@
 begin;
-select plan(21);
+select plan(25);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -100,6 +100,27 @@ select results_eq(
   $$select comment from public.shelf_entries
     where user_id = '22222222-2222-2222-2222-222222222222'$$,
   array['Bob''s'], 'users cannot change or delete others'' entries');
+
+-- Added from a friend's shelf: the friend's name stays when their account goes.
+insert into auth.users (id, email) values ('33333333-3333-3333-3333-333333333333', 'anna@example.com');
+select lives_ok(
+  $$insert into public.shelf_entries (user_id, album_id, added_from_user_id, added_from_name)
+    values ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+            '33333333-3333-3333-3333-333333333333', 'Anna')$$,
+  'an entry remembers the friend it was added from');
+select throws_ok(
+  $$insert into public.shelf_entries (user_id, album_id, added_from_user_id)
+    values ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+            '33333333-3333-3333-3333-333333333333')$$,
+  '23514', null, 'the friend''s name is required with the friend');
+delete from auth.users where id = '33333333-3333-3333-3333-333333333333';
+select is(
+  (select added_from_user_id from public.shelf_entries where added_from_name = 'Anna'), null,
+  'deleting the friend''s account clears the link');
+select is(
+  (select added_from_name from public.shelf_entries where album_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+     and user_id = '11111111-1111-1111-1111-111111111111'), 'Anna',
+  'the friend''s name stays');
 
 select * from finish();
 rollback;

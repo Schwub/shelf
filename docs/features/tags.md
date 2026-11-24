@@ -44,7 +44,10 @@ menu.
 - Importing from a friend (M2): built-in tags match by key and are never
   asked about. Other tags match by group and tag name; for missing ones the
   app asks (all, pick, or skip) and creates copies in the user's own groups.
-  Copies have no link back and are freely editable.
+  Copies have no link back and are freely editable. The album itself
+  remembers whose shelf it came from (`added_from_user_id`, and
+  `added_from_name` kept as it was, so "Added from Anna's shelf" stays
+  after Anna's account is deleted).
 - Album entry: groups with up to six tags show them all as keys;
   multiple-choice groups have an "Add" action on their label line, which
   searches and can create a tag. "Edit tags" opens the Tags list and keeps the album draft.

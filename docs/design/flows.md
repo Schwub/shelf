@@ -196,3 +196,5 @@ Notes:
 - A match in a hidden built-in group is applied and stays hidden.
 - A copied new group takes the friend's type (one or several per album).
 - Copies stay even if the user then cancels adding the album.
+- The album remembers whose shelf it came from: "Added from Anna's shelf"
+  under the artist, kept even if Anna's account is deleted.

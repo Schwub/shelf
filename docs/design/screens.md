@@ -62,6 +62,8 @@ flowchart LR
   - A sub-group appears under its parent tag only while that tag is
     pressed (Format under Own); releasing the parent removes its sub-tags.
   - No tag is required: "Add to shelf" is always available.
+- **Added from a friend (M2):** "Added from Anna's shelf" under the artist
+  on the album entry, for as long as the album is on the shelf.
   - "Edit tags" at the end of the section opens the Tags list; the album's
     unsaved changes are kept for when the user comes back.
 - **Tag editor:** Tags lists the groups (built-in ones marked); Tag group
