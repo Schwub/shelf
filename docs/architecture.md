@@ -54,6 +54,28 @@
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 
+## Environments
+- **Local:** `supabase start`; the app defaults to it.
+- **Staging:** a hosted Supabase project. The `staging` workflow deploys
+  it after the `db` workflow passes on `main` (or by hand from `main`):
+  `supabase db push` for migrations, `supabase config push` for auth
+  settings and the sign-in email. `[remotes.staging]` in
+  `supabase/config.toml` holds its project ID and overrides the local
+  URLs. The web app on `main` (TASK-22) and Android test builds (TASK-23)
+  use it.
+- **Production:** later, a second hosted project the same way.
+
+One-time staging setup (TASK-21):
+1. Supabase dashboard → New project `shelf-staging` (free plan; it pauses
+   after a week without use). Keep the database password.
+2. GitHub → repository Settings → Secrets and variables → Actions:
+   secrets `SUPABASE_ACCESS_TOKEN` (Supabase → Account → Access Tokens)
+   and `SUPABASE_STAGING_DB_PASSWORD`; variable
+   `SUPABASE_STAGING_PROJECT_ID` (the project ref from its URL).
+3. Add `[remotes.staging]` with that `project_id`, the staging web URL as
+   `site_url` and the preview URLs as redirect URLs to
+   `supabase/config.toml`, then run the `staging` workflow.
+
 ## Web deploys
 - The `web` workflow builds `flutter build web` in GitHub Actions and
   uploads it to Cloudflare Pages (project `shelf`) with Wrangler: `main`
@@ -70,15 +92,11 @@
      Account · Cloudflare Pages · Edit.
   3. GitHub → repository Settings → Secrets and variables → Actions: add
      both secrets (the account ID is on the dashboard's overview page).
-- Before the first deploy with sign-in, the hosted Supabase project
-  needs (dashboard, Authentication):
-  1. URL Configuration: the production URL as Site URL and
-     `https://*.<project>.pages.dev/**` as a redirect URL for previews.
-  2. Email Templates: "Magic Link" and "Confirm signup" with the content
-     of `supabase/templates/sign_in.html`, so the email carries the code.
-  3. GitHub repository variables `SUPABASE_URL` and
-     `SUPABASE_PUBLISHABLE_KEY` (Project Settings → API keys); the web
-     build reads them. Without them the build talks to a local Supabase.
+- The web build reads the Supabase project from the repository variables
+  `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (Project Settings → API
+  keys); without them it talks to a local Supabase. Auth URLs and the
+  sign-in email come from `supabase/config.toml` via the `staging`
+  workflow (see Environments).
 
 ## Decisions
 - **2026-11-24 – Sign in with an emailed code and link.** The email

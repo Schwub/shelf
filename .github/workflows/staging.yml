@@ -1,0 +1,60 @@
+name: staging
+
+# Deploys the database and auth settings to the staging Supabase project
+# once the db tests pass on main, or by hand from main.
+on:
+  workflow_run:
+    workflows: [db]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency: staging
+
+jobs:
+  # Secrets are missing until the staging project is set up; a job-level
+  # `if` can't read them directly.
+  configured:
+    runs-on: ubuntu-latest
+    outputs:
+      yes: ${{ steps.check.outputs.yes }}
+    steps:
+      - id: check
+        run: echo "yes=${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: configured
+    if: >-
+      needs.configured.outputs.yes == 'true' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+      PROJECT: ${{ vars.SUPABASE_STAGING_PROJECT_ID }}
+      MISE_EXEC_AUTO_INSTALL: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The commit the db tests passed on.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: jdx/mise-action@v3
+        with:
+          install_args: supabase
+      - name: Apply migrations
+        run: mise exec -- supabase db push --remote="$PROJECT" --password="$DB_PASSWORD" --yes
+      # Auth settings and email templates; [remotes.staging] in
+      # supabase/config.toml overrides the local URLs.
+      - name: Apply auth settings
+        run: |
+          # Without the override, the local URLs would be pushed.
+          grep -q "project_id = \"$PROJECT\"" supabase/config.toml || {
+            echo "::error::Add [remotes.staging] with project_id = \"$PROJECT\" to supabase/config.toml"
+            exit 1
+          }
+          mise exec -- supabase config push --remote="$PROJECT" --yes
