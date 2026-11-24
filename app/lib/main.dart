@@ -1,12 +1,22 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'preview/preview_page.dart';
 import 'share/share_receiver.dart';
+import 'theme/shelf_theme.dart';
 
 void main() {
+  LicenseRegistry.addLicense(() async* {
+    for (final font in ['Archivo', 'IBMPlexSans']) {
+      yield LicenseEntryWithLineBreaks([
+        font,
+      ], await rootBundle.loadString('assets/fonts/$font-OFL.txt'));
+    }
+  });
   runApp(ShelfApp(links: sharedLinks()));
 }
 
-/// Placeholder until M1: shows the last link shared into the app.
 class ShelfApp extends StatelessWidget {
   const ShelfApp({super.key, required this.links});
 
@@ -16,22 +26,9 @@ class ShelfApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'shelf',
-      home: Scaffold(
-        appBar: AppBar(title: const Text('shelf')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: StreamBuilder<Uri>(
-              stream: links,
-              builder: (context, snapshot) => Text(
-                snapshot.data?.toString() ??
-                    'Share an album from Spotify or Bandcamp to add it.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
-      ),
+      theme: shelfTheme(Brightness.light),
+      darkTheme: shelfTheme(Brightness.dark),
+      home: PreviewPage(links: links),
     );
   }
 }

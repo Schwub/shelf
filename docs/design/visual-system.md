@@ -57,8 +57,10 @@ Weights: Archivo 600–800, IBM Plex Sans 400 and 600 (no 700).
 ## Shape and space
 - **Corners:** controls and fields 4 px on all corners; covers and spines
   2 px. No pills, no mixed corners.
-- **Sizes:** every control 44 × 44 px or taller; icon keys 44 × 44 with
-  20 px line icons (1.5 px stroke), no Unicode glyphs.
+- **Sizes:** keys look 44 px high (icon keys 44 × 44, 20 px line icons
+  with a 1.5 px stroke, no Unicode glyphs); an invisible margin makes
+  every touch area at least 48 × 48 (Android's minimum), so rows of keys
+  sit 4 px further apart than they look. Fields are 48 px high.
 - **Spacing:** 4 px grid only (4, 8, 12, 16, 20, 24, 28); 20 px side
   margin; 8 px between keys; 12 px between covers; 4 px between tabs and
   spines.

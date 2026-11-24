@@ -1,9 +1,10 @@
 ---
 id: TASK-14
 title: Build the Flutter theme and components
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-23T22:44:00Z'
+updated_date: '2026-11-24T09:05:00Z'
 labels: []
 dependencies: []
 ordinal: 5800
@@ -17,7 +18,13 @@ Turn docs/design/visual-system.md into the app's theme: colour tokens for evenin
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Theme and widgets match visual-system.md in evening and daylight
-- [ ] #2 Widget tests cover key states, rating keys and the filter bar, plus Flutter's tap-target, label and text-contrast guidelines
-- [ ] #3 A preview page in the app shows every component in both themes
+- [x] #1 Theme and widgets match visual-system.md in evening and daylight
+- [x] #2 Widget tests cover key states, rating keys and the filter bar, plus Flutter's tap-target, label and text-contrast guidelines
+- [x] #3 A preview page in the app shows every component in both themes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Theme in app/lib/theme (tokens as a ThemeExtension, Archivo and IBM Plex Sans bundled as variable fonts under the OFL), components in app/lib/widgets (ShelfKey with KeyGeometry, FilterBar, RatingKeys, ShelfBoard, ShelfField), preview as the start screen until sign-in (app/lib/preview). Keys look 44 px and touch 48 px (user decision). Icons are Material Icons for now; the 1.5 px line icon set is still open.
+<!-- SECTION:NOTES:END -->
