@@ -12,3 +12,5 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+# The staging test key is committed on purpose (see app/build.gradle.kts).
+!app/staging.jks

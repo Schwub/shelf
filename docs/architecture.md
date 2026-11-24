@@ -68,7 +68,22 @@
   The built-in sender only reaches members of the Supabase organization,
   a few emails an hour. Other testers and production need an SMTP sender
   (then the workflow pushes our template again).
+- **Android on staging:** the `android-staging` workflow builds a release
+  APK against staging on every push to `main` that touches the app and
+  publishes it as a GitHub release (`v1.0.<run>`). Obtainium on the phone
+  watches the releases and installs updates. Signed with a staging-only key
+  committed in `app/android/app/staging.jks`, so updates install over each
+  other; Play Store releases get their own private key. Firebase App
+  Distribution was the plan, but the account hit its project limit.
 - **Production:** later, a second hosted project the same way.
+
+One-time Android setup (TASK-23):
+1. GitHub repository variable `SUPABASE_STAGING_PUBLISHABLE_KEY`
+   (Supabase → Project Settings → API Keys; not secret).
+2. On the phone: install Obtainium (GitHub or F-Droid). The repository is
+   private, so create a fine-grained GitHub token with read-only "Contents"
+   access to `Schwub/shelf` and enter it in Obtainium's settings (GitHub
+   source). Then add the app with the URL `https://github.com/Schwub/shelf`.
 
 One-time staging setup (TASK-21):
 1. Supabase dashboard → New project `shelf-staging` (free plan; it pauses

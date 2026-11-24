@@ -26,3 +26,6 @@ jobs:
           install_args: flutter
       - run: mise exec -- flutter build apk --debug
         working-directory: app
+      # Also checks the release signing that staging builds use.
+      - run: mise exec -- flutter build apk --release
+        working-directory: app

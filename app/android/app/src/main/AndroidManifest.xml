@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Supabase; debug builds get this automatically, release builds don't. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="shelf"
         android:name="${applicationName}"
