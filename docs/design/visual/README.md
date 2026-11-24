@@ -2,7 +2,8 @@
 
 **Final** (what the app is built from):
 - `screens/` – every M1 screen and state, evening and daylight
-  (`shelf.html`, `entry.html`, `search.html`, `signin.html`).
+  (`shelf.html`, `entry.html`, `search.html`, `signin.html`, `tags.html`,
+  `filters.html`, `import.html`).
 - `variations/c4-final-sheet.html` – the key in close-up; option B is
   final.
 - Rules and values: `../visual-system.md`.
@@ -12,3 +13,4 @@
   locked layout (flat keys, divider tabs).
 - `variations/` – colour variations V1–V5, key and pressed-state studies,
   tab bar studies (T1–T3, piano keys, S1–S5; S2 chosen), the top-down key.
+- `screens/signin.html` predates sign-in by code: the built screens (TASK-6) add a code field to Check your email.

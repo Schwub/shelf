@@ -1,36 +1,57 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'auth/auth.dart';
+import 'auth/auth_gate.dart';
+import 'preview/preview_page.dart';
 import 'share/share_receiver.dart';
+import 'theme/shelf_theme.dart';
 
-void main() {
-  runApp(ShelfApp(links: sharedLinks()));
+// Defaults: the local Supabase (`supabase start`). Builds for the hosted
+// project pass both with --dart-define.
+const _supabaseUrl = String.fromEnvironment(
+  'SUPABASE_URL',
+  defaultValue: 'http://127.0.0.1:54321',
+);
+const _supabaseKey = String.fromEnvironment(
+  'SUPABASE_PUBLISHABLE_KEY',
+  defaultValue: 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',
+);
+
+Future<void> main() async {
+  LicenseRegistry.addLicense(() async* {
+    for (final font in ['Archivo', 'IBMPlexSans']) {
+      yield LicenseEntryWithLineBreaks([
+        font,
+      ], await rootBundle.loadString('assets/fonts/$font-OFL.txt'));
+    }
+  });
+  final supabase = await Supabase.initialize(
+    url: _supabaseUrl,
+    publishableKey: _supabaseKey,
+  );
+  runApp(
+    ShelfApp(auth: SupabaseAuth(supabase.client.auth), links: sharedLinks()),
+  );
 }
 
-/// Placeholder until M1: shows the last link shared into the app.
 class ShelfApp extends StatelessWidget {
-  const ShelfApp({super.key, required this.links});
+  const ShelfApp({super.key, required this.auth, required this.links});
 
+  final Auth auth;
   final Stream<Uri> links;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'shelf',
-      home: Scaffold(
-        appBar: AppBar(title: const Text('shelf')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: StreamBuilder<Uri>(
-              stream: links,
-              builder: (context, snapshot) => Text(
-                snapshot.data?.toString() ??
-                    'Share an album from Spotify or Bandcamp to add it.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
+      theme: shelfTheme(Brightness.light),
+      darkTheme: shelfTheme(Brightness.dark),
+      home: AuthGate(
+        auth: auth,
+        signedIn: PreviewPage(auth: auth, links: links),
       ),
     );
   }

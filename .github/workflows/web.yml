@@ -34,7 +34,12 @@ jobs:
       - uses: jdx/mise-action@v3
         with:
           install_args: flutter
-      - run: mise exec -- flutter build web --release
+      # The hosted Supabase project: repository variables, not secrets (the
+      # publishable key ships in the app anyway).
+      - run: >-
+          mise exec -- flutter build web --release
+          --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }}
+          --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY }}
         working-directory: app
       - id: deploy
         uses: cloudflare/wrangler-action@v3

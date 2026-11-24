@@ -33,7 +33,7 @@ Two themes; the app follows the system setting.
 | amber | #F2B13A → #E8743A | same | Primary key face, left to right; lip #B4501E |
 | onAmber | #1F1510 | #2A1D16 | Text on amber |
 | line | text at 12 % | text at 15 % | Hairlines, key outlines |
-| off | #8C7C6A | #A39482 | Unlit light outlines, empty meter segments (≥ 3:1) |
+| off | #8C7C6A | #857563 | Unlit light outlines, empty meter segments (≥ 3:1) |
 
 One accent: the warm amber-to-coral gradient, like a level meter warming
 up; backgrounds stay flat. Cover colours are the only other colour on screen; the
@@ -46,7 +46,8 @@ in both themes (daylight signal #B06A00: 3.7:1 on bg, 4.0:1 on surface);
 bright amber is only used as a fill under dark text (8:1).
 
 ## Type
-Five sizes only: 24, 15, 14, 13, 12.
+Six sizes only: 24, 18 (sheet, dialog and message titles), 15, 14, 13, 12.
+Weights: Archivo 600–800, IBM Plex Sans 400 and 600 (no 700).
 - **Archivo** width 125 (Expanded) 700, 24: screen and album titles.
   Width 112, 600, 13: keys, tabs and tab counts (tabular figures).
 - **IBM Plex Sans**: 15/600 pulled-spine title; 14 body and fields;
@@ -56,14 +57,17 @@ Five sizes only: 24, 15, 14, 13, 12.
 ## Shape and space
 - **Corners:** controls and fields 4 px on all corners; covers and spines
   2 px. No pills, no mixed corners.
-- **Sizes:** every control 44 × 44 px or taller; icon keys 44 × 44 with
-  20 px line icons (1.5 px stroke), no Unicode glyphs.
+- **Sizes:** keys look 44 px high (icon keys 44 × 44, 20 px line icons
+  with a 1.5 px stroke, no Unicode glyphs); an invisible margin makes
+  every touch area at least 48 × 48 (Android's minimum), so rows of keys
+  sit 4 px further apart than they look. Fields are 48 px high.
 - **Spacing:** 4 px grid only (4, 8, 12, 16, 20, 24, 28); 20 px side
   margin; 8 px between keys; 12 px between covers; 4 px between tabs and
   spines.
 
 ## Components
-- **Key** (the only control), modelled on a cassette recorder's piano
+- **Key** (the only control besides two text links: "Add" on a tag
+  group's label line and "Edit tags"), modelled on a cassette recorder's piano
   key, seen from the bottom right with light from the top left (mockup:
   [visual/variations/c4-final-sheet.html](visual/variations/c4-final-sheet.html), option B):
   - **Construction:** two layers, each a rounded rectangle with 4 px
@@ -109,7 +113,10 @@ Five sizes only: 24, 15, 14, 13, 12.
   S2): the labels are printed on the panel above the keys (Archivo 12/600,
   muted, centred over each key); below them five equal C4 keys, 44 px
   high, 6 px apart, across the full width, each with its light window
-  at the start and its count (13/600) centred in the rest. No scrolling. The selected filter is a pressed key
+  at the start and its count (13/600) centred in the rest. Up to five
+  filters fill the width in equal keys; with more, keys keep the width of
+  five and the row (labels with it) scrolls sideways, fading out over the
+  last 32 px. Labels that don't fit their key end in an ellipsis. The selected filter is a pressed key
   (state B) with its light on. The row stands on a teak board that casts
   the usual 10 px shadow.
 - **Shelf board:** a 4 px teak line (1 px lighter top edge) across the
@@ -148,12 +155,33 @@ same rules:
 - **Progress:** a 3 px track in off colour with a moving segment in the
   amber gradient; skeletons are surface-coloured blocks and lines.
 - **Dialog:** background colour, 1 px line, 4 px corners, title in Archivo
-  18, two keys (secondary, primary) side by side; the screen behind is
-  dimmed to 55 %.
+  18, two keys side by side; the screen behind is dimmed to 45 %. The
+  second key is primary (amber) for safe confirmations ("Discard", "Sign
+  out"); destructive deletes use two plain keys and let the label say what
+  happens ("Delete").
 - **Snackbar:** always dark (#2A1D16, cream text, hairline outline) with
   the action in amber, 20 px from the sides, above the bottom bar.
 - **Search field:** a recessed field like the comment field, with a 18 px
   search icon in muted colour.
+- **Tag groups on the album entry:** each group has a label line (12/600,
+  muted); multiple-choice groups add an "Add" action on the right of it
+  (13/600, underlined, 44 px tall). Built-in two-tag groups fill the row
+  with equal keys; other tags keep their natural width and wrap. A
+  sub-group is indented 12 px with a 2 px line on its left. "Edit tags" is
+  an underlined text link (13/600, muted) with about 24 px of space above
+  and below, so it doesn't read as part of the last group.
+- **List rows** (editor, filters, sheets): 56 px, 1 px line below, title
+  15/600 and a 12 px muted second line; 44 × 44 icons for reorder (≡),
+  more (⋯), remove (✕) and open (›); "Built-in" as muted 12/600 text.
+  Selection in a list uses the light window (lit = chosen), unlit with a
+  1 px off outline and lit exactly like on keys. "Add" rows put their + in
+  the same 44 px slot as the reorder handle, so all titles line up. Dimmed
+  rows (hidden group, "All") use muted text, never opacity.
+- **Screen bar:** a 44 px back key and the title in Archivo 24.
+- **Bottom sheet:** background colour, 4 px top corners, a hairline on top,
+  a grab bar, title in Archivo 18; the screen behind is dimmed to 45 %.
+- **Menu:** surface colour, 1 px line, 4 px corners, 48 px rows, under the
+  ⋮ key, 4 px below it; rows 15/600.
 
 ## Motion
 Short and functional only: keys press in 100 ms (the face slides down and right as the sides shrink); a pulled spine slides
@@ -162,3 +190,8 @@ Short and functional only: keys press in 100 ms (the face slides down and right 
 ## Later ideas (not in M1)
 - The album entry opens by lifting the cover off its shelf board.
 - A "Queue" section on the shelf for albums you want to listen to.
+- Corridor palette (#553116, #7B3A24, #D2601E, #E2CA50, #6A6A2E): warmer
+  browns, orange and olive, tried on all screens in
+  [visual/variations/palette-corridor.html](visual/variations/palette-corridor.html).
+  Kept as an idea; the current colours stay. Its daylight version needs
+  contrast work (off and muted text below 3:1).

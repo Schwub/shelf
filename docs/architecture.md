@@ -9,7 +9,10 @@
   hand it to the app.
 - **Supabase** in `supabase/` (config, migrations, edge functions):
   - Postgres for users, albums, shelf entries, friendships and the feed.
-  - Auth for accounts.
+  - Auth for accounts: email sign-in with a 6-digit code or the link in
+    the same email; no passwords. The app reads `SUPABASE_URL` and
+    `SUPABASE_PUBLISHABLE_KEY` from `--dart-define` and defaults to the
+    local Supabase (`supabase start`).
   - Row-level security decides who sees what: your own shelf, and your
     friends' shelves and activity.
   - Edge functions (TypeScript) for work the app can't do itself:
@@ -39,14 +42,40 @@
 - `albums`: shared catalog; `musicbrainz_id` (release group) is unique and
   nullable for links that don't resolve. Signed-in users read and add;
   no client edits or deletes.
-- `shelf_entries`: one per user and album. Two independent statuses, at
-  least one set: `listening` (want_to_listen, listened) and `owning` (want,
-  own); `formats` (vinyl, cd, cassette, digital; several allowed, only when
-  owned). Optional `rating` 1–10 (half stars), `comment`, `updated_at`
-  set by a trigger. RLS: only the owner reads and writes; friends' read
-  access comes with M2.
+- `shelf_entries`: one per user and album. Optional `rating` 1–10 (half
+  stars), `comment`, `updated_at` set by a trigger; for albums added from a
+  friend's shelf (M2), `added_from_user_id` (cleared if that account is
+  deleted) and `added_from_name` (kept). RLS: only the owner
+  reads and writes; friends' read access comes with M2.
+- Tags (`tag_groups`, `tags`, `entry_tags`, `shelf_filters`): user-defined
+  groups, exclusive or multiple choice, sub-groups under a tag, built-in
+  groups Collection and Listening shared in meaning across users; suggested
+  groups created for each new user. Details: `docs/features/tags.md`.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
+
+## Environments
+- **Local:** `supabase start`; the app defaults to it.
+- **Staging:** a hosted Supabase project. The `staging` workflow deploys
+  it after the `db` workflow passes on `main` (or by hand from `main`):
+  `supabase db push` for migrations, `supabase config push` for auth
+  settings and the sign-in email. `[remotes.staging]` in
+  `supabase/config.toml` holds its project ID and overrides the local
+  URLs. The web app on `main` (TASK-22) and Android test builds (TASK-23)
+  use it.
+- **Production:** later, a second hosted project the same way.
+
+One-time staging setup (TASK-21):
+1. Supabase dashboard → New project `shelf-staging` (free plan; it pauses
+   after a week without use). Keep the database password.
+2. GitHub → repository Settings → Secrets and variables → Actions:
+   repository secrets `SUPABASE_ACCESS_TOKEN` (Supabase → Account →
+   Access Tokens; one for all projects) and
+   `SUPABASE_STAGING_DB_PASSWORD`; repository variable
+   `SUPABASE_STAGING_PROJECT_ID` (the project ref from its URL).
+3. Add `[remotes.staging]` with that `project_id`, the staging web URL as
+   `site_url` and the preview URLs as redirect URLs to
+   `supabase/config.toml`, then run the `staging` workflow.
 
 ## Web deploys
 - The `web` workflow builds `flutter build web` in GitHub Actions and
@@ -64,11 +93,19 @@
      Account · Cloudflare Pages · Edit.
   3. GitHub → repository Settings → Secrets and variables → Actions: add
      both secrets (the account ID is on the dashboard's overview page).
-- With sign-in (TASK-6), the hosted Supabase project's Auth URL
-  configuration needs the production URL as Site URL and
-  `https://*.<project>.pages.dev/**` as a redirect URL for previews.
+- The web build reads the Supabase project from the repository variables
+  `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (Project Settings → API
+  keys); without them it talks to a local Supabase. Auth URLs and the
+  sign-in email come from `supabase/config.toml` via the `staging`
+  workflow (see Environments).
 
 ## Decisions
+- **2026-11-24 – Sign in with an emailed code and link.** The email
+  carries a 6-digit code and a link. The code works on any device from
+  day one, including when the mail is read on another device; the link
+  works on the web now, and on phones once app links are set up.
+  Considered: link only (needs app links on iOS and Android and signs in
+  wherever the mail is opened), passwords (more to build and forget).
 - **2026-11-22 – Flutter for the app.** One codebase for iOS, Android and
   web; the author knows Dart; mature share-intent plugins.
   Considered: Compose Multiplatform (web still beta, community Supabase
@@ -87,6 +124,12 @@
   (the app has no CocoaPods); Apache-2.0, maintained. Considered: own native
   code (same Xcode setup, ~150 lines of Kotlin/Swift more), `share_handler`
   (CocoaPods only, last release 2025).
+- **2026-11-24 – Generic tags instead of fixed statuses.** Tag groups,
+  tags and a join table, with the rules (one tag per exclusive group,
+  sub-tags need their parent, built-ins can't be deleted, owner only)
+  enforced in Postgres. Works for every media type. Considered: tag IDs as
+  an array on the entry (rules only via triggers, stale IDs), text labels
+  (renaming rewrites every item). See `docs/features/tags.md`.
 - **2026-11-23 – Visual system "subtle 80s".** Warm surfaces with a few
   cues (teak shelf lines, cassette-recorder keys in 3D seen from the bottom
   right, a filter bar with labels above its keys, wide Archivo type, light

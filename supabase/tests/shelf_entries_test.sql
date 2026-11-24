@@ -1,5 +1,5 @@
 begin;
-select plan(28);
+select plan(25);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -8,8 +8,8 @@ insert into auth.users (id, email) values
 insert into public.albums (id, title, artist) values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Album A', 'Artist A');
 
-insert into public.shelf_entries (user_id, album_id, owning) values
-  ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'own');
+insert into public.shelf_entries (user_id, album_id, comment) values
+  ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Bob''s');
 
 -- Anonymous users see nothing.
 set local role anon;
@@ -19,10 +19,10 @@ select throws_ok(
   $$insert into public.albums (title, artist) values ('X', 'Y')$$,
   '42501', null, 'anon cannot add albums');
 select throws_ok(
-  $$insert into public.shelf_entries (user_id, album_id, owning)
-    values ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'want')$$,
+  $$insert into public.shelf_entries (user_id, album_id)
+    values ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')$$,
   '42501', null, 'anon cannot add shelf entries');
-update public.shelf_entries set owning = 'want';
+update public.shelf_entries set comment = 'changed';
 delete from public.shelf_entries;
 
 -- Alice is signed in.
@@ -48,66 +48,36 @@ select is_empty('select * from public.shelf_entries',
   'users cannot read others'' shelf entries');
 
 select lives_ok(
-  $$insert into public.shelf_entries (album_id, listening, rating, comment)
-    values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'listened', 9, 'Great')$$,
+  $$insert into public.shelf_entries (album_id) values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')$$,
+  'an entry needs no tags, rating or comment');
+delete from public.shelf_entries where album_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+select lives_ok(
+  $$insert into public.shelf_entries (album_id, rating, comment)
+    values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 9, 'Great')$$,
   'users add their own shelf entries, user_id defaults to them');
 select results_eq('select user_id from public.shelf_entries',
   array['11111111-1111-1111-1111-111111111111'::uuid],
   'users read only their own shelf entries');
 
 select throws_ok(
-  $$insert into public.shelf_entries (user_id, album_id, owning)
-    values ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'own')$$,
+  $$insert into public.shelf_entries (user_id, album_id)
+    values ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')$$,
   '42501', null, 'users cannot add entries for others');
 
 select throws_ok(
-  $$insert into public.shelf_entries (album_id, owning)
-    values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'want')$$,
+  $$insert into public.shelf_entries (album_id) values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')$$,
   '23505', null, 'one entry per user and album');
-select lives_ok(
-  $$insert into public.shelf_entries (album_id, owning, rating)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'own', 1)$$,
-  'rating 1 is accepted');
-select lives_ok(
-  $$update public.shelf_entries set rating = null
-    where album_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'$$,
-  'rating is optional');
-delete from public.shelf_entries where album_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 select throws_ok(
-  $$insert into public.shelf_entries (album_id, owning, rating)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'own', 11)$$,
+  $$insert into public.shelf_entries (album_id, rating)
+    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 11)$$,
   '23514', null, 'rating above 10 is rejected');
 select throws_ok(
-  $$insert into public.shelf_entries (album_id, owning, rating)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'own', 0)$$,
+  $$insert into public.shelf_entries (album_id, rating)
+    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 0)$$,
   '23514', null, 'rating below 1 is rejected');
-select throws_ok(
-  $$insert into public.shelf_entries (album_id, owning)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'borrowed')$$,
-  '22P02', null, 'unknown status is rejected');
-select throws_ok(
-  $$insert into public.shelf_entries (album_id)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')$$,
-  '23514', null, 'an entry needs a listening or collection status');
-select throws_ok(
-  $$insert into public.shelf_entries (album_id, owning, formats)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'want', '{vinyl}')$$,
-  '23514', null, 'formats only when owned');
-select throws_ok(
-  $$insert into public.shelf_entries (album_id, owning, formats)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'own', '{minidisc}')$$,
-  '22P02', null, 'unknown format is rejected');
-select lives_ok(
-  $$insert into public.shelf_entries (album_id, listening, owning, formats)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'want_to_listen', 'own', '{vinyl,digital}')$$,
-  'listening and collection status together, several formats');
-select is(
-  (select formats::text[] from public.shelf_entries
-    where album_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
-  array['vinyl', 'digital'], 'formats are stored');
-delete from public.shelf_entries where album_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
-update public.shelf_entries set owning = 'want'
+update public.shelf_entries set comment = 'hacked'
   where user_id = '22222222-2222-2222-2222-222222222222';
 delete from public.shelf_entries
   where user_id = '22222222-2222-2222-2222-222222222222';
@@ -127,9 +97,30 @@ select is_empty('select * from public.shelf_entries', 'own entry is gone');
 
 reset role;
 select results_eq(
-  $$select owning::text from public.shelf_entries
+  $$select comment from public.shelf_entries
     where user_id = '22222222-2222-2222-2222-222222222222'$$,
-  array['own'], 'users cannot change or delete others'' entries');
+  array['Bob''s'], 'users cannot change or delete others'' entries');
+
+-- Added from a friend's shelf: the friend's name stays when their account goes.
+insert into auth.users (id, email) values ('33333333-3333-3333-3333-333333333333', 'anna@example.com');
+select lives_ok(
+  $$insert into public.shelf_entries (user_id, album_id, added_from_user_id, added_from_name)
+    values ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+            '33333333-3333-3333-3333-333333333333', 'Anna')$$,
+  'an entry remembers the friend it was added from');
+select throws_ok(
+  $$insert into public.shelf_entries (user_id, album_id, added_from_user_id)
+    values ('22222222-2222-2222-2222-222222222222', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+            '33333333-3333-3333-3333-333333333333')$$,
+  '23514', null, 'the friend''s name is required with the friend');
+delete from auth.users where id = '33333333-3333-3333-3333-333333333333';
+select is(
+  (select added_from_user_id from public.shelf_entries where added_from_name = 'Anna'), null,
+  'deleting the friend''s account clears the link');
+select is(
+  (select added_from_name from public.shelf_entries where album_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+     and user_id = '11111111-1111-1111-1111-111111111111'), 'Anna',
+  'the friend''s name stays');
 
 select * from finish();
 rollback;

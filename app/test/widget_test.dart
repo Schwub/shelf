@@ -4,10 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:shelf_app/main.dart';
 
+import 'auth/fake_auth.dart';
+
 void main() {
   testWidgets('shows the last shared link', (tester) async {
     final links = StreamController<Uri>();
-    await tester.pumpWidget(ShelfApp(links: links.stream));
+    await tester.pumpWidget(
+      ShelfApp(auth: FakeAuth(signedIn: true), links: links.stream),
+    );
 
     expect(find.textContaining('Share an album'), findsOneWidget);
 

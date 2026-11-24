@@ -33,6 +33,7 @@ dependencies:
   material_ui: ^1.1.0
 
   receive_sharing_intent: ^1.9.0
+  supabase_flutter: ^2.18.3
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +56,19 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/fonts/Archivo-OFL.txt
+    - assets/fonts/IBMPlexSans-OFL.txt
+
+  # Variable fonts (width and weight axes), SIL Open Font License.
+  fonts:
+    - family: Archivo
+      fonts:
+        - asset: assets/fonts/Archivo.ttf
+    - family: IBM Plex Sans
+      fonts:
+        - asset: assets/fonts/IBMPlexSans.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:
