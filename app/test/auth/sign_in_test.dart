@@ -128,6 +128,18 @@ void main() {
     expect(find.text('Resend code in 1:00'), findsOneWidget);
   });
 
+  testWidgets('a failed link says so on the sign-in screen', (tester) async {
+    await pumpApp(tester);
+    await enterEmail(tester, 'anna@example.com');
+
+    auth.failLink();
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('This link has expired'), findsOneWidget);
+    expect(find.text('Check your email'), findsNothing);
+    expect(find.text('Send sign-in code'), findsOneWidget);
+  });
+
   testWidgets('a different email goes back to the email field', (tester) async {
     await pumpApp(tester);
     await enterEmail(tester, 'anna@example.com');

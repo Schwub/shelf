@@ -6,7 +6,7 @@ Flows are in [flows.md](flows.md), wireframes in [wireframes/](wireframes/).
 
 | Screen | Purpose | Flows | States |
 |---|---|---|---|
-| Sign in | Enter an email to get a sign-in code and link | Sign in | default, sending, invalid email, send error, too many emails |
+| Sign in | Enter an email to get a sign-in code and link | Sign in | default, sending, invalid email, send error, too many emails, link failed |
 | Check your email | Enter the emailed code; resend it or change the email | Sign in | sent (resend countdown), resend available, code not 6 digits, wrong or expired code, resent |
 | My shelf | The user's albums; start adding | all | loading, empty, filled grid, filled list, filter with no matches, error |
 | Search | Find an album on MusicBrainz | Add by search | idle, loading, results (some already on shelf), no results, error |

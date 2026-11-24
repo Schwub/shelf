@@ -21,6 +21,9 @@ class FakeAuth implements Auth {
     _changes.add(signedIn);
   }
 
+  /// The email's link failed, as the server reports it.
+  void failLink() => _changes.addError(LinkFailed());
+
   @override
   Future<void> sendCode(String email) async {
     final error = sendError;

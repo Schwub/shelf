@@ -1,9 +1,10 @@
 ---
 id: TASK-20
 title: Open the sign-in link in the phone apps
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-24T09:46:00Z'
+updated_date: '2026-11-24T23:06:00Z'
 labels: []
 dependencies: []
 ordinal: 21000
@@ -21,3 +22,9 @@ The sign-in email's link works on the web; on Android and iOS it should open the
 - [ ] #2 Same on iOS
 - [ ] #3 An expired link shows the 'link expired' note on the sign-in screen
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Android: custom scheme de.schwubware.shelf://login (manifest intent filter, flutter_deeplinking_enabled=false so only supabase_flutter handles it), allowed as redirect URL locally and on staging. Expired, used or other-device links show a note on Sign in (LinkFailed). iOS still open (needs a Mac).
+<!-- SECTION:NOTES:END -->
