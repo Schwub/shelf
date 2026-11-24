@@ -188,3 +188,8 @@ Short and functional only: keys press in 100 ms (the face slides down and right 
 ## Later ideas (not in M1)
 - The album entry opens by lifting the cover off its shelf board.
 - A "Queue" section on the shelf for albums you want to listen to.
+- Corridor palette (#553116, #7B3A24, #D2601E, #E2CA50, #6A6A2E): warmer
+  browns, orange and olive, tried on all screens in
+  [visual/variations/palette-corridor.html](visual/variations/palette-corridor.html).
+  Kept as an idea; the current colours stay. Its daylight version needs
+  contrast work (off and muted text below 3:1).
