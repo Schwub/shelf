@@ -33,7 +33,7 @@ Two themes; the app follows the system setting.
 | amber | #F2B13A → #E8743A | same | Primary key face, left to right; lip #B4501E |
 | onAmber | #1F1510 | #2A1D16 | Text on amber |
 | line | text at 12 % | text at 15 % | Hairlines, key outlines |
-| off | #8C7C6A | #A39482 | Unlit light outlines, empty meter segments (≥ 3:1) |
+| off | #8C7C6A | #857563 | Unlit light outlines, empty meter segments (≥ 3:1) |
 
 One accent: the warm amber-to-coral gradient, like a level meter warming
 up; backgrounds stay flat. Cover colours are the only other colour on screen; the
@@ -46,7 +46,8 @@ in both themes (daylight signal #B06A00: 3.7:1 on bg, 4.0:1 on surface);
 bright amber is only used as a fill under dark text (8:1).
 
 ## Type
-Five sizes only: 24, 15, 14, 13, 12.
+Six sizes only: 24, 18 (sheet, dialog and message titles), 15, 14, 13, 12.
+Weights: Archivo 600–800, IBM Plex Sans 400 and 600 (no 700).
 - **Archivo** width 125 (Expanded) 700, 24: screen and album titles.
   Width 112, 600, 13: keys, tabs and tab counts (tabular figures).
 - **IBM Plex Sans**: 15/600 pulled-spine title; 14 body and fields;
@@ -152,8 +153,10 @@ same rules:
 - **Progress:** a 3 px track in off colour with a moving segment in the
   amber gradient; skeletons are surface-coloured blocks and lines.
 - **Dialog:** background colour, 1 px line, 4 px corners, title in Archivo
-  18, two keys (secondary, primary) side by side; the screen behind is
-  dimmed to 55 %.
+  18, two keys side by side; the screen behind is dimmed to 45 %. The
+  second key is primary (amber) for safe confirmations ("Discard", "Sign
+  out"); destructive deletes use two plain keys and let the label say what
+  happens ("Delete").
 - **Snackbar:** always dark (#2A1D16, cream text, hairline outline) with
   the action in amber, 20 px from the sides, above the bottom bar.
 - **Search field:** a recessed field like the comment field, with a 18 px
@@ -163,16 +166,20 @@ same rules:
   (13/600, underlined, 44 px tall). Built-in two-tag groups fill the row
   with equal keys; other tags keep their natural width and wrap. A
   sub-group is indented 12 px with a 2 px line on its left. "Edit tags" is
-  an underlined text link (13/600, muted).
+  an underlined text link (13/600, muted) with about 24 px of space above
+  and below, so it doesn't read as part of the last group.
 - **List rows** (editor, filters, sheets): 56 px, 1 px line below, title
   15/600 and a 12 px muted second line; 44 × 44 icons for reorder (≡),
   more (⋯), remove (✕) and open (›); "Built-in" as muted 12/600 text.
-  Selection in a list uses the light window (lit = chosen).
+  Selection in a list uses the light window (lit = chosen), unlit with a
+  1 px off outline and lit exactly like on keys. "Add" rows put their + in
+  the same 44 px slot as the reorder handle, so all titles line up. Dimmed
+  rows (hidden group, "All") use muted text, never opacity.
 - **Screen bar:** a 44 px back key and the title in Archivo 24.
 - **Bottom sheet:** background colour, 4 px top corners, a hairline on top,
   a grab bar, title in Archivo 18; the screen behind is dimmed to 45 %.
 - **Menu:** surface colour, 1 px line, 4 px corners, 48 px rows, under the
-  ⋮ key.
+  ⋮ key, 4 px below it; rows 15/600.
 
 ## Motion
 Short and functional only: keys press in 100 ms (the face slides down and right as the sides shrink); a pulled spine slides
