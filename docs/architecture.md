@@ -70,8 +70,9 @@ One-time staging setup (TASK-21):
    after a week without use). Keep the database password.
 2. GitHub → repository Settings → Secrets and variables → Actions:
    repository secrets `SUPABASE_ACCESS_TOKEN` (Supabase → Account →
-   Access Tokens; one for all projects), `SUPABASE_STAGING_DB_PASSWORD`
-   and `SUPABASE_STAGING_PROJECT_ID` (the project ref from its URL).
+   Access Tokens; one for all projects) and
+   `SUPABASE_STAGING_DB_PASSWORD`; repository variable
+   `SUPABASE_STAGING_PROJECT_ID` (the project ref from its URL).
 3. Add `[remotes.staging]` with that `project_id`, the staging web URL as
    `site_url` and the preview URLs as redirect URLs to
    `supabase/config.toml`, then run the `staging` workflow.
