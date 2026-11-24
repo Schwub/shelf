@@ -29,13 +29,18 @@ flowchart TD
   code -- wrong or expired --> codeErr[That code isn't right or has expired. Check it, or send a new one.] --> check
   check -- Resend code, after 60 s countdown --> send
   check -- Use a different email / back --> signin
-  check -- taps the link in the email, web --> shelf
+  check -- taps the link in the email, web or Android --> link{Link valid?}
+  link -- yes --> shelf
+  link -- expired, used or other device --> linkErr[Sign in with a note: send a new one] --> signin
 ```
 
 Notes:
-- The email carries both the code and the link. The code works on any
-  device; the link signs in where it is opened (web now, phones once app
-  links are set up, TASK-20).
+- The email carries both the code and the link (staging: only the link,
+  see docs/architecture.md). The code works on any device; the link signs
+  in where it was requested: the web app, or the Android app through
+  `de.schwubware.shelf://login` (iOS: TASK-20). An expired, used or
+  other-device link returns to Sign in with the note "This link has
+  expired or was already used. Send a new one below."
 - A pending shared link (see "Add by sharing") survives the sign-in and
   continues afterwards.
 - Sign out lives in the shelf's overflow menu and asks for confirmation.

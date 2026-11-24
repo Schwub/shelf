@@ -19,16 +19,27 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   late bool _signedIn = widget.auth.signedIn;
+  bool _linkFailed = false;
   late final StreamSubscription<bool> _changes;
 
   @override
   void initState() {
     super.initState();
-    _changes = widget.auth.changes.listen((signedIn) {
-      if (!mounted || signedIn == _signedIn) return;
-      Navigator.of(context).popUntil((route) => route.isFirst);
-      setState(() => _signedIn = signedIn);
-    });
+    _changes = widget.auth.changes.listen(
+      (signedIn) {
+        if (!mounted || signedIn == _signedIn) return;
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        setState(() {
+          _signedIn = signedIn;
+          _linkFailed = false;
+        });
+      },
+      onError: (Object error) {
+        if (!mounted || error is! LinkFailed || _signedIn) return;
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        setState(() => _linkFailed = true);
+      },
+    );
   }
 
   @override
@@ -38,6 +49,7 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      _signedIn ? widget.signedIn : SignInPage(auth: widget.auth);
+  Widget build(BuildContext context) => _signedIn
+      ? widget.signedIn
+      : SignInPage(auth: widget.auth, linkFailed: _linkFailed);
 }

@@ -12,9 +12,12 @@ final _email = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
 /// Enter an email to get a sign-in code and link.
 class SignInPage extends StatefulWidget {
-  const SignInPage({super.key, required this.auth});
+  const SignInPage({super.key, required this.auth, this.linkFailed = false});
 
   final Auth auth;
+
+  /// The email's link didn't work: shows a note to send a new one.
+  final bool linkFailed;
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -81,8 +84,31 @@ class _SignInPageState extends State<SignInPage> {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 64, 20, 20),
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  widget.linkFailed ? 24 : 64,
+                  20,
+                  20,
+                ),
                 children: [
+                  if (widget.linkFailed) ...[
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: c.surface,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: c.line),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: HelpLine(
+                          'This link has expired or was already used. '
+                          'Send a new one below.',
+                          error: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   Text(
                     'shelf',
                     style: archivo(

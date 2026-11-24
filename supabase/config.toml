@@ -166,7 +166,8 @@ site_url = "http://127.0.0.1:3000"
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # Local web builds on any port (flutter run -d chrome, a static server).
-additional_redirect_urls = ["http://localhost:*/**", "http://127.0.0.1:*/**"]
+# and the phone apps (signInLink in app/lib/auth/auth.dart).
+additional_redirect_urls = ["http://localhost:*/**", "http://127.0.0.1:*/**", "de.schwubware.shelf://login"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -450,4 +451,4 @@ project_id = "hgmfcbntezhvqwyjzcno"
 
 [remotes.staging.auth]
 site_url = "https://shelf.pages.dev"
-additional_redirect_urls = ["https://*.shelf.pages.dev/**"]
+additional_redirect_urls = ["https://*.shelf.pages.dev/**", "de.schwubware.shelf://login"]
