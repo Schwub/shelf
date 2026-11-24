@@ -29,11 +29,20 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        // Staging test builds only (Obtainium updates need the same key every
+        // time). Not secret on purpose; Play Store releases get their own key.
+        create("staging") {
+            storeFile = file("staging.jks")
+            storePassword = "shelf-staging"
+            keyAlias = "staging"
+            keyPassword = "shelf-staging"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("staging")
         }
     }
 }
