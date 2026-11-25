@@ -48,6 +48,7 @@ void main() {
     expect(auth.sent, ['anna@example.com']);
     expect(find.text('Check your email'), findsOneWidget);
     expect(find.textContaining('anna@example.com'), findsOneWidget);
+    expect(find.textContaining('Tap the link in the email'), findsOneWidget);
 
     await enterCode(tester, '123456');
     expect(find.text('Signed in'), findsOneWidget);

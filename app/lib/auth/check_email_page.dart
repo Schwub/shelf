@@ -129,7 +129,7 @@ class _CheckEmailPageState extends State<CheckEmailPage> {
             const SizedBox(height: 8),
             Text.rich(
               TextSpan(
-                text: 'We sent a code to\n',
+                text: 'We sent a sign-in email to\n',
                 children: [
                   TextSpan(
                     text: widget.email,
@@ -155,8 +155,9 @@ class _CheckEmailPageState extends State<CheckEmailPage> {
             HelpLine(
               _error ??
                   _note ??
-                  'Or open the link in the email on this device. '
-                      'The code works once and for one hour.',
+                  'Tap the link in the email on this device, or enter the '
+                      'code if the email shows one. Both work once and for '
+                      'one hour.',
               error: _error != null,
             ),
             const SizedBox(height: 16),
