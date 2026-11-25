@@ -40,6 +40,13 @@ android {
         }
     }
 
+    // Android Lint crashes on a plugin's Java doc comments (NoSuchMethodError
+    // in JavaDocParser) when it runs as part of release builds; our own code
+    // is Dart, checked by flutter analyze.
+    lint {
+        checkReleaseBuilds = false
+    }
+
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("staging")
