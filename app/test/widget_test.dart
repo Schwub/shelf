@@ -1,24 +1,26 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:shelf_app/main.dart';
 
 import 'auth/fake_auth.dart';
+import 'shelf/fake_shelf.dart';
 
 void main() {
-  testWidgets('shows the last shared link', (tester) async {
-    final links = StreamController<Uri>();
+  testWidgets('starts on the shelf when signed in', (tester) async {
     await tester.pumpWidget(
-      ShelfApp(auth: FakeAuth(signedIn: true), links: links.stream),
+      ShelfApp(
+        auth: FakeAuth(signedIn: true),
+        shelf: FakeShelf([entry('1', 'Blue')]),
+      ),
     );
+    await tester.pumpAndSettle();
 
-    expect(find.textContaining('Share an album'), findsOneWidget);
+    expect(find.text('My shelf'), findsOneWidget);
+    expect(find.text('Blue'), findsOneWidget);
+  });
 
-    links.add(Uri.parse('https://open.spotify.com/album/abc'));
-    await tester.pump();
+  testWidgets('starts on sign-in when signed out', (tester) async {
+    await tester.pumpWidget(ShelfApp(auth: FakeAuth(), shelf: FakeShelf([])));
 
-    expect(find.text('https://open.spotify.com/album/abc'), findsOneWidget);
-    await links.close();
+    expect(find.text('Send sign-in code'), findsOneWidget);
   });
 }

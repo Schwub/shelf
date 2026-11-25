@@ -44,3 +44,7 @@ run = "supabase db start && supabase db reset && supabase test db"
 description = "Build the web app (iOS and Android need local SDKs)"
 dir = "app"
 run = "flutter build web"
+
+[tasks."dev:albums"]
+description = "Add test albums to an account's shelf in the local Supabase (usage: mise run dev:albums -- <email>)"
+run = "supabase/dev/test-albums.sh"

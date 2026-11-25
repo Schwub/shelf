@@ -1,10 +1,10 @@
 ---
 id: TASK-9
 title: Show and edit my shelf
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-23T17:42:00Z'
-updated_date: '2026-11-23T23:51:00Z'
+updated_date: '2026-11-25T00:18:00Z'
 labels: []
 dependencies:
   - TASK-5
@@ -20,7 +20,13 @@ List the signed-in user's shelf entries and edit an entry's rating and comment. 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Widget tests cover the list, the empty state and editing
-- [ ] #2 The shelf lists entries with cover, title, artist and rating (no tags on the tiles), with an empty state
-- [ ] #3 Rating and comment can be changed and are saved
+- [x] #1 Widget tests cover the list, the empty state and editing
+- [x] #2 The shelf lists entries with cover, title, artist and rating (no tags on the tiles), with an empty state
+- [x] #3 Rating and comment can be changed and are saved
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+My shelf (lib/shelf): covers on boards and spines (pull up, then open), filter bar with counts from shelf_filters (hidden groups left out), loading, empty, error and no-match states, sign-out menu; development builds keep the component page under ⋮. Album entry in edit mode: rating keys, comment, save errors, Discard changes?, remove with Undo (the delete runs when the snackbar closes). Not yet: covers/spines choice kept on the device (needs shared_preferences, a new dependency), spine colours from the covers (fixed palette for now), Add album key (TASK-8), tags on the entry (TASK-16). Test albums: supabase/dev/test_albums.sql, mise run dev:albums, staging-test-albums workflow.
+<!-- SECTION:NOTES:END -->

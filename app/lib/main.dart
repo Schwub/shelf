@@ -5,8 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth/auth.dart';
 import 'auth/auth_gate.dart';
-import 'preview/preview_page.dart';
-import 'share/share_receiver.dart';
+import 'shelf/shelf_data.dart';
+import 'shelf/shelf_page.dart';
 import 'theme/shelf_theme.dart';
 
 // Defaults: the local Supabase (`supabase start`). Builds for the hosted
@@ -33,15 +33,18 @@ Future<void> main() async {
     publishableKey: _supabaseKey,
   );
   runApp(
-    ShelfApp(auth: SupabaseAuth(supabase.client.auth), links: sharedLinks()),
+    ShelfApp(
+      auth: SupabaseAuth(supabase.client.auth),
+      shelf: SupabaseShelfRepository(supabase.client),
+    ),
   );
 }
 
 class ShelfApp extends StatelessWidget {
-  const ShelfApp({super.key, required this.auth, required this.links});
+  const ShelfApp({super.key, required this.auth, required this.shelf});
 
   final Auth auth;
-  final Stream<Uri> links;
+  final ShelfRepository shelf;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +54,7 @@ class ShelfApp extends StatelessWidget {
       darkTheme: shelfTheme(Brightness.dark),
       home: AuthGate(
         auth: auth,
-        signedIn: PreviewPage(auth: auth, links: links),
+        signedIn: ShelfPage(auth: auth, shelf: shelf),
       ),
     );
   }
