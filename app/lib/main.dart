@@ -29,6 +29,7 @@ const _supabaseKey = String.fromEnvironment(
 const _musicBrainzContact = String.fromEnvironment('MUSICBRAINZ_CONTACT');
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   LicenseRegistry.addLicense(() async* {
     for (final font in ['Archivo', 'IBMPlexSans']) {
       yield LicenseEntryWithLineBreaks([

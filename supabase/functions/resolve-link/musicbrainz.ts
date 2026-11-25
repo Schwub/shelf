@@ -11,7 +11,8 @@ let last = 0;
 
 /**
  * GET at most one request per [gap] ms (MusicBrainz's rate limit; a link
- * takes up to three), with one retry when MusicBrainz is busy anyway (503).
+ * takes up to three). When MusicBrainz is busy anyway (503, from other
+ * clients on a shared address), backs off twice: [gap], then twice that.
  */
 async function get(
   url: string,
@@ -19,15 +20,15 @@ async function get(
   agent: string,
   gap: number,
 ): Promise<Record<string, unknown> | null> {
-  const once = async () => {
-    await wait(last + gap - Date.now());
+  let response!: Response;
+  for (const pause of [0, gap, 2 * gap]) {
+    await wait(Math.max(pause, last + gap - Date.now()));
     last = Date.now();
-    return fetchFn(url, {
+    response = await fetchFn(url, {
       headers: { "User-Agent": agent, Accept: "application/json" },
     });
-  };
-  let response = await once();
-  if (response.status === 503) response = await once();
+    if (response.status !== 503) break;
+  }
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`MusicBrainz answered ${response.status}`);
   return await response.json();
@@ -76,8 +77,8 @@ export async function urlLookup(
 }
 
 const norm = (s: string) =>
-  s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ").trim();
+  s.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const quote = (s: string) => `"${s.replace(/[\\"]/g, (c) => "\\" + c)}"`;
 
 /**

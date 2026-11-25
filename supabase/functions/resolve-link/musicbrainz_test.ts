@@ -60,8 +60,9 @@ Deno.test("a URL MusicBrainz doesn't know is no hit", async () => {
   );
 });
 
-Deno.test("retries once when MusicBrainz is busy", async () => {
+Deno.test("retries twice when MusicBrainz is busy", async () => {
   const { fn, urls } = fakeFetch(
+    () => new Response("", { status: 503 }),
     () => new Response("", { status: 503 }),
     () => Response.json(urlEntry),
     () => Response.json(release),
@@ -70,8 +71,9 @@ Deno.test("retries once when MusicBrainz is busy", async () => {
     await urlLookup(urlEntry.resource, fn, agent, 0),
     okComputer,
   );
-  assert.equal(urls.length, 3);
+  assert.equal(urls.length, 4);
   const busy = fakeFetch(
+    () => new Response("", { status: 503 }),
     () => new Response("", { status: 503 }),
     () => new Response("", { status: 503 }),
   );
@@ -124,6 +126,27 @@ Deno.test("matches titles loosely but not other artists", async () => {
   );
   assert.equal(
     await search(page, fakeFetch(groups("Coldplay")).fn, agent, 0),
+    null,
+  );
+});
+
+Deno.test("matches non-Latin titles by their letters", async () => {
+  const groups = () =>
+    Response.json({
+      "release-groups": [{
+        id: groupId,
+        title: "ボーイ",
+        "artist-credit": [{ name: "Ichiko Aoba" }],
+      }],
+    });
+  const aoba = { ...page, artist: "Ichiko Aoba" };
+  assert.equal(
+    (await search({ ...aoba, title: "ボーイ" }, fakeFetch(groups).fn, agent, 0))
+      ?.musicbrainz_id,
+    groupId,
+  );
+  assert.equal(
+    await search({ ...aoba, title: "アダン" }, fakeFetch(groups).fn, agent, 0),
     null,
   );
 });

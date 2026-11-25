@@ -33,8 +33,9 @@ Deno.serve(async (request) => {
     return json(
       await resolve(String(url ?? ""), {
         fetchPage: async (pageUrl) => {
+          // The contact is for MusicBrainz only.
           const response = await fetch(pageUrl, {
-            headers: { "User-Agent": agent },
+            headers: { "User-Agent": userAgent(undefined) },
             redirect: "follow",
           });
           if (!response.ok) return null;

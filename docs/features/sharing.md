@@ -26,7 +26,7 @@ users only:
    URL.
 
 MusicBrainz allows one request per second, so the function spaces its up
-to three requests and retries a 503 once. Measured on 20 real links: 19
+to three requests and backs off twice on a 503. Measured on 20 real links: 19
 resolved (docs/project.md, Risks).
 
 ## App
