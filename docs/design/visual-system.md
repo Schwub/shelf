@@ -60,24 +60,22 @@ Six sizes only: 24, 18 (sheet, dialog and message titles), 15, 14, 13, 12.
 Weights: Archivo 600–800, IBM Plex Sans 400 and 600 (no 700).
 - **Archivo** width 125 (Expanded) 700, 24: screen and album titles.
   Width 112, 600, 13: keys, tabs and tab counts (tabular figures).
-- **IBM Plex Sans**: 15/600 pulled-spine title; 14 body and fields;
-  13/600 cover titles; 12 artist, labels (600) and spine text.
+- **IBM Plex Sans**: 15/600 list and row titles; 14 body and fields;
+  13/600 cover titles; 12 artist and labels (600).
 - Sentence case everywhere; no all-caps labels.
 
 ## Shape and space
-- **Corners:** controls and fields 4 px on all corners; covers and spines
-  2 px. No pills, no mixed corners.
+- **Corners:** controls and fields 4 px on all corners; covers 2 px. No pills, no mixed corners.
 - **Sizes:** keys look 44 px high (icon keys 44 × 44, 20 px line icons
   with a 1.5 px stroke, no Unicode glyphs); an invisible margin makes
   every touch area at least 48 × 48 (Android's minimum), so rows of keys
   sit 4 px further apart than they look. Fields are 48 px high.
 - **Spacing:** 4 px grid only (4, 8, 12, 16, 20, 24, 28); 20 px side
-  margin; 8 px between keys; 12 px between covers; 4 px between tabs and
-  spines.
+  margin; 8 px between keys; 12 px between covers; 4 px between tabs.
 
 ## Components
-- **Key** (the only control besides two text links: "Add" on a tag
-  group's label line and "Edit tags"), modelled on a cassette recorder's piano
+- **Key** (the only control besides text links such as "Add" on a tag
+  group's label line), modelled on a cassette recorder's piano
   key, seen from the bottom right with light from the top left (mockup:
   [visual/variations/c4-final-sheet.html](visual/variations/c4-final-sheet.html), option B):
   - **Construction:** two layers, each a rounded rectangle with 4 px
@@ -147,11 +145,10 @@ Weights: Archivo 600–800, IBM Plex Sans 400 and 600 (no 700).
 - **Shelf tiles** show only title, artist and, if rated, the small rating
   meter. No status tags on the shelf (less clutter): listening and
   collection status live on the album entry and in the filter bar.
-- **Spines view:** the list alternative; spines coloured from the cover,
-  artist and title rotated, full width, standing on shelf boards; heights
-  vary per album, pale spines get a 1 px line outline. Tapping a spine
-  pulls it up 8 px with a signal light at its foot and shows its details
-  below; tapping again opens it.
+- **List view:** the alternative to covers (replaced the spines view,
+  TASK-30, 2026-11-25): one row per album, a 56 px cover, title 15/600,
+  artist 12 muted and the small rating meter if rated, a 1 px line below;
+  tapping a row opens the album.
 
 ## Supporting elements
 All M1 screens and states in this system: [visual/screens/](visual/screens/)
@@ -177,9 +174,7 @@ same rules:
   muted); multiple-choice groups add an "Add" action on the right of it
   (13/600, underlined, 44 px tall). Built-in two-tag groups fill the row
   with equal keys; other tags keep their natural width and wrap. A
-  sub-group is indented 12 px with a 2 px line on its left. "Edit tags" is
-  an underlined text link (13/600, muted) with about 24 px of space above
-  and below, so it doesn't read as part of the last group.
+  sub-group is indented 12 px with a 2 px line on its left.
 - **List rows** (editor, filters, sheets): 56 px, 1 px line below, title
   15/600 and a 12 px muted second line; 44 × 44 icons for reorder (≡),
   more (⋯), remove (✕) and open (›); "Built-in" as muted 12/600 text.
@@ -194,8 +189,7 @@ same rules:
   ⋮ key, 4 px below it; rows 15/600.
 
 ## Motion
-Short and functional only: keys press in 100 ms (the face slides down and right as the sides shrink); a pulled spine slides
-150 ms. No looping or decorative animation.
+Short and functional only: keys press in 100 ms (the face slides down and right as the sides shrink). No looping or decorative animation.
 
 ## Later ideas (not in M1)
 - The album entry opens by lifting the cover off its shelf board.

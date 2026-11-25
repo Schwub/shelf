@@ -61,7 +61,6 @@ class TagSection extends StatelessWidget {
     required this.choice,
     required this.onChanged,
     required this.onCreate,
-    required this.onEditTags,
   });
 
   final TagChoice choice;
@@ -70,9 +69,6 @@ class TagSection extends StatelessWidget {
   /// Creates a tag in a group (from the Add sheet) and returns it.
   final Future<Tag> Function(TagGroup group, String name) onCreate;
 
-  /// Opens the tag editor.
-  final VoidCallback onEditTags;
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -80,14 +76,6 @@ class TagSection extends StatelessWidget {
       children: [
         for (final g in choice.groups)
           if (g.parentTagId == null) ..._group(context, g),
-        // Space around it, so it doesn't read as part of the last group.
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: TextLink(label: 'Edit tags', onPressed: onEditTags),
-          ),
-        ),
       ],
     );
   }

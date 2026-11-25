@@ -8,7 +8,7 @@ import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/tags/tags_page.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
-import 'package:shelf_app/shelf/spines_view.dart';
+import 'package:shelf_app/shelf/albums_list_view.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 import 'package:shelf_app/theme/theme_choice.dart';
@@ -123,22 +123,24 @@ void main() {
     expect(find.text('OK Computer'), findsOneWidget);
   });
 
-  testWidgets('spines pull up on the first tap and open on the second', (
-    tester,
-  ) async {
+  testWidgets('the list shows each album and opens it', (tester) async {
     await pumpShelf(tester, FakeShelf(three));
 
-    await tester.tap(find.byIcon(Icons.view_week_outlined));
+    await tester.tap(find.byIcon(Icons.view_list_outlined));
     await tester.pumpAndSettle();
-    expect(find.byType(SpinesView), findsOneWidget);
+    expect(find.byType(AlbumsListView), findsOneWidget);
+    expect(find.text('Discovery'), findsOneWidget);
+    expect(find.text('Artist 2'), findsOneWidget);
+    // The rated albums show their meter.
+    expect(
+      find.descendant(
+        of: find.byType(AlbumsListView),
+        matching: find.byType(RatingMeter),
+      ),
+      findsNWidgets(2),
+    );
 
-    final spine = find.text('Artist 2 · Discovery');
-    await tester.tap(spine);
-    await tester.pumpAndSettle();
-    expect(find.text('Artist 2, 1997'), findsOneWidget);
-    expect(find.byType(EntryPage), findsNothing);
-
-    await tester.tap(spine);
+    await tester.tap(find.text('Discovery'));
     await tester.pumpAndSettle();
     expect(find.byType(EntryPage), findsOneWidget);
   });
@@ -223,19 +225,31 @@ void main() {
     });
   }
 
-  testWidgets('remembers covers or spines on the device', (tester) async {
+  testWidgets('the list meets the accessibility guidelines', (tester) async {
+    final semantics = tester.ensureSemantics();
     await pumpShelf(tester, FakeShelf(three));
-    expect(find.byType(SpinesView), findsNothing);
+    await tester.tap(find.byIcon(Icons.view_list_outlined));
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.view_week_outlined));
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    semantics.dispose();
+  });
+
+  testWidgets('remembers covers or list on the device', (tester) async {
+    await pumpShelf(tester, FakeShelf(three));
+    expect(find.byType(AlbumsListView), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.view_list_outlined));
     await tester.pumpAndSettle();
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getBool('shelf.spines'), isTrue);
+    expect(prefs.getBool('shelf.list'), isTrue);
 
     // A new start of the app.
     await tester.pumpWidget(const SizedBox());
     await pumpShelf(tester, FakeShelf(three));
-    expect(find.byType(SpinesView), findsOneWidget);
+    expect(find.byType(AlbumsListView), findsOneWidget);
   });
 
   testWidgets('the menu opens the tags, and the shelf reloads after', (

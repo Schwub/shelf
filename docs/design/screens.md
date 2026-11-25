@@ -35,7 +35,6 @@ flowchart LR
   entry -- Search instead --> search
   entry -- saved --> shelf
   entry -- Genre: Add --> addtags[Add tags sheet]
-  entry -- Edit tags --> group[Tag group]
   shelf -- ⋮ Tags --> tags[Tags]
   tags -- group --> group
   shelf -- ⋮ Filters --> filters[Filters]
@@ -67,8 +66,8 @@ flowchart LR
   - No tag is required: "Add to shelf" is always available.
 - **Added from a friend (M2):** "Added from Anna's shelf" under the artist
   on the album entry, for as long as the album is on the shelf.
-  - "Edit tags" at the end of the section opens the Tags list; the album's
-    unsaved changes are kept for when the user comes back.
+  - The tag editor is reached only from My shelf's ⋮ menu (Tags), not from
+    the album entry (TASK-29, 2026-11-25).
 - **Tag editor:** Tags lists the groups (built-in ones marked); Tag group
   edits one. Changes save immediately (no Save or Cancel), except a new
   group, which is created with "Create group". Tapping a tag opens its
@@ -90,7 +89,7 @@ flowchart LR
   "Rating, 3.5 of 5 stars" with increase / decrease actions in half-star
   steps.
 - **Comment** is an optional multi-line field labelled "Comment (optional)".
-- **Covers / spines** toggle in the bottom bar next to "Add album"; the
+- **Covers / list** toggle in the bottom bar next to "Add album"; the
   choice is remembered on the device. A filter bar (labels above keys, each key showing its count) sits above
   the albums; it starts with All, Own, Want, Want to listen, Listened. Look and components: [visual-system.md](visual-system.md).
 - Confirmation after adding or removing an album is a snackbar; removing

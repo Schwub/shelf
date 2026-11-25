@@ -410,41 +410,6 @@ void main() {
     });
   });
 
-  testWidgets('Edit tags on an album keeps its draft', (tester) async {
-    shelf = FakeShelf(albums);
-    tester.view.physicalSize = const Size(412, 1600);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: shelfTheme(ShelfColors.tobacco),
-        home: EntryPage(
-          entry: albums[1],
-          shelf: shelf,
-          groups: (await shelf.load()).groups,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tapText(tester, 'Listened');
-    await tapText(tester, 'Edit tags');
-    expect(find.byType(TagsPage), findsOneWidget);
-    await openGroup(tester, 'Listening');
-    await tester.enterText(find.byType(TextField).first, 'Heard');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Back'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Back'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(EntryPage), findsOneWidget);
-    expect(find.text('Heard'), findsOneWidget);
-    await tapText(tester, 'Save');
-    expect(shelf.entries[1].tagIds, contains('listened'));
-  });
-
   for (final theme in AppTheme.values) {
     testWidgets('meets the accessibility guidelines (${theme.label})', (
       tester,

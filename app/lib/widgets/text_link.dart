@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../theme/shelf_colors.dart';
 
 /// An underlined muted link with a 48 px touch area: "Add" on a group's
-/// label line, "Edit tags", the track list's actions.
+/// label line, the track list's actions.
 class TextLink extends StatelessWidget {
   const TextLink({
     super.key,

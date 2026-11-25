@@ -20,12 +20,12 @@ import '../theme/theme_sheet.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/shelf_board.dart';
 import '../widgets/shelf_key.dart';
+import 'albums_list_view.dart';
 import 'covers_view.dart';
 import 'entry_page.dart';
 import 'shelf_data.dart';
-import 'spines_view.dart';
 
-/// The signed-in user's albums as covers or spines, with the filter bar.
+/// The signed-in user's albums as covers or a list, with the filter bar.
 /// Opens links shared into the app once the shelf has loaded.
 class ShelfPage extends StatefulWidget {
   const ShelfPage({
@@ -56,9 +56,9 @@ class _ShelfPageState extends State<ShelfPage> {
   /// The selected filter's tag; null for All.
   String? _filterId;
 
-  /// Covers or spines, remembered on the device.
-  bool _spines = false;
-  static const _spinesKey = 'shelf.spines';
+  /// Covers or a list, remembered on the device.
+  bool _list = false;
+  static const _listKey = 'shelf.list';
 
   /// Removed but still undoable: hidden until the snackbar closes.
   final _removing = <String>{};
@@ -72,8 +72,8 @@ class _ShelfPageState extends State<ShelfPage> {
     widget.inbox.addListener(_openSharedLink);
     _load();
     SharedPreferences.getInstance().then((prefs) {
-      final spines = prefs.getBool(_spinesKey);
-      if (mounted && spines != null) setState(() => _spines = spines);
+      final list = prefs.getBool(_listKey);
+      if (mounted && list != null) setState(() => _list = list);
     });
   }
 
@@ -330,14 +330,14 @@ class _ShelfPageState extends State<ShelfPage> {
         ),
       );
     }
-    return _spines
-        ? SpinesView(entries: entries, onOpen: _open)
+    return _list
+        ? AlbumsListView(entries: entries, onOpen: _open)
         : CoversView(entries: entries, onOpen: _open);
   }
 
-  Future<void> _setSpines(bool spines) async {
-    setState(() => _spines = spines);
-    await (await SharedPreferences.getInstance()).setBool(_spinesKey, spines);
+  Future<void> _setList(bool list) async {
+    setState(() => _list = list);
+    await (await SharedPreferences.getInstance()).setBool(_listKey, list);
   }
 
   Widget _bottomBar(BuildContext context) {
@@ -353,15 +353,15 @@ class _ShelfPageState extends State<ShelfPage> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
           child: Row(
             children: [
-              for (final (spines, icon, label) in [
+              for (final (list, icon, label) in [
                 (false, Icons.grid_view, 'Covers'),
-                (true, Icons.view_week_outlined, 'Spines'),
+                (true, Icons.view_list_outlined, 'List'),
               ]) ...[
                 ShelfKey(
                   semanticLabel: label,
-                  selected: _spines == spines,
+                  selected: _list == list,
                   padding: EdgeInsets.zero,
-                  onPressed: () => _setSpines(spines),
+                  onPressed: () => _setList(list),
                   child: Icon(icon),
                 ),
                 const SizedBox(width: 8),

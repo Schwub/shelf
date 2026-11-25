@@ -3,8 +3,8 @@
 Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor built (TASK-17); groups picked from a list (TASK-28); filters and import not built (TASK-18, TASK-19).
 
 Tag editor (TASK-17): `app/lib/tags/` (Tags list, Tag group, tag actions
-sheet), reached from My shelf's ⋮ menu and "Edit tags" on the album entry,
-which keeps the album's draft. The database enforces every rule; the app
+sheet), reached only from My shelf's ⋮ menu (the album entry's "Edit tags"
+link was removed, TASK-29). The database enforces every rule; the app
 turns its refusals into the designed messages (`DuplicateName`,
 `SeveralTags` in `shelf_data.dart`) and works out counts and what a delete
 takes along from the loaded shelf (`Shelf.allGroups`, `allFilters`).
@@ -60,7 +60,7 @@ menu.
   album's tags, each removable. List groups and multiple-choice key groups
   have an "Add" action on their label line: an alphabetical list to scroll
   or search, which can create a tag. A list group stays ordinary tags in an
-  ordinary group, so filters, the editor and importing work the same. "Edit tags" opens the Tags list and keeps the album draft.
+  ordinary group, so filters, the editor and importing work the same.
 - Editor: changes save immediately; deletes ask first (with the albums,
   sub-groups and filters affected) and take effect at once. Sub-groups go
   one level deep in the editor (the model allows deeper). Only built-in

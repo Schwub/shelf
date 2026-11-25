@@ -122,6 +122,13 @@ void main() {
     expect(find.text('Ambient'), findsNothing);
   });
 
+  testWidgets('the tag editor is only in the menu, not on the album', (
+    tester,
+  ) async {
+    await pumpEntry(tester);
+    expect(find.text('Edit tags'), findsNothing);
+  });
+
   testWidgets('the Add sheet searches and ticks tags', (tester) async {
     await pumpEntry(tester);
     expect(find.text('No genre yet'), findsOneWidget);
