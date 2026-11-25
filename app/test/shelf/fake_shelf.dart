@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:shelf_app/shelf/shelf_data.dart';
 
-const own = ShelfFilter(tagId: 'own', label: 'Own');
-const want = ShelfFilter(tagId: 'want', label: 'Want');
+final own = ShelfFilter.tag('own', 'Own');
+final want = ShelfFilter.tag('want', 'Want');
 
 Tag tag(String group, String name, {bool builtin = false}) =>
     Tag(id: name.toLowerCase(), groupId: group, name: name, builtin: builtin);
@@ -78,10 +78,12 @@ ShelfEntry entry(String id, String title, {int? rating, Set<String>? tags}) =>
 class FakeShelf implements ShelfRepository {
   FakeShelf(
     List<ShelfEntry> entries, {
-    List<ShelfFilter> filters = const [own, want],
+    List<ShelfFilter>? filters,
     List<TagGroup>? groups,
   }) : entries = [...entries],
-       filters = [...filters],
+       filters = [
+         ...(filters ?? [own, want]),
+       ],
        groups = [...(groups ?? suggestedGroups)];
 
   final List<ShelfEntry> entries;
@@ -329,7 +331,16 @@ class FakeShelf implements ShelfRepository {
         tracks: e.tracks,
       );
     }
-    filters.removeWhere((f) => ids.contains(f.tagId));
+    // Like the database: tags leave filters; emptied filters go.
+    for (final (i, f) in filters.indexed.toList()) {
+      filters[i] = f.copyWith(
+        tagIds: [
+          for (final t in f.tagIds)
+            if (!ids.contains(t)) t,
+        ],
+      );
+    }
+    filters.removeWhere((f) => !f.hasConditions);
     for (final sub
         in groups.where((g) => ids.contains(g.parentTagId)).toList()) {
       _dropGroup(sub.id);
@@ -403,5 +414,50 @@ class FakeShelf implements ShelfRepository {
     final i = _groupOfTag(tagIds.first);
     final byId = {for (final t in groups[i].tags) t.id: t};
     groups[i] = groups[i].copyWith(tags: [for (final id in tagIds) byId[id]!]);
+  }
+
+  @override
+  Future<void> saveFilter(ShelfFilter filter) async {
+    _edit();
+    final saved = filter.copyWith(
+      label: filter.isTag
+          ? groups
+                .expand((g) => g.tags)
+                .firstWhere((t) => t.id == filter.tagIds.single)
+                .name
+          : filter.name,
+    );
+    final i = filters.indexWhere((f) => f.id == filter.id);
+    if (filter.id.isEmpty || i < 0) {
+      filters.add(
+        ShelfFilter(
+          id: 'filter-${filters.length + 1}',
+          name: saved.name,
+          label: saved.label,
+          tagIds: saved.tagIds,
+          matchAll: saved.matchAll,
+          minRating: saved.minRating,
+          unrated: saved.unrated,
+          favoriteTracks: saved.favoriteTracks,
+        ),
+      );
+    } else {
+      filters[i] = saved;
+    }
+  }
+
+  @override
+  Future<void> deleteFilter(String filterId) async {
+    _edit();
+    filters.removeWhere((f) => f.id == filterId);
+  }
+
+  @override
+  Future<void> reorderFilters(List<String> filterIds) async {
+    _edit();
+    final byId = {for (final f in filters) f.id: f};
+    filters
+      ..clear()
+      ..addAll([for (final id in filterIds) byId[id]!]);
   }
 }

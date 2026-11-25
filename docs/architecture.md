@@ -56,10 +56,13 @@
   friend's shelf (M2), `added_from_user_id` (cleared if that account is
   deleted) and `added_from_name` (kept). RLS: only the owner
   reads and writes; friends' read access comes with M2.
-- Tags (`tag_groups`, `tags`, `entry_tags`, `shelf_filters`): user-defined
+- Tags (`tag_groups`, `tags`, `entry_tags`): user-defined
   groups, exclusive or multiple choice, sub-groups under a tag, built-in
   groups Collection and Listening shared in meaning across users; suggested
   groups created for each new user. Details: `docs/features/tags.md`.
+- `shelf_filters` and `shelf_filter_tags`: the filter bar's filters, one tag
+  or combined conditions (tags any/all, minimum rating or unrated, favorite
+  tracks). Owner-only. Details: `docs/features/filters.md`.
 - `entry_tracks`: the user's own track list of a shelf entry, with a
   `favorite` flag per track; replaced as a whole by `set_entry_tracks` (one
   transaction). Owner-only. Details: `docs/features/tracks.md`.

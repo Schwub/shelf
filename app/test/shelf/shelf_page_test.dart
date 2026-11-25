@@ -1,12 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shelf_app/filters/filters_page.dart';
 import 'package:shelf_app/search/search_page.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/resolve_page.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/tags/tags_page.dart';
+import 'package:shelf_app/shelf/shelf_data.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/albums_list_view.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
@@ -93,6 +95,42 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('OK Computer'), findsOneWidget);
     expect(find.text('Discovery'), findsNothing);
+  });
+
+  testWidgets('a custom filter shows in the bar and filters by its rules', (
+    tester,
+  ) async {
+    await pumpShelf(
+      tester,
+      FakeShelf(
+        three,
+        filters: [
+          const ShelfFilter(
+            id: 'best',
+            name: 'Best',
+            label: 'Best',
+            minRating: 9,
+          ),
+        ],
+      ),
+    );
+
+    expect(find.text('Best'), findsOneWidget);
+    await tester.tap(filterKey(1));
+    await tester.pumpAndSettle();
+    expect(find.text('OK Computer'), findsOneWidget);
+    expect(find.text('Blue'), findsNothing);
+  });
+
+  testWidgets('the menu opens the filters', (tester) async {
+    await pumpShelf(tester, FakeShelf(three));
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FiltersPage), findsOneWidget);
   });
 
   testWidgets('a filter with no albums says so and offers all', (tester) async {

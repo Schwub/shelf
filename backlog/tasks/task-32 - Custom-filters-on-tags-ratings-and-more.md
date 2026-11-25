@@ -1,9 +1,10 @@
 ---
 id: TASK-32
 title: Custom filters on tags, ratings and more
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-25T18:25:00Z'
+updated_date: '2026-11-25T19:28:00Z'
 labels: []
 dependencies:
   - TASK-18
@@ -19,7 +20,13 @@ Beyond one tag per filter (TASK-18): filters that combine conditions such as tag
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Users can create, edit and delete a filter combining tag and rating conditions
-- [ ] #2 Saved filters appear in the filter bar and stay across devices
-- [ ] #3 Tests cover each condition and their combination
+- [x] #1 Users can create, edit and delete a filter combining tag and rating conditions
+- [x] #2 Saved filters appear in the filter bar and stay across devices
+- [x] #3 Tests cover each condition and their combination
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Year ranges left for later (docs/features/filters.md).
+<!-- SECTION:NOTES:END -->

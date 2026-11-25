@@ -1,9 +1,10 @@
 ---
 id: TASK-18
 title: Choose shelf filters
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-23T23:51:00Z'
+updated_date: '2026-11-25T19:28:00Z'
 labels: []
 dependencies:
   - TASK-14
@@ -19,6 +20,6 @@ Filters screen from docs/design/visual/screens/filters.html (⋮ → Filters): A
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Filter bar on the shelf reflects the chosen filters and order
-- [ ] #2 Widget tests cover add, remove, reorder and the scrolling bar
+- [x] #1 Filter bar on the shelf reflects the chosen filters and order
+- [x] #2 Widget tests cover add, remove, reorder and the scrolling bar
 <!-- AC:END -->

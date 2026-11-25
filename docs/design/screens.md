@@ -82,7 +82,8 @@ flowchart LR
   several of its tags is refused with the list of those albums.
 - **Filters:** chosen from ⋮ → Filters; changes save immediately; "All" is
   always first. The bar shows them in order and scrolls sideways after
-  five. Tags of hidden groups aren't offered.
+  five. Tags of hidden groups aren't offered. Custom filters combine tags,
+  rating and favorite tracks ([../features/filters.md](../features/filters.md)).
 - **Rating** is optional: five 44 px keys, each a bar of the rating meter.
   Tapping a key sets that many stars, tapping the same key again makes it a
   half, tapping it a third time clears the rating. Screen readers get

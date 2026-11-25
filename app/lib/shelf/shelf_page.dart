@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../errors.dart';
+import '../filters/filters_page.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,7 +54,7 @@ class _ShelfPageState extends State<ShelfPage> {
   Shelf? _shelf;
   bool _failed = false;
 
-  /// The selected filter's tag; null for All.
+  /// The selected filter; null for All.
   String? _filterId;
 
   /// Covers or a list, remembered on the device.
@@ -139,7 +140,7 @@ class _ShelfPageState extends State<ShelfPage> {
 
   /// Null for All, and when the filter was removed meanwhile.
   ShelfFilter? get _filter =>
-      _shelf?.filters.where((f) => f.tagId == _filterId).firstOrNull;
+      _shelf?.filters.where((f) => f.id == _filterId).firstOrNull;
 
   List<ShelfEntry> get _visible =>
       _shelf!.entries.where((e) => !_removing.contains(e.id)).toList();
@@ -276,10 +277,9 @@ class _ShelfPageState extends State<ShelfPage> {
           for (final f in shelf.filters)
             (label: f.label, count: visible.matching(f).length),
         ],
-        selected: shelf.filters.indexWhere((f) => f.tagId == _filterId) + 1,
-        onSelected: (i) => setState(
-          () => _filterId = i == 0 ? null : shelf.filters[i - 1].tagId,
-        ),
+        selected: shelf.filters.indexWhere((f) => f.id == _filterId) + 1,
+        onSelected: (i) =>
+            setState(() => _filterId = i == 0 ? null : shelf.filters[i - 1].id),
       ),
     );
   }
@@ -415,6 +415,11 @@ class _ShelfPageState extends State<ShelfPage> {
           child: Text('Tags', style: style),
         ),
         PopupMenuItem(
+          value: 'filters',
+          height: 48,
+          child: Text('Filters', style: style),
+        ),
+        PopupMenuItem(
           value: 'theme',
           height: 48,
           child: Text('Theme', style: style),
@@ -438,6 +443,13 @@ class _ShelfPageState extends State<ShelfPage> {
           ),
         );
         // Names, filters and hidden groups may have changed.
+        await _load();
+      case 'filters':
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => FiltersPage(shelf: widget.shelf),
+          ),
+        );
         await _load();
       case 'theme':
         await showThemeSheet(context, widget.theme);

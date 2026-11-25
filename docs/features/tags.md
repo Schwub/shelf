@@ -94,7 +94,8 @@ rewrites every item, breaks the editor).
 - Sub-tags: a trigger rejects a tag whose group hangs under a parent tag the
   entry doesn't have, and removing a tag from an entry also removes its
   sub-tags.
-- `shelf_filters`: `user_id`, `tag_id`, `position`. "All" is implicit.
+- `shelf_filters` and `shelf_filter_tags`: filters on one tag or combined
+  conditions (since TASK-32, docs/features/filters.md). "All" is implicit.
 - Clients can't set `builtin`, `user_id` or move a tag to another group:
   column privileges allow only the editable columns.
 - A trigger on new users (security definer) creates the suggested groups and
