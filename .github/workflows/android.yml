@@ -1,10 +1,22 @@
 name: android
 
+# Only when something that can break the native build changes: the Android
+# project, plugins (pubspec) or the toolchain. Dart-only changes are covered
+# by check; on main, android-staging builds the release APK.
 on:
-  push:
-    paths: [app/**, mise.toml, .github/workflows/android.yml]
   pull_request:
-    paths: [app/**, mise.toml, .github/workflows/android.yml]
+    paths:
+      - app/android/**
+      - app/pubspec.yaml
+      - app/pubspec.lock
+      - mise.toml
+      - .github/workflows/android.yml
+  workflow_dispatch:
+
+# A newer push to a pull request replaces the run in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read

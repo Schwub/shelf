@@ -34,7 +34,9 @@ friends, view friends' shelves and read the feed.
 
 ## Out of scope
 For the first version:
-- Media other than albums (no tracks, artists, playlists, movies, books, games).
+- Media other than albums (no artists, playlists, movies, books, games).
+  Tracks only as part of an album: its track list and favorite tracks
+  (added to scope 2026-11-25, TASK-27; docs/features/tracks.md).
 - Likes, replies, recommendations, notifications.
 - Public profiles, user search, a public launch.
 - Imports other than Bandcamp. A Spotify import was dropped on 2026-11-23:

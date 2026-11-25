@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../search/album_search.dart';
 import '../tags/tags_page.dart';
 import '../theme/shelf_colors.dart';
+import '../tracks/track_editor_page.dart';
+import '../tracks/track_section.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/cover.dart';
 import '../widgets/help_line.dart';
@@ -86,10 +89,46 @@ class _EntryPageState extends State<EntryPage> {
   bool _saving = false;
   bool _saveFailed = false;
 
+  late final List<Track> _initialTracks = widget.entry?.tracks ?? const [];
+  late List<Track> _tracks = _initialTracks;
+
+  /// A MusicBrainz track list waiting for Use it or Not this one.
+  List<Track>? _suggestion;
+  TrackLookup _lookup = TrackLookup.idle;
+  bool _allTracks = false;
+
+  String? get _musicbrainzId =>
+      widget.entry?.album.musicbrainzId ?? widget.result?.musicbrainzId;
+
   @override
   void initState() {
     super.initState();
     _comment.addListener(() => setState(() {}));
+    // A new album from MusicBrainz comes with its track list to approve.
+    if (widget.adding && _musicbrainzId != null) _lookUpTracks();
+  }
+
+  Future<void> _lookUpTracks() async {
+    setState(() => _lookup = TrackLookup.loading);
+    try {
+      final tracks = await widget.shelf.trackList(_musicbrainzId!);
+      if (!mounted) return;
+      setState(() {
+        _lookup = tracks.isEmpty ? TrackLookup.none : TrackLookup.idle;
+        _suggestion = tracks.isEmpty ? null : tracks;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _lookup = TrackLookup.failed);
+    }
+  }
+
+  Future<void> _editTracks() async {
+    final tracks = await Navigator.of(context).push(
+      MaterialPageRoute<List<Track>>(
+        builder: (_) => TrackEditorPage(tracks: _tracks),
+      ),
+    );
+    if (tracks != null && mounted) setState(() => _tracks = tracks);
   }
 
   @override
@@ -102,7 +141,8 @@ class _EntryPageState extends State<EntryPage> {
       _rating != widget.entry?.rating ||
       _comment.text.trim() != (widget.entry?.comment ?? '').trim() ||
       _tags.chosen.length != _initialTags.length ||
-      !_tags.chosen.containsAll(_initialTags);
+      !_tags.chosen.containsAll(_initialTags) ||
+      !listEquals(_tracks, _initialTracks);
 
   Future<void> _save() async {
     if (!widget.adding && !_changed) {
@@ -120,6 +160,7 @@ class _EntryPageState extends State<EntryPage> {
           rating: _rating,
           comment: _comment.text.trim(),
           tags: _tags.ordered(_tags.chosen),
+          tracks: _tracks,
         );
       } else if (widget.adding) {
         await widget.shelf.add(
@@ -127,6 +168,7 @@ class _EntryPageState extends State<EntryPage> {
           rating: _rating,
           comment: _comment.text.trim(),
           tags: _tags.ordered(_tags.chosen),
+          tracks: _tracks,
         );
       } else {
         await widget.shelf.save(
@@ -135,6 +177,7 @@ class _EntryPageState extends State<EntryPage> {
           comment: _comment.text.trim(),
           removeTags: _initialTags.difference(_tags.chosen),
           addTags: _tags.ordered(_tags.chosen.difference(_initialTags)),
+          tracks: listEquals(_tracks, _initialTracks) ? null : _tracks,
         );
       }
       if (mounted) {
@@ -272,6 +315,31 @@ class _EntryPageState extends State<EntryPage> {
                             hintText: 'Comment (optional)',
                             minLines: 3,
                             maxLines: 8,
+                          ),
+                          const SizedBox(height: 16),
+                          TrackSection(
+                            tracks: _tracks,
+                            onFavorite: (i) => setState(
+                              () => _tracks = [
+                                for (final (j, t) in _tracks.indexed)
+                                  j == i
+                                      ? t.copyWith(favorite: !t.favorite)
+                                      : t,
+                              ],
+                            ),
+                            onEdit: _editTracks,
+                            suggestion: _suggestion,
+                            onUse: () => setState(() {
+                              _tracks = _suggestion!;
+                              _suggestion = null;
+                            }),
+                            onDecline: () => setState(() => _suggestion = null),
+                            lookup: _lookup,
+                            onLookUp: _musicbrainzId == null
+                                ? null
+                                : _lookUpTracks,
+                            showAll: _allTracks,
+                            onShowAll: () => setState(() => _allTracks = true),
                           ),
                           if (!widget.adding) ...[
                             const SizedBox(height: 24),

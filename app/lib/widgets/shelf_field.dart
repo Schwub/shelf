@@ -15,6 +15,7 @@ class ShelfField extends StatelessWidget {
     this.keyboardType,
     this.autofillHints,
     this.onSubmitted,
+    this.autofocus = false,
   });
 
   final String hintText;
@@ -27,6 +28,7 @@ class ShelfField extends StatelessWidget {
   final TextInputType? keyboardType;
   final Iterable<String>? autofillHints;
   final ValueChanged<String>? onSubmitted;
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,7 @@ class ShelfField extends StatelessWidget {
         children: [
           TextField(
             controller: controller,
+            autofocus: autofocus,
             minLines: minLines,
             maxLines: maxLines,
             keyboardType: keyboardType,

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../tracks/track_source.dart';
+
 @immutable
 class Album {
   const Album({
@@ -20,6 +22,52 @@ class Album {
   final String? coverUrl;
 }
 
+/// A track on the user's own track list of an album (docs/features/tracks.md).
+@immutable
+class Track {
+  const Track({
+    required this.title,
+    this.disc = 1,
+    required this.position,
+    this.lengthMs,
+    this.favorite = false,
+  });
+
+  final String title;
+  final int disc, position;
+  final int? lengthMs;
+  final bool favorite;
+
+  Track copyWith({String? title, int? disc, int? position, bool? favorite}) =>
+      Track(
+        title: title ?? this.title,
+        disc: disc ?? this.disc,
+        position: position ?? this.position,
+        lengthMs: lengthMs,
+        favorite: favorite ?? this.favorite,
+      );
+
+  Map<String, dynamic> toJson() => {
+    'disc': disc,
+    'position': position,
+    'title': title.trim(),
+    'length_ms': lengthMs,
+    'favorite': favorite,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is Track &&
+      other.title == title &&
+      other.disc == disc &&
+      other.position == position &&
+      other.lengthMs == lengthMs &&
+      other.favorite == favorite;
+
+  @override
+  int get hashCode => Object.hash(title, disc, position, lengthMs, favorite);
+}
+
 /// An album on the user's shelf. [rating] is in half stars (1–10).
 @immutable
 class ShelfEntry {
@@ -29,6 +77,7 @@ class ShelfEntry {
     this.rating,
     this.comment,
     this.tagIds = const {},
+    this.tracks = const [],
   });
 
   final String id;
@@ -36,6 +85,10 @@ class ShelfEntry {
   final int? rating;
   final String? comment;
   final Set<String> tagIds;
+
+  /// The user's track list, disc by disc; empty until they approve or enter
+  /// one.
+  final List<Track> tracks;
 }
 
 @immutable
@@ -199,13 +252,15 @@ abstract class ShelfRepository {
 
   /// Rating in half stars or null; an empty comment is stored as none.
   /// [addTags] go on in their order (parent tags before their sub-tags),
-  /// after [removeTags] come off.
+  /// after [removeTags] come off. [tracks] replace the track list; null
+  /// leaves it.
   Future<void> save(
     String entryId, {
     int? rating,
     String? comment,
     Set<String> removeTags = const {},
     List<String> addTags = const [],
+    List<Track>? tracks,
   });
 
   Future<void> remove(String entryId);
@@ -217,6 +272,7 @@ abstract class ShelfRepository {
     int? rating,
     String? comment,
     List<String> tags = const [],
+    List<Track> tracks = const [],
   });
 
   /// Adds an album by hand: the add-album function adds it as the user's
@@ -226,7 +282,12 @@ abstract class ShelfRepository {
     int? rating,
     String? comment,
     List<String> tags = const [],
+    List<Track> tracks = const [],
   });
+
+  /// The track list MusicBrainz has for the album [musicbrainzId], to
+  /// suggest; empty when it has none.
+  Future<List<Track>> trackList(String musicbrainzId);
 
   /// A new tag at the end of [groupId]; the name must be new in that group
   /// ([DuplicateName] otherwise).
@@ -272,9 +333,14 @@ class DuplicateName implements Exception {}
 class SeveralTags implements Exception {}
 
 class SupabaseShelfRepository implements ShelfRepository {
-  SupabaseShelfRepository(this._db);
+  SupabaseShelfRepository(this._db, this._tracks);
 
   final SupabaseClient _db;
+  final TrackSource _tracks;
+
+  @override
+  Future<List<Track>> trackList(String musicbrainzId) =>
+      _tracks.trackList(musicbrainzId);
 
   @override
   Future<Shelf> load() async {
@@ -285,7 +351,8 @@ class SupabaseShelfRepository implements ShelfRepository {
           .select(
             'id, rating, comment, '
             'album:albums(id, musicbrainz_id, title, artist, year, cover_url), '
-            'entry_tags(tag_id)',
+            'entry_tags(tag_id), '
+            'entry_tracks(disc, position, title, length_ms, favorite)',
           )
           .order('created_at', ascending: false),
       _db
@@ -314,6 +381,21 @@ class SupabaseShelfRepository implements ShelfRepository {
             rating: e['rating'],
             comment: e['comment'],
             tagIds: {for (final t in e['entry_tags']) t['tag_id'] as String},
+            tracks:
+                [
+                  for (final t in e['entry_tracks'])
+                    Track(
+                      disc: t['disc'],
+                      position: t['position'],
+                      title: t['title'],
+                      lengthMs: t['length_ms'],
+                      favorite: t['favorite'],
+                    ),
+                ]..sort(
+                  (a, b) => a.disc != b.disc
+                      ? a.disc - b.disc
+                      : a.position - b.position,
+                ),
           ),
       ],
       allFilters: [
@@ -360,13 +442,24 @@ class SupabaseShelfRepository implements ShelfRepository {
     String? comment,
     Set<String> removeTags = const {},
     List<String> addTags = const [],
+    List<Track>? tracks,
   }) async {
     await _db
         .from('shelf_entries')
         .update({'rating': rating, 'comment': _comment(comment)})
         .eq('id', entryId);
     await _setTags(entryId, removeTags, addTags);
+    if (tracks != null) await _setTracks(entryId, tracks);
   }
+
+  /// Replaces the whole list in one transaction.
+  Future<void> _setTracks(String entryId, List<Track> tracks) => _db.rpc(
+    'set_entry_tracks',
+    params: {
+      'entry': entryId,
+      'tracks': [for (final t in tracks) t.toJson()],
+    },
+  );
 
   /// Off before on, so an exclusive group never holds two tags; one at a
   /// time, so a parent tag is on before its sub-tags (the database checks).
@@ -396,12 +489,14 @@ class SupabaseShelfRepository implements ShelfRepository {
     int? rating,
     String? comment,
     List<String> tags = const [],
+    List<Track> tracks = const [],
   }) async {
     await _addEntry(
       {'musicbrainz_id': musicbrainzId},
       rating: rating,
       comment: comment,
       tags: tags,
+      tracks: tracks,
     );
   }
 
@@ -411,7 +506,14 @@ class SupabaseShelfRepository implements ShelfRepository {
     int? rating,
     String? comment,
     List<String> tags = const [],
-  }) => _addEntry(album.toJson(), rating: rating, comment: comment, tags: tags);
+    List<Track> tracks = const [],
+  }) => _addEntry(
+    album.toJson(),
+    rating: rating,
+    comment: comment,
+    tags: tags,
+    tracks: tracks,
+  );
 
   /// The add-album function returns the album; then the entry and its tags.
   Future<void> _addEntry(
@@ -419,6 +521,7 @@ class SupabaseShelfRepository implements ShelfRepository {
     int? rating,
     String? comment,
     List<String> tags = const [],
+    List<Track> tracks = const [],
   }) async {
     final response = await _db.functions.invoke('add-album', body: album);
     final entry = await _db
@@ -431,6 +534,7 @@ class SupabaseShelfRepository implements ShelfRepository {
         .select('id')
         .single();
     await _setTags(entry['id'], const {}, tags);
+    if (tracks.isNotEmpty) await _setTracks(entry['id'], tracks);
   }
 
   @override

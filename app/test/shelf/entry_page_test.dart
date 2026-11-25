@@ -108,6 +108,8 @@ void main() {
   testWidgets('remove returns to the shelf for the undo', (tester) async {
     await pumpEntry(tester);
 
+    await tester.ensureVisible(find.text('Remove from shelf'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Remove from shelf'));
     await tester.pumpAndSettle();
 
