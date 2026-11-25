@@ -104,3 +104,20 @@ called by signed-in users only.
 - The local edge runtime container can't load npm packages in the cloud
   session (its network proxy isn't trusted there); hosted Supabase and CI
   are not affected.
+
+## Albums added by hand (TASK-26)
+For albums MusicBrainz doesn't have (decision 2026-11-25).
+- **Where:** "Add it yourself" under the search results and in the
+  no-results state. It opens a form: title and artist (required), year,
+  and a cover from a photo (camera or gallery, `image_picker`, scaled to
+  500 px). Then the album entry in add mode, as for search results.
+- **Adding:** the app sends `{ title, artist, year, cover }` (cover as a
+  base64 JPEG or PNG, at most 2 MB) to `add-album`. The function checks the
+  fields, inserts the album with `created_by` = the caller and no
+  `musicbrainz_id`, and stores the cover as `covers/<album id>.jpg`. Only
+  the function writes albums and covers, as before.
+- **Visibility:** albums with `created_by` are readable only by their
+  creator (friends' shelves come in M2). MusicBrainz albums stay readable by
+  every signed-in user. A check keeps exactly one of `musicbrainz_id` and
+  `created_by` set.
+- **Not yet:** editing an album's details after adding it.

@@ -10,8 +10,9 @@ begin
     raise exception 'No account for __EMAIL__: sign in once in the app first.';
   end if;
 
-  insert into public.albums (title, artist, year)
-  select * from (values
+  -- Added as the account's own albums (no MusicBrainz ID).
+  insert into public.albums (title, artist, year, created_by)
+  select a.*, account from (values
     ('OK Computer', 'Radiohead', 1997),
     ('Discovery', 'Daft Punk', 2001),
     ('To Pimp a Butterfly', 'Kendrick Lamar', 2015),
@@ -23,7 +24,8 @@ begin
     ('Remain in Light', 'Talking Heads', 1980)
   ) as a (title, artist, year)
   where not exists (
-    select from public.albums b where b.title = a.title and b.artist = a.artist
+    select from public.albums b
+    where b.title = a.title and b.artist = a.artist and b.created_by = account
   );
 
   -- Rating in half stars, and the built-in tags to mark it with.
@@ -35,7 +37,7 @@ begin
     ('Promises', null), ('Hounds of Love', 10), ('Ágætis byrjun', 8),
     ('Remain in Light', 9)
   ) as s (title, rating)
-  join public.albums b on b.title = s.title
+  join public.albums b on b.title = s.title and b.created_by = account
   on conflict (user_id, album_id) do nothing;
 
   insert into public.entry_tags (entry_id, tag_id, user_id)
@@ -49,7 +51,7 @@ begin
     ('Hounds of Love', 'own'), ('Hounds of Love', 'listened'),
     ('Ágætis byrjun', 'listened'), ('Remain in Light', 'own')
   ) as s (title, builtin)
-  join public.albums b on b.title = s.title
+  join public.albums b on b.title = s.title and b.created_by = account
   join public.shelf_entries e on e.album_id = b.id and e.user_id = account
   join public.tags t on t.user_id = account and t.builtin = s.builtin
   on conflict do nothing;
