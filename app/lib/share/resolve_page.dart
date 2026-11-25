@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../errors.dart';
 import '../search/album_search.dart';
 import '../search/manual_album_page.dart';
 import '../search/search_page.dart';
@@ -56,7 +57,9 @@ class _ResolvePageState extends State<ResolvePage> {
     final Resolved resolved;
     try {
       resolved = await widget.resolver.resolve(widget.link);
-    } catch (e) {
+    } catch (e, stack) {
+      // Other sites and broken links are the user's to fix, not a fault.
+      if (e is! UnsupportedLink && e is! LinkNotFound) reportError(e, stack);
       if (mounted) setState(() => _problem = e);
       return;
     }

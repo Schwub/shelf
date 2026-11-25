@@ -1,4 +1,7 @@
 import 'package:flutter/foundation.dart';
+
+import '../errors.dart';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../search/album_search.dart';
@@ -117,7 +120,8 @@ class _EntryPageState extends State<EntryPage> {
         _lookup = tracks.isEmpty ? TrackLookup.none : TrackLookup.idle;
         _suggestion = tracks.isEmpty ? null : tracks;
       });
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted) setState(() => _lookup = TrackLookup.failed);
     }
   }
@@ -184,7 +188,8 @@ class _EntryPageState extends State<EntryPage> {
         Navigator.of(context)
             .pop(widget.adding ? EntryResult.added : EntryResult.saved);
       }
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted) {
         setState(() {
           _saving = false;

@@ -1,4 +1,7 @@
 import 'package:flutter/foundation.dart';
+
+import '../errors.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -80,7 +83,8 @@ class _ShelfPageState extends State<ShelfPage> {
       final shelf = await widget.shelf.load();
       if (!mounted) return;
       setState(() => _shelf = shelf);
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted) setState(() => _failed = true);
       return;
     }
@@ -206,7 +210,8 @@ class _ShelfPageState extends State<ShelfPage> {
           }
           try {
             await widget.shelf.remove(entry.id);
-          } catch (_) {
+          } catch (e, stack) {
+            reportError(e, stack);
             messenger.showSnackBar(
               const SnackBar(content: Text("Couldn't remove the album.")),
             );

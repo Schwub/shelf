@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../errors.dart';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../shelf/entry_page.dart';
@@ -103,7 +105,8 @@ class _SearchPageState extends State<SearchPage> {
         _results = results;
         _loading = _running = false;
       });
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (!mounted || request != _request) return;
       setState(() {
         _loading = _running = false;

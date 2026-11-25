@@ -1,9 +1,10 @@
 ---
 id: TASK-11
 title: Add error reporting
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-23T17:42:00Z'
+updated_date: '2026-11-25T18:57:00Z'
 labels: []
 dependencies: []
 ordinal: 10000
@@ -17,7 +18,13 @@ Capture crashes and errors from the app on web, iOS and Android. Compare Sentry 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Options compared and a decision recorded in docs/architecture.md
+- [x] #1 Options compared and a decision recorded in docs/architecture.md
 - [ ] #2 Unhandled errors from web, iOS and Android show up with release and readable stack traces
-- [ ] #3 Events contain no personal data beyond an anonymous user ID
+- [x] #3 Events contain no personal data beyond an anonymous user ID
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-25: Sentry integrated (app/lib/errors.dart), off until the SENTRY_DSN repository variable is set. Open for AC2: readable web stack traces need source maps uploaded from the web workflow (Sentry auth token); check Android and iOS traces once events arrive.
+<!-- SECTION:NOTES:END -->

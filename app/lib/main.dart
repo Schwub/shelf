@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth/auth.dart';
 import 'auth/auth_gate.dart';
+import 'errors.dart';
 import 'search/album_search.dart';
 import 'search/musicbrainz.dart';
 import 'share/link_resolver.dart';
@@ -31,6 +32,13 @@ const _supabaseKey = String.fromEnvironment(
 /// The contact MusicBrainz asks every client to send (repository variable).
 const _musicBrainzContact = String.fromEnvironment('MUSICBRAINZ_CONTACT');
 
+/// Error reporting (Sentry); without a DSN nothing is sent.
+const _sentryDsn = String.fromEnvironment('SENTRY_DSN');
+const _environment = String.fromEnvironment(
+  'SENTRY_ENVIRONMENT',
+  defaultValue: 'development',
+);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   LicenseRegistry.addLicense(() async* {
@@ -42,24 +50,33 @@ Future<void> main() async {
   });
   // Before anything slow, so the link that launches the app isn't missed.
   final inbox = SharedLinkInbox(sharedLinks());
-  final supabase = await Supabase.initialize(
-    url: _supabaseUrl,
-    publishableKey: _supabaseKey,
-  );
-  final client = http.Client();
-  final musicBrainz = MusicBrainz(client, contact: _musicBrainzContact);
-  runApp(
-    ShelfApp(
-      auth: SupabaseAuth(supabase.client.auth),
-      shelf: SupabaseShelfRepository(
-        supabase.client,
-        MusicBrainzTracks(musicBrainz),
-      ),
-      search: MusicBrainzSearch(musicBrainz),
-      links: SupabaseLinkResolver(supabase.client, client),
-      inbox: inbox,
-      theme: await ThemeChoice.load(),
-    ),
+  await runReporting(
+    dsn: _sentryDsn,
+    environment: _environment,
+    app: () async {
+      final supabase = await Supabase.initialize(
+        url: _supabaseUrl,
+        publishableKey: _supabaseKey,
+      );
+      supabase.client.auth.onAuthStateChange.listen(
+        (change) => reportAs(change.session?.user.id),
+      );
+      final client = reportingClient(http.Client());
+      final musicBrainz = MusicBrainz(client, contact: _musicBrainzContact);
+      runApp(
+        ShelfApp(
+          auth: SupabaseAuth(supabase.client.auth),
+          shelf: SupabaseShelfRepository(
+            supabase.client,
+            MusicBrainzTracks(musicBrainz),
+          ),
+          search: MusicBrainzSearch(musicBrainz),
+          links: SupabaseLinkResolver(supabase.client, client),
+          inbox: inbox,
+          theme: await ThemeChoice.load(),
+        ),
+      );
+    },
   );
 }
 
