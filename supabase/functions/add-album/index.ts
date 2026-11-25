@@ -1,11 +1,19 @@
 // POST { "musicbrainz_id": "<release group id>" } → the album, added to the
-// shared catalog with its cover if it wasn't there yet. Signed-in users only
-// (the platform checks the JWT); writes with the service role, since users
-// can't add albums or covers themselves.
+// shared catalog with its cover if it wasn't there yet.
+// POST { "title", "artist", "year"?, "cover"?: { "data", "type" } } → an
+// album added by hand, the caller's own, with the photo as its cover.
+// Signed-in users only (the platform checks the JWT); writes with the
+// service role, since users can't add albums or covers themselves.
 
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
-import { addAlbum, BadRequest } from "./album.ts";
-import { cover, NotFound, releaseGroup, userAgent } from "./musicbrainz.ts";
+import { addAlbum, addManualAlbum, BadRequest, parseManual } from "./album.ts";
+import {
+  cover,
+  Image,
+  NotFound,
+  releaseGroup,
+  userAgent,
+} from "./musicbrainz.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -31,8 +39,45 @@ Deno.serve(async (request) => {
     return new Response("ok", { headers: cors });
   }
   try {
-    const { musicbrainz_id } = await request.json();
-    const album = await addAlbum(String(musicbrainz_id), {
+    const body = await request.json();
+    const storeCover = async (albumId: string, image: Image) => {
+      const path = `${albumId}.jpg`;
+      const { error } = await db.storage.from("covers")
+        .upload(path, image.bytes, {
+          contentType: image.contentType,
+          upsert: true,
+        });
+      if (error) throw error;
+      return db.storage.from("covers").getPublicUrl(path).data.publicUrl;
+    };
+    const setCoverUrl = async (albumId: string, url: string) => {
+      const { error } = await db.from("albums").update({ cover_url: url })
+        .eq("id", albumId);
+      if (error) throw error;
+    };
+    if (body.musicbrainz_id == null) {
+      const manual = parseManual(body);
+      const token = request.headers.get("Authorization")?.replace(
+        /^Bearer /,
+        "",
+      );
+      const { data } = await db.auth.getUser(token);
+      if (!data.user) return json({ error: "unauthorized" }, 401);
+      return json(
+        await addManualAlbum(manual, data.user.id, {
+          insertManual: async (fields, userId) => {
+            const { data, error } = await db.from("albums")
+              .insert({ ...fields, created_by: userId }).select(columns)
+              .single();
+            if (error) throw error;
+            return data;
+          },
+          storeCover,
+          setCoverUrl,
+        }),
+      );
+    }
+    const album = await addAlbum(String(body.musicbrainz_id), {
       findAlbum: async (id) => {
         const { data, error } = await db.from("albums").select(columns)
           .eq("musicbrainz_id", id).maybeSingle();
@@ -51,21 +96,8 @@ Deno.serve(async (request) => {
         return data[0] ?? null;
       },
       cover: (id) => cover(id, fetch, agent),
-      storeCover: async (albumId, image) => {
-        const path = `${albumId}.jpg`;
-        const { error } = await db.storage.from("covers")
-          .upload(path, image.bytes, {
-            contentType: image.contentType,
-            upsert: true,
-          });
-        if (error) throw error;
-        return db.storage.from("covers").getPublicUrl(path).data.publicUrl;
-      },
-      setCoverUrl: async (albumId, url) => {
-        const { error } = await db.from("albums").update({ cover_url: url })
-          .eq("id", albumId);
-        if (error) throw error;
-      },
+      storeCover,
+      setCoverUrl,
     });
     return json(album);
   } catch (e) {

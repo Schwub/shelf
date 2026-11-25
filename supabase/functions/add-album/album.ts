@@ -6,7 +6,8 @@ import { Image, ReleaseGroup } from "./musicbrainz.ts";
 
 export interface Album {
   id: string;
-  musicbrainz_id: string;
+  /** Null for albums added by hand. */
+  musicbrainz_id: string | null;
   title: string;
   artist: string;
   year: number | null;
@@ -50,4 +51,79 @@ export async function addAlbum(
     }
   }
   return album;
+}
+
+/** An album added by hand (no MusicBrainz ID), with an optional photo. */
+export interface ManualAlbum {
+  title: string;
+  artist: string;
+  year: number | null;
+  cover: Image | null;
+}
+
+export interface ManualDeps {
+  insertManual(
+    album: Omit<ManualAlbum, "cover">,
+    userId: string,
+  ): Promise<Album>;
+  storeCover(albumId: string, image: Image): Promise<string>;
+  setCoverUrl(albumId: string, url: string): Promise<void>;
+}
+
+/** Largest photo accepted, decoded; the app scales photos to 500 px. */
+export const maxCoverBytes = 2 * 1024 * 1024;
+
+/** Reads and checks what the app sends for an album added by hand. */
+export function parseManual(body: Record<string, unknown>): ManualAlbum {
+  const text = (value: unknown, field: string) => {
+    const s = typeof value === "string" ? value.trim() : "";
+    if (s.length === 0 || s.length > 200) {
+      throw new BadRequest(`${field} is required (at most 200 characters)`);
+    }
+    return s;
+  };
+  const year = body.year ?? null;
+  if (
+    year !== null &&
+    (!Number.isInteger(year) || (year as number) < 1000 ||
+      (year as number) > 2100)
+  ) {
+    throw new BadRequest("year must be a whole year");
+  }
+  let cover: Image | null = null;
+  if (body.cover != null) {
+    const c = body.cover as { data?: unknown; type?: unknown };
+    if (c.type !== "image/jpeg" && c.type !== "image/png") {
+      throw new BadRequest("cover must be a JPEG or PNG");
+    }
+    let bytes: Uint8Array;
+    try {
+      bytes = Uint8Array.from(atob(String(c.data)), (ch) => ch.charCodeAt(0));
+    } catch {
+      throw new BadRequest("cover is not base64");
+    }
+    if (bytes.length === 0 || bytes.length > maxCoverBytes) {
+      throw new BadRequest("cover is empty or larger than 2 MB");
+    }
+    cover = { bytes, contentType: c.type };
+  }
+  return {
+    title: text(body.title, "title"),
+    artist: text(body.artist, "artist"),
+    year: year as number | null,
+    cover,
+  };
+}
+
+export async function addManualAlbum(
+  album: ManualAlbum,
+  userId: string,
+  deps: ManualDeps,
+): Promise<Album> {
+  const { cover, ...fields } = album;
+  const added = await deps.insertManual(fields, userId);
+  if (!cover) return added;
+  const url = await deps.storeCover(added.id, cover);
+  await deps.setCoverUrl(added.id, url);
+  return { ...added, cover_url: url };
 }

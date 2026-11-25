@@ -149,6 +149,37 @@ class FakeShelf implements ShelfRepository {
     );
   }
 
+  final manual = <ManualAlbum>[];
+
+  @override
+  Future<void> addManual(
+    ManualAlbum album, {
+    int? rating,
+    String? comment,
+    List<String> tags = const [],
+  }) async {
+    if (failAdd) {
+      failAdd = false;
+      throw Exception('offline');
+    }
+    manual.add(album);
+    addedTags = tags;
+    entries.insert(
+      0,
+      ShelfEntry(
+        id: 'manual-${manual.length}',
+        album: Album(
+          id: 'm${manual.length}',
+          title: album.title,
+          artist: album.artist,
+          year: album.year,
+        ),
+        rating: rating,
+        tagIds: tags.toSet(),
+      ),
+    );
+  }
+
   @override
   Future<Tag> createTag(String groupId, String name) async {
     if (failCreate) {

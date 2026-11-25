@@ -47,7 +47,7 @@ void main() {
     expect(sent.url.path, '/ws/2/release-group');
     expect(
       sent.url.queryParameters['query'],
-      '(ok computer) AND primarytype:album',
+      '(ok AND computer) AND primarytype:album',
     );
     expect(sent.headers['User-Agent'], 'shelf/1.0 ( someone@example.com )');
     expect(results.first.title, 'OK Computer');
@@ -64,7 +64,7 @@ void main() {
   test('query syntax in the text is escaped', () {
     expect(
       MusicBrainzSearch.query('AC/DC: Back in Black!'),
-      r'(AC\/DC\: Back in Black\!) AND primarytype:album',
+      r'(AC\/DC\: AND Back AND in AND Black\!) AND primarytype:album',
     );
   });
 

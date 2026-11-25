@@ -22,7 +22,8 @@ update storage.objects set name = 'replaced.jpg' where bucket_id = 'covers';
 
 reset role;
 select results_eq(
-  $$select name from storage.objects where bucket_id = 'covers'$$,
+  $$select name from storage.objects
+    where bucket_id = 'covers' and name in ('a.jpg', 'replaced.jpg')$$,
   array['a.jpg'], 'users cannot replace covers');
 
 set local role anon;

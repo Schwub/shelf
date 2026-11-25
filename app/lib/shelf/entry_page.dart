@@ -15,24 +15,36 @@ enum EntryResult { added, saved, removed }
 
 /// An album on the shelf: change its rating and comment, or remove it (the
 /// shelf removes it after the snackbar's Undo has passed). [EntryPage.add]
-/// shows a search result to add instead. Tags are TASK-16.
+/// shows a search result to add instead, [EntryPage.manual] an album added
+/// by hand.
 class EntryPage extends StatefulWidget {
   const EntryPage({
     super.key,
     required ShelfEntry this.entry,
     required this.shelf,
     this.groups = const [],
-  }) : result = null;
+  }) : result = null,
+       manual = null;
 
   const EntryPage.add({
     super.key,
     required SearchResult this.result,
     required this.shelf,
     this.groups = const [],
-  }) : entry = null;
+  }) : entry = null,
+       manual = null;
+
+  const EntryPage.manual({
+    super.key,
+    required ManualAlbum this.manual,
+    required this.shelf,
+    this.groups = const [],
+  }) : entry = null,
+       result = null;
 
   final ShelfEntry? entry;
   final SearchResult? result;
+  final ManualAlbum? manual;
   final ShelfRepository shelf;
 
   /// The user's visible tag groups, to tag the album with.
@@ -42,14 +54,23 @@ class EntryPage extends StatefulWidget {
 
   Album get album =>
       entry?.album ??
-      Album(
-        id: '',
-        musicbrainzId: result!.musicbrainzId,
-        title: result!.title,
-        artist: result!.artist,
-        year: result!.year,
-        coverUrl: result!.coverUrl,
-      );
+      switch ((result, manual)) {
+        (final r?, _) => Album(
+          id: '',
+          musicbrainzId: r.musicbrainzId,
+          title: r.title,
+          artist: r.artist,
+          year: r.year,
+          coverUrl: r.coverUrl,
+        ),
+        (_, final m?) => Album(
+          id: '',
+          title: m.title,
+          artist: m.artist,
+          year: m.year,
+        ),
+        _ => throw StateError('nothing to show'),
+      };
 
   @override
   State<EntryPage> createState() => _EntryPageState();
@@ -91,7 +112,14 @@ class _EntryPageState extends State<EntryPage> {
       _saveFailed = false;
     });
     try {
-      if (widget.adding) {
+      if (widget.manual case final manual?) {
+        await widget.shelf.addManual(
+          manual,
+          rating: _rating,
+          comment: _comment.text.trim(),
+          tags: _tags.ordered(_tags.chosen),
+        );
+      } else if (widget.adding) {
         await widget.shelf.add(
           widget.result!.musicbrainzId,
           rating: _rating,
@@ -275,6 +303,7 @@ class _EntryPageState extends State<EntryPage> {
 
   /// The cover standing on its board, with the close key.
   Widget _stage(Album album) {
+    final photo = widget.manual?.cover;
     return SizedBox(
       height: 260,
       child: Stack(
@@ -285,7 +314,18 @@ class _EntryPageState extends State<EntryPage> {
             bottom: 0,
             child: Column(
               children: [
-                SizedBox(width: 200, child: Cover(album)),
+                SizedBox(
+                  width: 200,
+                  child: photo != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: Image.memory(photo, fit: BoxFit.cover),
+                          ),
+                        )
+                      : Cover(album),
+                ),
                 const ShelfBoard(),
               ],
             ),

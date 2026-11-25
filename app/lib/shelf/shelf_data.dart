@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -71,6 +73,37 @@ class TagGroup {
   );
 }
 
+/// An album to add by hand (not on MusicBrainz), with an optional photo as
+/// its cover (JPEG or PNG bytes).
+@immutable
+class ManualAlbum {
+  const ManualAlbum({
+    required this.title,
+    required this.artist,
+    this.year,
+    this.cover,
+  });
+
+  final String title, artist;
+  final int? year;
+  final Uint8List? cover;
+
+  /// What the add-album function expects.
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'artist': artist,
+    'year': year,
+    if (cover case final bytes?)
+      'cover': {
+        'data': base64Encode(bytes),
+        // PNG files start with 0x89 'P'; the picker gives JPEG otherwise.
+        'type': bytes.length > 1 && bytes[0] == 0x89 && bytes[1] == 0x50
+            ? 'image/png'
+            : 'image/jpeg',
+      },
+  };
+}
+
 /// A key of the shelf's filter bar: one of the user's tags.
 @immutable
 class ShelfFilter {
@@ -125,6 +158,15 @@ abstract class ShelfRepository {
   /// function puts it in the shared catalog (with its cover) if needed.
   Future<void> add(
     String musicbrainzId, {
+    int? rating,
+    String? comment,
+    List<String> tags = const [],
+  });
+
+  /// Adds an album by hand: the add-album function adds it as the user's
+  /// own, with the photo as its cover.
+  Future<void> addManual(
+    ManualAlbum album, {
     int? rating,
     String? comment,
     List<String> tags = const [],
@@ -269,10 +311,30 @@ class SupabaseShelfRepository implements ShelfRepository {
     String? comment,
     List<String> tags = const [],
   }) async {
-    final response = await _db.functions.invoke(
-      'add-album',
-      body: {'musicbrainz_id': musicbrainzId},
+    await _addEntry(
+      {'musicbrainz_id': musicbrainzId},
+      rating: rating,
+      comment: comment,
+      tags: tags,
     );
+  }
+
+  @override
+  Future<void> addManual(
+    ManualAlbum album, {
+    int? rating,
+    String? comment,
+    List<String> tags = const [],
+  }) => _addEntry(album.toJson(), rating: rating, comment: comment, tags: tags);
+
+  /// The add-album function returns the album; then the entry and its tags.
+  Future<void> _addEntry(
+    Map<String, dynamic> album, {
+    int? rating,
+    String? comment,
+    List<String> tags = const [],
+  }) async {
+    final response = await _db.functions.invoke('add-album', body: album);
     final entry = await _db
         .from('shelf_entries')
         .insert({
