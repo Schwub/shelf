@@ -1,9 +1,10 @@
 ---
 id: TASK-29
 title: Open the tag editor only from the menu
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-25T18:25:00Z'
+updated_date: '2026-11-25T19:07:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -18,6 +19,6 @@ Remove the "Edit tags" link from the album entry's tag section; the tag editor s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The album entry has no Edit tags link
-- [ ] #2 Tags in the ⋮ menu still opens the tag editor
+- [x] #1 The album entry has no Edit tags link
+- [x] #2 Tags in the ⋮ menu still opens the tag editor
 <!-- AC:END -->

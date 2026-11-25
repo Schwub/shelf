@@ -43,11 +43,16 @@ jobs:
       # publishable key ships in the app anyway).
       - env:
           MUSICBRAINZ_CONTACT: ${{ vars.MUSICBRAINZ_CONTACT }}
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+          # Pull request previews report apart from main.
+          SENTRY_ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
         run: >-
           mise exec -- flutter build web --release
           --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }}
           --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           --dart-define=MUSICBRAINZ_CONTACT="$MUSICBRAINZ_CONTACT"
+          --dart-define=SENTRY_DSN="$SENTRY_DSN"
+          --dart-define=SENTRY_ENVIRONMENT="$SENTRY_ENVIRONMENT"
         working-directory: app
       - id: deploy
         uses: cloudflare/wrangler-action@v3

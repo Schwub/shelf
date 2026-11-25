@@ -56,7 +56,9 @@ class ShelfKey extends StatefulWidget {
   final VoidCallback? onPressed;
   final bool? selected;
 
-  /// Shows the light window at the start of the key, lit while selected.
+  /// Shows the light window at the start of the key, lit while selected,
+  /// in themes with lights ([ShelfColors.lights]); otherwise a selected
+  /// key's label takes the signal colour.
   final bool light;
 
   /// Amber face, for the main action of a screen.
@@ -97,14 +99,14 @@ class _ShelfKeyState extends State<ShelfKey> {
           colors: context.shelf,
           primary: widget.primary,
           lit: lit,
-          light: widget.light,
+          light: widget.light && context.shelf.lights,
         ),
         child: Padding(
-          padding: _contentPadding(KeyGeometry(depth)),
+          padding: _contentPadding(context, KeyGeometry(depth)),
           child: child,
         ),
       ),
-      child: Center(widthFactor: 1, child: _label(context)),
+      child: Center(widthFactor: 1, child: _label(context, lit: lit)),
     );
     // The key looks 44 px; an invisible margin makes the touch area at
     // least 48 × 48 (Android's minimum).
@@ -151,25 +153,36 @@ class _ShelfKeyState extends State<ShelfKey> {
     );
   }
 
-  EdgeInsets _contentPadding(KeyGeometry g) {
+  EdgeInsets _contentPadding(BuildContext context, KeyGeometry g) {
     final p = widget.padding;
+    final window = widget.light && context.shelf.lights;
     return EdgeInsets.fromLTRB(
-      g.faceOffset.dx + p.left + (widget.light ? 12 : 0),
+      g.faceOffset.dx + p.left + (window ? 12 : 0),
       g.faceOffset.dy,
       g.right + p.right,
       g.front,
     );
   }
 
-  Widget _label(BuildContext context) {
+  Widget _label(BuildContext context, {required bool lit}) {
     final c = context.shelf;
     final engraved = widget.primary
-        ? const [Shadow(color: Color(0x88FFD98A), offset: Offset(0, 1))]
+        ? [
+            Shadow(
+              color: c.primaryHighlight.withValues(alpha: 0.53),
+              offset: const Offset(0, 1),
+            ),
+          ]
         : [
             Shadow(color: c.engrave, offset: const Offset(0, 1)),
             Shadow(color: c.engraveLight, offset: const Offset(0, -1)),
           ];
-    final color = widget.primary ? c.onAmber : c.text;
+    final color = widget.primary
+        ? c.onAmber
+        // Without a light window, a chosen option shows in its label.
+        : lit && widget.light && !c.lights
+        ? c.signal
+        : c.text;
     return DefaultTextStyle.merge(
       style: Theme.of(context).textTheme.labelLarge!
           .copyWith(color: color, shadows: engraved),
@@ -221,18 +234,18 @@ class _KeyPainter extends CustomPainter {
     );
     canvas.drawRRect(
       edgeShape,
-      Paint()..color = primary ? ShelfColors.amberSide : colors.side,
+      Paint()..color = primary ? colors.primarySide : colors.side,
     );
     canvas.save();
     canvas.clipRRect(edgeShape);
     final right = Paint()
-      ..color = primary ? ShelfColors.amberSideRight : colors.sideRight;
+      ..color = primary ? colors.primarySideRight : colors.sideRight;
     canvas.drawRect(
       Rect.fromLTRB(size.width - g.right, o.dy, size.width, size.height),
       right,
     );
     final contact = Paint()
-      ..color = primary ? ShelfColors.amberContact : colors.contact;
+      ..color = primary ? colors.primaryContact : colors.contact;
     canvas.drawRect(
       Rect.fromLTRB(size.width - 1, o.dy, size.width, size.height),
       contact,
@@ -244,9 +257,7 @@ class _KeyPainter extends CustomPainter {
     canvas.restore();
 
     final gradient = primary
-        ? const LinearGradient(
-            colors: [ShelfColors.amberStart, ShelfColors.amberEnd],
-          )
+        ? LinearGradient(colors: [colors.primaryStart, colors.primaryEnd])
         : LinearGradient(
             // CSS 160deg with the second colour at 70 %.
             begin: const Alignment(-0.36, -1),
@@ -281,10 +292,10 @@ class _KeyPainter extends CustomPainter {
     }
 
     if (primary) {
-      topLeft(1, ShelfColors.amberHighlight);
+      topLeft(1, colors.primaryHighlight);
     } else if (lit) {
       // Pressed keys catch the light in signal colour.
-      topLeft(2, const Color(0x33F2B13A));
+      topLeft(2, colors.signal.withValues(alpha: 0.2));
       topLeft(1, colors.signal);
     } else {
       topLeft(1, colors.highlight);
@@ -301,7 +312,7 @@ class _KeyPainter extends CustomPainter {
     if (lit) {
       for (final glow in [
         BoxShadow(color: colors.windowGlow, blurRadius: 18, spreadRadius: 8),
-        const BoxShadow(color: Color(0x88F2B13A), blurRadius: 6),
+        BoxShadow(color: colors.signal.withValues(alpha: 0.53), blurRadius: 6),
       ]) {
         canvas.drawRRect(shape.inflate(glow.spreadRadius), glow.toPaint());
       }

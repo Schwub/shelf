@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/search/album_search.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/tag_section.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 import 'package:shelf_app/widgets/shelf_key.dart';
 
@@ -45,7 +46,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(Brightness.dark),
+        theme: shelfTheme(ShelfColors.tobacco),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async => outcome = await Navigator.of(context).push(
@@ -119,6 +120,13 @@ void main() {
 
     expect(find.text('Jazz'), findsOneWidget);
     expect(find.text('Ambient'), findsNothing);
+  });
+
+  testWidgets('the tag editor is only in the menu, not on the album', (
+    tester,
+  ) async {
+    await pumpEntry(tester);
+    expect(find.text('Edit tags'), findsNothing);
   });
 
   testWidgets('the Add sheet searches and ticks tags', (tester) async {
@@ -228,7 +236,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(Brightness.dark),
+        theme: shelfTheme(ShelfColors.tobacco),
         home: EntryPage.add(
           result: const SearchResult(
             musicbrainzId: 'mb-ok',

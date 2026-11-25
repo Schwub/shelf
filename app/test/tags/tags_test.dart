@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf_data.dart';
 import 'package:shelf_app/tags/tags_page.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 
 import '../shelf/fake_shelf.dart';
@@ -23,7 +24,7 @@ void main() {
   Future<void> pumpTags(
     WidgetTester tester, {
     FakeShelf? fake,
-    Brightness brightness = Brightness.dark,
+    AppTheme theme = AppTheme.tobacco,
   }) async {
     shelf = fake ?? FakeShelf(albums, filters: const [own, want]);
     tester.view.physicalSize = const Size(412, 1600);
@@ -31,7 +32,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(brightness),
+        theme: shelfTheme(theme.colors),
         home: TagsPage(shelf: shelf),
       ),
     );
@@ -409,47 +410,12 @@ void main() {
     });
   });
 
-  testWidgets('Edit tags on an album keeps its draft', (tester) async {
-    shelf = FakeShelf(albums);
-    tester.view.physicalSize = const Size(412, 1600);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: shelfTheme(Brightness.dark),
-        home: EntryPage(
-          entry: albums[1],
-          shelf: shelf,
-          groups: (await shelf.load()).groups,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tapText(tester, 'Listened');
-    await tapText(tester, 'Edit tags');
-    expect(find.byType(TagsPage), findsOneWidget);
-    await openGroup(tester, 'Listening');
-    await tester.enterText(find.byType(TextField).first, 'Heard');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Back'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Back'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(EntryPage), findsOneWidget);
-    expect(find.text('Heard'), findsOneWidget);
-    await tapText(tester, 'Save');
-    expect(shelf.entries[1].tagIds, contains('listened'));
-  });
-
-  for (final brightness in Brightness.values) {
-    testWidgets('meets the accessibility guidelines ($brightness)', (
+  for (final theme in AppTheme.values) {
+    testWidgets('meets the accessibility guidelines (${theme.label})', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      await pumpTags(tester, brightness: brightness);
+      await pumpTags(tester, theme: theme);
       Future<void> check() async {
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));

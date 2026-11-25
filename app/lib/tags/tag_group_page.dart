@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../errors.dart';
 import '../shelf/entry_page.dart';
 import '../shelf/shelf_data.dart';
 import '../theme/shelf_colors.dart';
@@ -88,7 +89,8 @@ class _TagGroupPageState extends State<TagGroupPage> {
         if (initial) _name.text = group.name;
         if (_several != null) _several = _withSeveral(group);
       });
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted && _shelf == null) setState(() => _loadFailed = true);
     }
   }
@@ -120,7 +122,8 @@ class _TagGroupPageState extends State<TagGroupPage> {
     } on SeveralTags {
       if (mounted) setState(() => _several = _withSeveral(_group!));
       return false;
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted) {
         setState(
           () => _failed = (
@@ -324,7 +327,8 @@ class _TagGroupPageState extends State<TagGroupPage> {
         setState(() => _nameError = 'You already have a group called “$name”.');
       }
       return;
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted) {
         setState(
           () => _failed = (

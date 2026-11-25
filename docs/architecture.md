@@ -122,6 +122,29 @@ One-time staging setup (TASK-21):
    for (an email address). The `staging` workflow stores it as a function
    secret; the Android and web builds pass it to the app.
 
+## Error reporting
+Decided 2026-11-25 (TASK-11): **Sentry**, free plan, EU data region.
+Considered: our own `app_errors` table in Supabase (no grouping, alerts or
+readable release stack traces without building them) and self-hosted
+GlitchTip (a server to run).
+- `app/lib/errors.dart` is the only code that imports `sentry_flutter`.
+  `main.dart` runs the app inside it; crashes and unhandled errors are
+  reported, and screens report the errors they handle and show as
+  "Couldn't …" (`reportError`), except a user's own mistakes (a link from
+  another site, a broken link).
+- Breadcrumbs: every HTTP request (MusicBrainz, covers) through
+  `reportingClient`; failed answers aren't reported on their own.
+- Privacy: `sendDefaultPii` off (no IP addresses, emails or bodies); the
+  user is only their Supabase account ID.
+- Settings: the `SENTRY_DSN` repository variable (a DSN only allows sending
+  events, so it isn't a secret) passed with `--dart-define`; without it
+  nothing is sent (local builds, tests). `SENTRY_ENVIRONMENT`: `staging`
+  (Android staging builds), `production` and `preview` (web), `development`
+  otherwise.
+- Not yet: readable web stack traces need source maps uploaded with a
+  Sentry auth token from the `web` workflow; GitHub issues from new errors
+  (TASK-13).
+
 ## Web deploys
 - The `web` workflow builds `flutter build web` in GitHub Actions and
   uploads it to Cloudflare Pages (project `shelf`) with Wrangler: `main`

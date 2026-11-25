@@ -20,11 +20,11 @@ TextStyle plex(double size, {double weight = 400}) => TextStyle(
   fontVariations: [FontVariation.weight(weight)],
 );
 
-/// The app theme: evening for dark, daylight for light (follows the system).
-ThemeData shelfTheme(Brightness brightness) {
-  final c = brightness == Brightness.dark
-      ? ShelfColors.evening
-      : ShelfColors.daylight;
+/// The app theme in the colours of [c] (see [AppTheme]).
+ThemeData shelfTheme(ShelfColors c) {
+  final brightness = c.brightness;
+  // Snackbars are always dark: daylight borrows evening's colours.
+  final snack = brightness == Brightness.dark ? c : ShelfColors.evening;
   // The six sizes of the visual system.
   final text = TextTheme(
     headlineSmall: archivo(24, width: 125, weight: 700),
@@ -54,17 +54,17 @@ ThemeData shelfTheme(Brightness brightness) {
       outline: c.line,
     ),
     textTheme: text,
-    // Always dark, in both themes (visual-system.md, Snackbar).
+    // Always dark (visual-system.md, Snackbar).
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: ShelfColors.evening.surface,
-      contentTextStyle: plex(14).copyWith(color: ShelfColors.evening.text),
-      actionTextColor: ShelfColors.amberStart,
+      backgroundColor: snack.surface,
+      contentTextStyle: plex(14).copyWith(color: snack.text),
+      actionTextColor: snack.primaryStart,
       behavior: SnackBarBehavior.floating,
       insetPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(4),
-        side: BorderSide(color: ShelfColors.evening.line),
+        side: BorderSide(color: snack.line),
       ),
     ),
     extensions: [c],

@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/widgets/shelf_key.dart';
 
 import 'harness.dart';
@@ -133,5 +134,41 @@ void main() {
       ),
       const Size(44, 44),
     );
+  });
+
+  group('themes', () {
+    Color label(WidgetTester tester) =>
+        DefaultTextStyle.of(tester.element(find.text('Own'))).style.color!;
+
+    testWidgets('without lights a chosen key shows in its label', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        themed(
+          ShelfKey(
+            light: true,
+            selected: true,
+            onPressed: () {},
+            child: const Text('Own'),
+          ),
+        ),
+      );
+      expect(label(tester), ShelfColors.tobacco.signal);
+    });
+
+    testWidgets('with lights the label stays in text colour', (tester) async {
+      await tester.pumpWidget(
+        themed(
+          ShelfKey(
+            light: true,
+            selected: true,
+            onPressed: () {},
+            child: const Text('Own'),
+          ),
+          theme: AppTheme.evening,
+        ),
+      );
+      expect(label(tester), ShelfColors.evening.text);
+    });
   });
 }

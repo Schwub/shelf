@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shelf_app/search/musicbrainz.dart';
 import 'package:shelf_app/shelf/shelf_data.dart';
 import 'package:shelf_app/tracks/track_source.dart';
 
@@ -74,8 +75,7 @@ void main() {
     });
 
     final tracks = await MusicBrainzTracks(
-      client,
-      retryAfter: Duration.zero,
+      MusicBrainz(client, gap: Duration.zero),
     ).trackList('rg');
 
     expect(urls.first.queryParameters, containsPair('release-group', 'rg'));
@@ -91,26 +91,25 @@ void main() {
     ]);
   });
 
-  test('retries once when MusicBrainz is busy, then fails', () async {
+  test('fails when MusicBrainz stays busy', () async {
     var calls = 0;
     final busy = MockClient((_) async {
       calls++;
       return json({}, 503);
     });
     await expectLater(
-      MusicBrainzTracks(busy, retryAfter: Duration.zero).trackList('rg'),
+      MusicBrainzTracks(MusicBrainz(busy, gap: Duration.zero)).trackList('rg'),
       throwsA(isA<http.ClientException>()),
     );
-    expect(calls, 2);
+    // The first try and MusicBrainz's two retries.
+    expect(calls, 3);
   });
 
   test('no official release means no track list', () async {
     final client = MockClient((_) async => json({'releases': []}));
     expect(
-      await MusicBrainzTracks(
-        client,
-        retryAfter: Duration.zero,
-      ).trackList('rg'),
+      await MusicBrainzTracks(MusicBrainz(client, gap: Duration.zero))
+          .trackList('rg'),
       isEmpty,
     );
   });

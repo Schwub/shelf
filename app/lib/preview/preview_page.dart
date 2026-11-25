@@ -36,12 +36,10 @@ class PreviewPage extends StatelessWidget {
                 ],
               ),
             ),
-            for (final brightness in [Brightness.dark, Brightness.light])
+            for (final theme in AppTheme.values)
               Theme(
-                data: shelfTheme(brightness),
-                child: _Components(
-                  title: brightness == Brightness.dark ? 'Evening' : 'Daylight',
-                ),
+                data: shelfTheme(theme.colors),
+                child: _Components(title: theme.label),
               ),
           ],
         ),

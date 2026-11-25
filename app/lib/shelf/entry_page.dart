@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+
+import '../errors.dart';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../search/album_search.dart';
-import '../tags/tags_page.dart';
 import '../theme/shelf_colors.dart';
 import '../tracks/track_editor_page.dart';
 import '../tracks/track_section.dart';
@@ -84,7 +86,7 @@ class EntryPage extends StatefulWidget {
 class _EntryPageState extends State<EntryPage> {
   late int? _rating = widget.entry?.rating;
   late final _comment = TextEditingController(text: widget.entry?.comment);
-  late Set<String> _initialTags = widget.entry?.tagIds ?? const {};
+  late final Set<String> _initialTags = widget.entry?.tagIds ?? const {};
   late TagChoice _tags = TagChoice(widget.groups, _initialTags);
   bool _saving = false;
   bool _saveFailed = false;
@@ -117,7 +119,8 @@ class _EntryPageState extends State<EntryPage> {
         _lookup = tracks.isEmpty ? TrackLookup.none : TrackLookup.idle;
         _suggestion = tracks.isEmpty ? null : tracks;
       });
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted) setState(() => _lookup = TrackLookup.failed);
     }
   }
@@ -184,7 +187,8 @@ class _EntryPageState extends State<EntryPage> {
         Navigator.of(context)
             .pop(widget.adding ? EntryResult.added : EntryResult.saved);
       }
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted) {
         setState(() {
           _saving = false;
@@ -199,45 +203,6 @@ class _EntryPageState extends State<EntryPage> {
     if (!_changed || await _confirmDiscard()) {
       if (mounted) Navigator.of(context).pop();
     }
-  }
-
-  /// Opens the tag editor; the draft stays, on the edited tags.
-  Future<void> _editTags() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => TagsPage(shelf: widget.shelf)),
-    );
-    final Shelf shelf;
-    try {
-      shelf = await widget.shelf.load();
-    } catch (_) {
-      return; // The tags shown stay as they were.
-    }
-    if (!mounted) return;
-    final existing = {
-      for (final g in shelf.allGroups)
-        for (final t in g.tags) t.id,
-    };
-    // Tags on the album from a hidden group stay on it.
-    final shown = {
-      for (final g in shelf.groups)
-        for (final t in g.tags) t.id,
-    };
-    final chosen = {
-      for (final id in _tags.chosen.intersection(existing))
-        if (!shown.contains(id)) id,
-    };
-    for (final g in shelf.groups) {
-      final inGroup = [
-        for (final t in g.tags)
-          if (_tags.chosen.contains(t.id)) t.id,
-      ];
-      // A group made one per album keeps the first of its chosen tags.
-      chosen.addAll(g.exclusive ? inGroup.take(1) : inGroup);
-    }
-    setState(() {
-      _initialTags = _initialTags.intersection(existing);
-      _tags = TagChoice(shelf.groups, chosen);
-    });
   }
 
   Future<bool> _confirmDiscard() => confirm(
@@ -288,7 +253,6 @@ class _EntryPageState extends State<EntryPage> {
                             onChanged: (t) => setState(() => _tags = t),
                             onCreate: (group, name) =>
                                 widget.shelf.createTag(group.id, name),
-                            onEditTags: _editTags,
                           ),
                           const SizedBox(height: 16),
                           Row(

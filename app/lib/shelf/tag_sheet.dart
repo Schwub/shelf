@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../errors.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/help_line.dart';
 import '../widgets/shelf_field.dart';
@@ -84,7 +85,8 @@ class _TagSheetState extends State<_TagSheet> {
         _creating = false;
         _query.clear();
       });
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted) {
         setState(() {
           _creating = false;

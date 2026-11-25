@@ -14,7 +14,8 @@ See an album's tracks on its entry and mark the favorites.
   release group, then the earliest release with the track counts most of
   them share. That is the original album, not a deluxe edition with a
   bonus disc (OK Computer: 39 official releases, 12 tracks). Two requests,
-  a second apart (MusicBrainz's rate limit), one retry on 503.
+  through the app's shared MusicBrainz connection (paced, 503 retried;
+  docs/features/search.md).
 - **By hand**: "Enter tracks" / "Edit tracks" opens the track editor (add,
   rename, reorder, remove; empty tracks are left out). Favorites and
   lengths stay with their track; a moved track joins the disc of the track

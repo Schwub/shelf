@@ -1,10 +1,10 @@
 ---
 id: TASK-30
 title: Replace the spines view with a list
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-25T18:25:00Z'
-updated_date: '2026-11-25T18:30:00Z'
+updated_date: '2026-11-25T19:07:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -19,7 +19,7 @@ The CD-style spines view doesn't add value: replace it with a simple list of alb
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 My shelf offers covers and a list instead of spines
-- [ ] #2 The chosen view is remembered as before
-- [ ] #3 Widget tests cover the list and switching views
+- [x] #1 My shelf offers covers and a list instead of spines
+- [x] #2 The chosen view is remembered as before
+- [x] #3 Widget tests cover the list and switching views
 <!-- AC:END -->

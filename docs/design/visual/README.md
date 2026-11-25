@@ -13,4 +13,7 @@
   locked layout (flat keys, divider tabs).
 - `variations/` – colour variations V1–V5, key and pressed-state studies,
   tab bar studies (T1–T3, piano keys, S1–S5; S2 chosen), the top-down key.
+- `variations/themes-warm.html` – five warmer, calmer theme candidates
+  without light windows or the bright gradient (2026-11-25, for TASK-31),
+  next to the current theme.
 - `screens/signin.html` predates sign-in by code: the built screens (TASK-6) add a code field to Check your email.

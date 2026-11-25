@@ -99,7 +99,6 @@ flowchart TD
   edit -- changes tags, rating or comment → Save --> saved{Saved?}
   edit -- Genre: Add --> sheet[Add tags: search, tick] -- no match → Create “…” --> sheet
   sheet -- Done --> edit
-  edit -- Edit tags --> editor([Tag group])
   saved -- yes --> back([My shelf, updated])
   saved -- error --> err[Couldn't save. Try again.] --> edit
   edit -- back with unsaved changes --> discard{Discard changes?}
@@ -132,7 +131,7 @@ screen and filter reflects the change.
 
 ```mermaid
 flowchart TD
-  menu([⋮ Tags, or Edit tags on an album: its unsaved changes are kept]) --> list[Tags: groups in order, built-ins marked]
+  menu([⋮ Tags]) --> list[Tags: groups in order, built-ins marked]
   list -- loading --> lskel[Placeholder rows]
   list -- error --> lerr[Couldn't load your tags. Try again.]
   list -- New group --> newg[Tag group: new, name empty]

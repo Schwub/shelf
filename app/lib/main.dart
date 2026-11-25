@@ -6,13 +6,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth/auth.dart';
 import 'auth/auth_gate.dart';
+import 'errors.dart';
 import 'search/album_search.dart';
+import 'search/musicbrainz.dart';
 import 'share/link_resolver.dart';
 import 'share/share_receiver.dart';
 import 'share/shared_link_inbox.dart';
 import 'shelf/shelf_data.dart';
 import 'shelf/shelf_page.dart';
 import 'theme/shelf_theme.dart';
+import 'theme/theme_choice.dart';
 import 'tracks/track_source.dart';
 
 // Defaults: the local Supabase (`supabase start`). Builds for the hosted
@@ -29,6 +32,13 @@ const _supabaseKey = String.fromEnvironment(
 /// The contact MusicBrainz asks every client to send (repository variable).
 const _musicBrainzContact = String.fromEnvironment('MUSICBRAINZ_CONTACT');
 
+/// Error reporting (Sentry); without a DSN nothing is sent.
+const _sentryDsn = String.fromEnvironment('SENTRY_DSN');
+const _environment = String.fromEnvironment(
+  'SENTRY_ENVIRONMENT',
+  defaultValue: 'development',
+);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   LicenseRegistry.addLicense(() async* {
@@ -40,22 +50,33 @@ Future<void> main() async {
   });
   // Before anything slow, so the link that launches the app isn't missed.
   final inbox = SharedLinkInbox(sharedLinks());
-  final supabase = await Supabase.initialize(
-    url: _supabaseUrl,
-    publishableKey: _supabaseKey,
-  );
-  final client = http.Client();
-  runApp(
-    ShelfApp(
-      auth: SupabaseAuth(supabase.client.auth),
-      shelf: SupabaseShelfRepository(
-        supabase.client,
-        MusicBrainzTracks(client, contact: _musicBrainzContact),
-      ),
-      search: MusicBrainzSearch(client, contact: _musicBrainzContact),
-      links: SupabaseLinkResolver(supabase.client, client),
-      inbox: inbox,
-    ),
+  await runReporting(
+    dsn: _sentryDsn,
+    environment: _environment,
+    app: () async {
+      final supabase = await Supabase.initialize(
+        url: _supabaseUrl,
+        publishableKey: _supabaseKey,
+      );
+      supabase.client.auth.onAuthStateChange.listen(
+        (change) => reportAs(change.session?.user.id),
+      );
+      final client = reportingClient(http.Client());
+      final musicBrainz = MusicBrainz(client, contact: _musicBrainzContact);
+      runApp(
+        ShelfApp(
+          auth: SupabaseAuth(supabase.client.auth),
+          shelf: SupabaseShelfRepository(
+            supabase.client,
+            MusicBrainzTracks(musicBrainz),
+          ),
+          search: MusicBrainzSearch(musicBrainz),
+          links: SupabaseLinkResolver(supabase.client, client),
+          inbox: inbox,
+          theme: await ThemeChoice.load(),
+        ),
+      );
+    },
   );
 }
 
@@ -67,6 +88,7 @@ class ShelfApp extends StatelessWidget {
     required this.search,
     required this.links,
     required this.inbox,
+    required this.theme,
   });
 
   final Auth auth;
@@ -74,14 +96,18 @@ class ShelfApp extends StatelessWidget {
   final AlbumSearch search;
   final LinkResolver links;
   final SharedLinkInbox inbox;
+  final ThemeChoice theme;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'shelf',
-      theme: shelfTheme(Brightness.light),
-      darkTheme: shelfTheme(Brightness.dark),
-      home: AuthGate(
+    return ValueListenableBuilder(
+      valueListenable: theme,
+      builder: (context, chosen, home) => MaterialApp(
+        title: 'shelf',
+        theme: shelfTheme(chosen.colors),
+        home: home,
+      ),
+      child: AuthGate(
         auth: auth,
         signedIn: ShelfPage(
           auth: auth,
@@ -89,6 +115,7 @@ class ShelfApp extends StatelessWidget {
           search: search,
           links: links,
           inbox: inbox,
+          theme: theme,
         ),
       ),
     );

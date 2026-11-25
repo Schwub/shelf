@@ -24,8 +24,9 @@ From TASK-8:
 ## Flow
 As in [../design/flows.md](../design/flows.md), "Add by search":
 1. My shelf gets the "Add album" key in its bottom bar, which opens Search.
-2. **Search** queries MusicBrainz directly from the app, 300 ms after
-   typing stops. It shows cover, title, artist and year; albums already on
+2. **Search** queries MusicBrainz directly from the app, 500 ms after
+   typing stops, with a spinner in the field from the first letter. It
+   shows cover, title, artist and year; albums already on
    the shelf are marked. States: idle, loading, results, no results, error
    with Try again.
 3. Tapping a result opens the **Album entry in add mode**. It is the same
@@ -41,8 +42,14 @@ As in [../design/flows.md](../design/flows.md), "Add by search":
   `GET https://musicbrainz.org/ws/2/release-group?query=<q> AND primarytype:album&fmt=json&limit=25`.
 - Each result: release group ID, title, artist credit, first release year.
 - MusicBrainz asks every client for a User-Agent with a contact and allows
-  about one request per second per IP. The 300 ms pause and one request in
-  flight keep a single user well below that.
+  about one request per second per IP, answering 503 beyond that. The
+  pause alone (then 300 ms) wasn't enough: typing with short pauses got 503s,
+  shown as errors (fixed 2026-11-25, TASK-33). All MusicBrainz requests now
+  go through `app/lib/search/musicbrainz.dart`: one at a time, at most one
+  per 1.1 s, a 503 tried again twice, and a search replaced by a newer one
+  dropped before it's sent. Shared mobile IPs make 503s more likely, and
+  MusicBrainz is stricter with clients that send no contact
+  (`MUSICBRAINZ_CONTACT`).
 - Thumbnails in the results come straight from the Cover Art Archive
   (`/release-group/<id>/front-250`). Only added albums are copied.
 - Web: browsers don't let the app set the User-Agent. MusicBrainz still
@@ -75,7 +82,7 @@ called by signed-in users only.
 
 ## Tests
 - App (widget tests with a fake search and fake function): results, already
-  on the shelf, no results, network error and Try again, the 300 ms pause,
+  on the shelf, no results, network error and Try again, the pause,
   add mode saving, add errors.
 - Function (Deno tests with recorded MusicBrainz and Cover Art Archive
   responses): new album with cover, existing album, no cover, failed

@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../errors.dart';
 import '../shelf/shelf_data.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/list_row.dart';
@@ -43,7 +44,8 @@ class _TagsPageState extends State<TagsPage> {
             if (g.parentTagId == null) g,
         ];
       });
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (mounted) setState(() => _failed = true);
     }
   }
@@ -61,7 +63,8 @@ class _TagsPageState extends State<TagsPage> {
     });
     try {
       await widget.shelf.reorderGroups([for (final g in _groups) g.id]);
-    } catch (_) {
+    } catch (e, stack) {
+      reportError(e, stack);
       if (!mounted) return;
       setState(() => _reorderFailed = true);
       await _load();
