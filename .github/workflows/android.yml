@@ -16,6 +16,12 @@ jobs:
       # Only Flutter is needed; don't install the other mise tools.
       MISE_EXEC_AUTO_INSTALL: false
     steps:
+      # Two APK builds with the NDK and Gradle caches fill the runner's disk
+      # ("No space left on device"); remove preinstalled tools shelf doesn't use.
+      - name: Free disk space
+        run: >-
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup
+          /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
         with:
