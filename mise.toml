@@ -1,6 +1,7 @@
 [tools]
 flutter = "3.50.1"
 supabase = "3.2.0"
+deno = "2.9.8"
 node = "24"
 "npm:backlog.md" = "1.55.3"
 
@@ -48,3 +49,12 @@ run = "flutter build web"
 [tasks."dev:albums"]
 description = "Add test albums to an account's shelf in the local Supabase (usage: mise run dev:albums -- <email>)"
 run = "supabase/dev/test-albums.sh"
+
+[tasks."test:functions"]
+description = "Test, lint and type-check the edge functions in supabase/functions"
+run = [
+  "deno fmt --check supabase/functions",
+  "deno lint supabase/functions",
+  "deno check supabase/functions/*/index.ts",
+  "deno test supabase/functions",
+]

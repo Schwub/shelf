@@ -13,11 +13,12 @@ jobs:
   test-db:
     runs-on: ubuntu-latest
     env:
-      # Only the Supabase CLI is needed; skip installing Flutter for the task.
+      # Only the Supabase CLI and Deno are needed; skip installing Flutter.
       MISE_TASK_RUN_AUTO_INSTALL: false
     steps:
       - uses: actions/checkout@v5
       - uses: jdx/mise-action@v3
         with:
-          install_args: supabase
+          install_args: supabase deno
       - run: mise run test:db
+      - run: mise run test:functions
