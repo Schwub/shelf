@@ -43,6 +43,7 @@ final suggestedGroups = [
     id: 'genre',
     name: 'Genre',
     exclusive: false,
+    pickFromList: true,
     tags: [
       for (final g in [
         'Alternative',
@@ -268,6 +269,7 @@ class FakeShelf implements ShelfRepository {
   Future<void> createGroup(
     String name, {
     required bool exclusive,
+    bool pickFromList = false,
     String? parentTagId,
     List<String> tags = const [],
   }) async {
@@ -279,6 +281,7 @@ class FakeShelf implements ShelfRepository {
         id: id,
         name: name,
         exclusive: exclusive,
+        pickFromList: pickFromList,
         parentTagId: parentTagId,
         tags: [for (final t in tags) tag(id, t)],
       ),
@@ -291,6 +294,7 @@ class FakeShelf implements ShelfRepository {
     String? name,
     bool? exclusive,
     bool? hidden,
+    bool? pickFromList,
   }) async {
     _edit();
     final i = _group(groupId);
@@ -308,6 +312,7 @@ class FakeShelf implements ShelfRepository {
       name: name,
       exclusive: exclusive,
       hidden: hidden,
+      pickFromList: pickFromList,
     );
   }
 

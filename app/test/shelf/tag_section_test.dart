@@ -135,8 +135,55 @@ void main() {
     await tap(tester, 'Krautrock');
     await tap(tester, 'Done');
 
-    expect(pressed(tester, 'Krautrock'), isTrue);
+    // A chosen genre shows on the album, to be taken off again.
+    expect(find.bySemanticsLabel('Remove Krautrock'), findsOneWidget);
     expect(find.text('No genre yet'), findsNothing);
+  });
+
+  testWidgets('the Add sheet lists tags alphabetically', (tester) async {
+    await pumpEntry(tester);
+    shelf.groups.last = shelf.groups.last.copyWith(
+      tags: [
+        tag('genre', 'Pop'),
+        tag('genre', 'ambient'),
+        tag('genre', 'Jazz'),
+      ],
+    );
+    // Reopen with the new order.
+    await tester.pumpWidget(const SizedBox());
+    await pumpEntry(tester);
+    await tester.tap(find.bySemanticsLabel('Add genre'));
+    await tester.pumpAndSettle();
+
+    final top = [
+      for (final name in ['Alternative', 'Ambient', 'Art rock', 'Jazz', 'Pop'])
+        tester.getTopLeft(find.text(name).last).dy,
+    ];
+    expect(top, [...top]..sort());
+  });
+
+  testWidgets('a genre picked from a list shows only the chosen ones', (
+    tester,
+  ) async {
+    await pumpEntry(tester, tags: {'jazz', 'ambient'});
+
+    expect(find.text('Jazz'), findsOneWidget);
+    expect(find.text('Pop'), findsNothing);
+    await tester.tap(find.bySemanticsLabel('Remove Jazz'));
+    await tester.pumpAndSettle();
+    expect(find.text('Jazz'), findsNothing);
+
+    await tap(tester, 'Save');
+    expect(shelf.removedTags, {'jazz'});
+  });
+
+  testWidgets('a group shown as keys shows all its tags', (tester) async {
+    await pumpEntry(tester, tags: {'own'});
+
+    // Format, under Own: every format as a key, none chosen yet.
+    for (final f in ['Vinyl', 'CD', 'Tape', 'File']) {
+      expect(pressed(tester, f), isFalse);
+    }
   });
 
   testWidgets('the Add sheet creates a tag that matches nothing', (
@@ -153,7 +200,7 @@ void main() {
     await tap(tester, 'Done');
 
     expect(shelf.groups.last.tags.last.name, 'Shoegaze');
-    expect(pressed(tester, 'Shoegaze'), isTrue);
+    expect(find.bySemanticsLabel('Remove Shoegaze'), findsOneWidget);
     await tap(tester, 'Save');
     expect(shelf.addedTags, ['shoegaze']);
   });

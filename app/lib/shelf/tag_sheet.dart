@@ -99,10 +99,11 @@ class _TagSheetState extends State<_TagSheet> {
     final c = context.shelf;
     final text = Theme.of(context).textTheme;
     final query = _query.text.trim().toLowerCase();
+    // Alphabetical, to scroll or search through a long list.
     final matches = [
       for (final t in _group.tags)
         if (t.name.toLowerCase().contains(query)) t,
-    ];
+    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     final exact = _group.tags.any((t) => t.name.toLowerCase() == query);
     final lower = _group.name.toLowerCase();
     return Padding(

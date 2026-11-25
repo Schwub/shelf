@@ -1,5 +1,5 @@
 begin;
-select plan(37);
+select plan(39);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -20,10 +20,11 @@ create function pg_temp.grp(g text) returns uuid language sql as $$
 
 -- Suggested groups for a new user (checked as superuser, for Alice).
 select results_eq(
-  $$select name, exclusive, builtin from public.tag_groups
+  $$select name, exclusive, builtin, pick_from_list from public.tag_groups
     where user_id = '11111111-1111-1111-1111-111111111111' and parent_tag_id is null order by position$$,
-  $$values ('Collection', true, 'collection'), ('Listening', true, 'listening'), ('Genre', false, null::text)$$,
-  'new users get Collection, Listening and Genre');
+  $$values ('Collection', true, 'collection', false), ('Listening', true, 'listening', false),
+    ('Genre', false, null::text, true)$$,
+  'new users get Collection, Listening and Genre, Genre picked from a list');
 select results_eq(
   $$select t.name, t.builtin from public.tags t join public.tag_groups g on g.id = t.group_id
     where g.user_id = '11111111-1111-1111-1111-111111111111' and g.builtin is not null order by g.position, t.position$$,
@@ -105,6 +106,12 @@ select throws_ok(
 select lives_ok(
   $$insert into public.tag_groups (name, parent_tag_id) values ('Mood', pg_temp.tag('Format', 'Vinyl'))$$,
   'the same name can be used at another level');
+select lives_ok(
+  $$insert into public.tag_groups (name, pick_from_list) values ('Country', true)$$,
+  'users make groups picked from a list');
+select lives_ok(
+  $$update public.tag_groups set pick_from_list = false where name = 'Genre'$$,
+  'users change how a group shows on albums');
 select lives_ok(
   $$update public.tag_groups set name = 'In my collection', hidden = true where builtin = 'collection'$$,
   'built-in groups can be renamed and hidden');

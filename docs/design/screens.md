@@ -54,11 +54,14 @@ flowchart LR
 ## Interaction decisions
 - **Tags** (design in [../features/tags.md](../features/tags.md)): the album
   entry lists the user's visible tag groups in their order.
-  - A group with up to six tags shows all of them as keys; a larger group
-    shows only this album's tags. Tapping a pressed key releases it.
-  - Multiple-choice groups have an "Add" action on the right of their
-    label line, which opens the Add tags sheet: search, tick tags, and
-    "Create “…”" when nothing matches. New groups are made in the editor.
+  - Each group shows on albums one of two ways (set in the editor, "On
+    albums"): all its tags as keys, tapping a pressed key releases it; or
+    "Pick from a list" (Genre), showing only this album's tags, each with
+    a ✕ that takes it off the album (TASK-28).
+  - List groups and multiple-choice key groups have an "Add" action on the
+    right of their label line, which opens the Add tags sheet: the tags in
+    alphabetical order to scroll or search, tick tags, and "Create “…”"
+    when nothing matches. New groups are made in the editor.
   - A sub-group appears under its parent tag only while that tag is
     pressed (Format under Own); releasing the parent removes its sub-tags.
   - No tag is required: "Add to shelf" is always available.

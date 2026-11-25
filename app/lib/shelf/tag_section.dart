@@ -73,8 +73,6 @@ class TagSection extends StatelessWidget {
   /// Opens the tag editor.
   final VoidCallback onEditTags;
 
-  static const showAllUpTo = 6;
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -101,13 +99,27 @@ class TagSection extends StatelessWidget {
       for (final t in group.tags)
         if (choice.chosen.contains(t.id)) t,
     ];
-    final shown = group.tags.length <= showAllUpTo ? group.tags : chosenTags;
+    // A group picked from a list shows only its chosen tags; tapping one
+    // takes it off the album.
+    final list = group.pickFromList;
+    final shown = list ? chosenTags : group.tags;
     Widget key(Tag t, {bool expand = false}) {
       final k = ShelfKey(
-        light: true,
-        selected: choice.chosen.contains(t.id),
+        light: !list,
+        selected: list ? null : choice.chosen.contains(t.id),
+        semanticLabel: list ? 'Remove ${t.name}' : null,
         onPressed: () => onChanged(choice.toggle(t.id)),
-        child: Text(t.name),
+        child: list
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // The key reads "Remove …" instead.
+                  ExcludeSemantics(child: Text(t.name)),
+                  const SizedBox(width: 6),
+                  Icon(Icons.close, size: 16, color: c.muted),
+                ],
+              )
+            : Text(t.name),
       );
       return expand ? Expanded(child: k) : k;
     }
@@ -120,7 +132,7 @@ class TagSection extends StatelessWidget {
     return [
       SizedBox(
         // 48 for the Add link's touch area; tighter without it.
-        height: group.exclusive ? 32 : 48,
+        height: group.exclusive && !list ? 32 : 48,
         child: Row(
           children: [
             Expanded(
@@ -129,7 +141,7 @@ class TagSection extends StatelessWidget {
                 style: text.labelSmall!.copyWith(color: c.muted),
               ),
             ),
-            if (!group.exclusive)
+            if (list || !group.exclusive)
               TextLink(
                 label: 'Add',
                 icon: Icons.add,
@@ -151,7 +163,7 @@ class TagSection extends StatelessWidget {
           ),
         )
       // Built-in two-tag groups fill the row with equal keys.
-      else if (group.builtin && group.tags.length == 2)
+      else if (!list && group.builtin && group.tags.length == 2)
         Row(
           children: [
             key(group.tags[0], expand: true),
