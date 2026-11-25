@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../auth/auth.dart';
 import '../auth/sign_out.dart';
@@ -30,7 +31,10 @@ class _ShelfPageState extends State<ShelfPage> {
 
   /// The selected filter's tag; null for All.
   String? _filterId;
+
+  /// Covers or spines, remembered on the device.
   bool _spines = false;
+  static const _spinesKey = 'shelf.spines';
 
   /// Removed but still undoable: hidden until the snackbar closes.
   final _removing = <String>{};
@@ -39,6 +43,10 @@ class _ShelfPageState extends State<ShelfPage> {
   void initState() {
     super.initState();
     _load();
+    SharedPreferences.getInstance().then((prefs) {
+      final spines = prefs.getBool(_spinesKey);
+      if (mounted && spines != null) setState(() => _spines = spines);
+    });
   }
 
   Future<void> _load() async {
@@ -210,6 +218,11 @@ class _ShelfPageState extends State<ShelfPage> {
         : CoversView(entries: entries, onOpen: _open);
   }
 
+  Future<void> _setSpines(bool spines) async {
+    setState(() => _spines = spines);
+    await (await SharedPreferences.getInstance()).setBool(_spinesKey, spines);
+  }
+
   Widget _bottomBar(BuildContext context) {
     final c = context.shelf;
     return DecoratedBox(
@@ -231,7 +244,7 @@ class _ShelfPageState extends State<ShelfPage> {
                   semanticLabel: label,
                   selected: _spines == spines,
                   padding: EdgeInsets.zero,
-                  onPressed: () => setState(() => _spines = spines),
+                  onPressed: () => _setSpines(spines),
                   child: Icon(icon),
                 ),
                 const SizedBox(width: 8),

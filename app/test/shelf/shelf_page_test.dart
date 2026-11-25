@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/spines_view.dart';
@@ -13,6 +14,8 @@ import 'fake_shelf.dart';
 
 void main() {
   late FakeShelf shelf;
+
+  setUp(() => SharedPreferences.setMockInitialValues({}));
 
   Future<void> pumpShelf(
     WidgetTester tester,
@@ -192,4 +195,19 @@ void main() {
       semantics.dispose();
     });
   }
+
+  testWidgets('remembers covers or spines on the device', (tester) async {
+    await pumpShelf(tester, FakeShelf(three));
+    expect(find.byType(SpinesView), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.view_week_outlined));
+    await tester.pumpAndSettle();
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('shelf.spines'), isTrue);
+
+    // A new start of the app.
+    await tester.pumpWidget(const SizedBox());
+    await pumpShelf(tester, FakeShelf(three));
+    expect(find.byType(SpinesView), findsOneWidget);
+  });
 }
