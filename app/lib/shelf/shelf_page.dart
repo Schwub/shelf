@@ -78,7 +78,11 @@ class _ShelfPageState extends State<ShelfPage> {
   Future<void> _open(ShelfEntry entry) async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute<EntryResult>(
-        builder: (_) => EntryPage(entry: entry, shelf: widget.shelf),
+        builder: (_) => EntryPage(
+          entry: entry,
+          shelf: widget.shelf,
+          groups: _shelf?.groups ?? const [],
+        ),
       ),
     );
     if (!mounted) return;
@@ -98,6 +102,7 @@ class _ShelfPageState extends State<ShelfPage> {
         builder: (_) => SearchPage(
           search: widget.search,
           shelf: widget.shelf,
+          groups: _shelf?.groups ?? const [],
           onShelf: {
             for (final e in _shelf?.entries ?? const <ShelfEntry>[])
               ?e.album.musicbrainzId: e,

@@ -9,6 +9,7 @@ import '../widgets/shelf_board.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
 import 'shelf_data.dart';
+import 'tag_section.dart';
 
 enum EntryResult { added, saved, removed }
 
@@ -20,17 +21,22 @@ class EntryPage extends StatefulWidget {
     super.key,
     required ShelfEntry this.entry,
     required this.shelf,
+    this.groups = const [],
   }) : result = null;
 
   const EntryPage.add({
     super.key,
     required SearchResult this.result,
     required this.shelf,
+    this.groups = const [],
   }) : entry = null;
 
   final ShelfEntry? entry;
   final SearchResult? result;
   final ShelfRepository shelf;
+
+  /// The user's visible tag groups, to tag the album with.
+  final List<TagGroup> groups;
 
   bool get adding => entry == null;
 
@@ -52,6 +58,8 @@ class EntryPage extends StatefulWidget {
 class _EntryPageState extends State<EntryPage> {
   late int? _rating = widget.entry?.rating;
   late final _comment = TextEditingController(text: widget.entry?.comment);
+  late final Set<String> _initialTags = widget.entry?.tagIds ?? const {};
+  late TagChoice _tags = TagChoice(widget.groups, _initialTags);
   bool _saving = false;
   bool _saveFailed = false;
 
@@ -69,7 +77,9 @@ class _EntryPageState extends State<EntryPage> {
 
   bool get _changed =>
       _rating != widget.entry?.rating ||
-      _comment.text.trim() != (widget.entry?.comment ?? '').trim();
+      _comment.text.trim() != (widget.entry?.comment ?? '').trim() ||
+      _tags.chosen.length != _initialTags.length ||
+      !_tags.chosen.containsAll(_initialTags);
 
   Future<void> _save() async {
     if (!widget.adding && !_changed) {
@@ -86,12 +96,15 @@ class _EntryPageState extends State<EntryPage> {
           widget.result!.musicbrainzId,
           rating: _rating,
           comment: _comment.text.trim(),
+          tags: _tags.ordered(_tags.chosen),
         );
       } else {
         await widget.shelf.save(
           widget.entry!.id,
           rating: _rating,
           comment: _comment.text.trim(),
+          removeTags: _initialTags.difference(_tags.chosen),
+          addTags: _tags.ordered(_tags.chosen.difference(_initialTags)),
         );
       }
       if (mounted) {
@@ -201,7 +214,14 @@ class _EntryPageState extends State<EntryPage> {
                             ].join(', '),
                             style: text.bodyMedium!.copyWith(color: c.muted),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
+                          TagSection(
+                            choice: _tags,
+                            onChanged: (t) => setState(() => _tags = t),
+                            onCreate: (group, name) =>
+                                widget.shelf.createTag(group.id, name),
+                          ),
+                          const SizedBox(height: 16),
                           Row(
                             children: [
                               Expanded(child: Text('Rating', style: label)),

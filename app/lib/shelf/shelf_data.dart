@@ -36,6 +36,41 @@ class ShelfEntry {
   final Set<String> tagIds;
 }
 
+@immutable
+class Tag {
+  const Tag({required this.id, required this.groupId, required this.name});
+
+  final String id, groupId, name;
+}
+
+/// One of the user's tag groups with its tags, in their order. A group with
+/// [parentTagId] is a sub-group, shown while that tag is chosen.
+@immutable
+class TagGroup {
+  const TagGroup({
+    required this.id,
+    required this.name,
+    required this.exclusive,
+    this.parentTagId,
+    this.builtin = false,
+    this.tags = const [],
+  });
+
+  final String id, name;
+  final bool exclusive, builtin;
+  final String? parentTagId;
+  final List<Tag> tags;
+
+  TagGroup withTag(Tag tag) => TagGroup(
+    id: id,
+    name: name,
+    exclusive: exclusive,
+    parentTagId: parentTagId,
+    builtin: builtin,
+    tags: [...tags, tag],
+  );
+}
+
 /// A key of the shelf's filter bar: one of the user's tags.
 @immutable
 class ShelfFilter {
@@ -46,13 +81,21 @@ class ShelfFilter {
 
 @immutable
 class Shelf {
-  const Shelf({required this.entries, this.filters = const []});
+  const Shelf({
+    required this.entries,
+    this.filters = const [],
+    this.groups = const [],
+  });
 
   /// Newest first.
   final List<ShelfEntry> entries;
 
   /// In the user's order; "All" is implicit.
   final List<ShelfFilter> filters;
+
+  /// The visible tag groups (hidden ones and their sub-groups left out), in
+  /// the user's order.
+  final List<TagGroup> groups;
 
   /// Entries with [filter]'s tag, or all of them for null ("All").
   List<ShelfEntry> matching(ShelfFilter? filter) => filter == null
@@ -66,13 +109,29 @@ abstract class ShelfRepository {
   Future<Shelf> load();
 
   /// Rating in half stars or null; an empty comment is stored as none.
-  Future<void> save(String entryId, {int? rating, String? comment});
+  /// [addTags] go on in their order (parent tags before their sub-tags),
+  /// after [removeTags] come off.
+  Future<void> save(
+    String entryId, {
+    int? rating,
+    String? comment,
+    Set<String> removeTags = const {},
+    List<String> addTags = const [],
+  });
 
   Future<void> remove(String entryId);
 
   /// Adds the album with this MusicBrainz ID to the shelf: the add-album
   /// function puts it in the shared catalog (with its cover) if needed.
-  Future<void> add(String musicbrainzId, {int? rating, String? comment});
+  Future<void> add(
+    String musicbrainzId, {
+    int? rating,
+    String? comment,
+    List<String> tags = const [],
+  });
+
+  /// A new tag in [groupId]; the name must be new in that group.
+  Future<Tag> createTag(String groupId, String name);
 }
 
 class SupabaseShelfRepository implements ShelfRepository {
@@ -96,16 +155,46 @@ class SupabaseShelfRepository implements ShelfRepository {
           .from('shelf_filters')
           .select('tag_id')
           .order('position', ascending: true),
-      _db.from('tags').select('id, name, group_id'),
-      _db.from('tag_groups').select('id, hidden'),
+      _db
+          .from('tags')
+          .select('id, name, group_id')
+          .order('position', ascending: true),
+      _db
+          .from('tag_groups')
+          .select('id, name, exclusive, parent_tag_id, builtin, hidden')
+          .order('position', ascending: true),
     ).wait;
-    final hidden = {
-      for (final g in groups)
-        if (g['hidden'] == true) g['id'] as String,
+    // A hidden group hides its tags, and so the sub-groups under them.
+    final groupOfTag = {
+      for (final t in tags) t['id'] as String: t['group_id'] as String,
     };
+    final byId = {for (final g in groups) g['id'] as String: g};
+    bool hidden(String groupId) {
+      final g = byId[groupId]!;
+      if (g['hidden'] == true) return true;
+      final parent = g['parent_tag_id'] as String?;
+      return parent != null && hidden(groupOfTag[parent]!);
+    }
+
+    final visible = [
+      for (final g in groups)
+        if (!hidden(g['id']))
+          TagGroup(
+            id: g['id'],
+            name: g['name'],
+            exclusive: g['exclusive'],
+            parentTagId: g['parent_tag_id'],
+            builtin: g['builtin'] != null,
+            tags: [
+              for (final t in tags)
+                if (t['group_id'] == g['id'])
+                  Tag(id: t['id'], groupId: g['id'], name: t['name']),
+            ],
+          ),
+    ];
     final tagNames = {
-      for (final t in tags)
-        if (!hidden.contains(t['group_id'])) t['id'] as String: t['name'],
+      for (final g in visible)
+        for (final t in g.tags) t.id: t.name,
     };
     return Shelf(
       entries: [
@@ -123,6 +212,7 @@ class SupabaseShelfRepository implements ShelfRepository {
           if (tagNames[f['tag_id']] case final String name)
             ShelfFilter(tagId: f['tag_id'], label: name),
       ],
+      groups: visible,
     );
   }
 
@@ -136,25 +226,73 @@ class SupabaseShelfRepository implements ShelfRepository {
   );
 
   @override
-  Future<void> save(String entryId, {int? rating, String? comment}) => _db
-      .from('shelf_entries')
-      .update({'rating': rating, 'comment': _comment(comment)})
-      .eq('id', entryId);
+  Future<void> save(
+    String entryId, {
+    int? rating,
+    String? comment,
+    Set<String> removeTags = const {},
+    List<String> addTags = const [],
+  }) async {
+    await _db
+        .from('shelf_entries')
+        .update({'rating': rating, 'comment': _comment(comment)})
+        .eq('id', entryId);
+    await _setTags(entryId, removeTags, addTags);
+  }
+
+  /// Off before on, so an exclusive group never holds two tags; one at a
+  /// time, so a parent tag is on before its sub-tags (the database checks).
+  Future<void> _setTags(
+    String entryId,
+    Set<String> remove,
+    List<String> add,
+  ) async {
+    if (remove.isNotEmpty) {
+      await _db
+          .from('entry_tags')
+          .delete()
+          .eq('entry_id', entryId)
+          .inFilter('tag_id', remove.toList());
+    }
+    for (final tag in add) {
+      await _db.from('entry_tags').insert({'entry_id': entryId, 'tag_id': tag});
+    }
+  }
 
   static String? _comment(String? c) =>
       c == null || c.trim().isEmpty ? null : c.trim();
 
   @override
-  Future<void> add(String musicbrainzId, {int? rating, String? comment}) async {
+  Future<void> add(
+    String musicbrainzId, {
+    int? rating,
+    String? comment,
+    List<String> tags = const [],
+  }) async {
     final response = await _db.functions.invoke(
       'add-album',
       body: {'musicbrainz_id': musicbrainzId},
     );
-    await _db.from('shelf_entries').insert({
-      'album_id': (response.data as Map<String, dynamic>)['id'],
-      'rating': rating,
-      'comment': _comment(comment),
-    });
+    final entry = await _db
+        .from('shelf_entries')
+        .insert({
+          'album_id': (response.data as Map<String, dynamic>)['id'],
+          'rating': rating,
+          'comment': _comment(comment),
+        })
+        .select('id')
+        .single();
+    await _setTags(entry['id'], const {}, tags);
+  }
+
+  @override
+  Future<Tag> createTag(String groupId, String name) async {
+    final tag = await _db
+        .from('tags')
+        .insert({'group_id': groupId, 'name': name.trim()})
+        .select('id, group_id, name')
+        .single();
+    return Tag(id: tag['id'], groupId: tag['group_id'], name: tag['name']);
   }
 
   @override

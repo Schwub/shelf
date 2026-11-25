@@ -7,6 +7,7 @@ import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/spines_view.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 import 'package:shelf_app/widgets/filter_bar.dart';
+import 'package:shelf_app/widgets/rating_keys.dart';
 import 'package:shelf_app/widgets/rating_meter.dart';
 import 'package:shelf_app/widgets/shelf_key.dart';
 
@@ -136,10 +137,10 @@ void main() {
     await tester.tap(
       find
           .descendant(
-            of: find.byType(EntryPage),
+            of: find.byType(RatingKeys),
             matching: find.byType(ShelfKey),
           )
-          .at(3), // Close is first, then the five rating keys.
+          .at(2), // The third star.
     );
     await tester.enterText(find.byType(TextField), '  Great on vinyl ');
     await tester.pumpAndSettle();
