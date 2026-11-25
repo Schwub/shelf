@@ -1,6 +1,8 @@
 # Add albums by search (TASK-8)
 
-Status: design, waiting for approval.
+Status: built (TASK-8). Decisions from 2026-11-25: covers in our own
+Storage, only the function adds albums, the function deploys to staging,
+`http` for the app's requests, MusicBrainz contact from a setting.
 
 ## Goal
 Find an album on MusicBrainz, see its cover, and add it to the shelf with a
@@ -86,9 +88,19 @@ called by signed-in users only.
   (`supabase functions deploy add-album`) after the migrations.
 - The function needs no secrets beyond what Supabase gives every function.
 
-## Open questions
-1. **User-Agent contact for MusicBrainz:** an email address or a URL that
-   MusicBrainz can use to reach us if the app misbehaves.
-2. **Dropping the albums insert policy** (schema change): OK?
-3. **Deploying the function from the staging workflow** (the project rules
-   say to ask before `functions deploy`): OK for staging?
+## Settings
+- `MUSICBRAINZ_CONTACT` (GitHub repository variable): the contact
+  MusicBrainz asks for. The staging workflow stores it as the function's
+  secret; the Android and web builds pass it with `--dart-define`. Without
+  it, requests go out as plain `shelf/1.0`, which MusicBrainz throttles
+  sooner.
+
+## Verified
+- Against local Supabase, running the function with Deno: an existing album
+  is returned and its missing cover copied (a 500 × 500 JPEG, about 85 KB);
+  a new album is fetched from MusicBrainz, added and its cover stored; a
+  bad ID gives 400; a throttled MusicBrainz (503) gives 502 and adds
+  nothing (now retried once first).
+- The local edge runtime container can't load npm packages in the cloud
+  session (its network proxy isn't trusted there); hosted Supabase and CI
+  are not affected.

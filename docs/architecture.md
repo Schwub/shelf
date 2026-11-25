@@ -9,6 +9,10 @@
   hand it to the app.
 - **Supabase** in `supabase/` (config, migrations, edge functions):
   - Postgres for users, albums, shelf entries, friendships and the feed.
+  - Edge function `add-album` adds albums to the shared catalog from
+    MusicBrainz and copies their covers into the public `covers` bucket;
+    users can't add albums or covers themselves
+    ([features/search.md](features/search.md)).
   - Auth for accounts: email sign-in with a 6-digit code or the link in
     the same email; no passwords. The app reads `SUPABASE_URL` and
     `SUPABASE_PUBLISHABLE_KEY` from `--dart-define` and defaults to the
@@ -101,6 +105,9 @@ One-time staging setup (TASK-21):
 3. Add `[remotes.staging]` with that `project_id`, the staging web URL as
    `site_url` and the preview URLs as redirect URLs to
    `supabase/config.toml`, then run the `staging` workflow.
+4. Repository variable `MUSICBRAINZ_CONTACT`: the contact MusicBrainz asks
+   for (an email address). The `staging` workflow stores it as a function
+   secret; the Android and web builds pass it to the app.
 
 ## Web deploys
 - The `web` workflow builds `flutter build web` in GitHub Actions and
