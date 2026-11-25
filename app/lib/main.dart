@@ -7,6 +7,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth/auth.dart';
 import 'auth/auth_gate.dart';
 import 'search/album_search.dart';
+import 'share/link_resolver.dart';
+import 'share/share_receiver.dart';
+import 'share/shared_link_inbox.dart';
 import 'shelf/shelf_data.dart';
 import 'shelf/shelf_page.dart';
 import 'theme/shelf_theme.dart';
@@ -26,6 +29,7 @@ const _supabaseKey = String.fromEnvironment(
 const _musicBrainzContact = String.fromEnvironment('MUSICBRAINZ_CONTACT');
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   LicenseRegistry.addLicense(() async* {
     for (final font in ['Archivo', 'IBMPlexSans']) {
       yield LicenseEntryWithLineBreaks([
@@ -33,15 +37,20 @@ Future<void> main() async {
       ], await rootBundle.loadString('assets/fonts/$font-OFL.txt'));
     }
   });
+  // Before anything slow, so the link that launches the app isn't missed.
+  final inbox = SharedLinkInbox(sharedLinks());
   final supabase = await Supabase.initialize(
     url: _supabaseUrl,
     publishableKey: _supabaseKey,
   );
+  final client = http.Client();
   runApp(
     ShelfApp(
       auth: SupabaseAuth(supabase.client.auth),
       shelf: SupabaseShelfRepository(supabase.client),
-      search: MusicBrainzSearch(http.Client(), contact: _musicBrainzContact),
+      search: MusicBrainzSearch(client, contact: _musicBrainzContact),
+      links: SupabaseLinkResolver(supabase.client, client),
+      inbox: inbox,
     ),
   );
 }
@@ -52,11 +61,15 @@ class ShelfApp extends StatelessWidget {
     required this.auth,
     required this.shelf,
     required this.search,
+    required this.links,
+    required this.inbox,
   });
 
   final Auth auth;
   final ShelfRepository shelf;
   final AlbumSearch search;
+  final LinkResolver links;
+  final SharedLinkInbox inbox;
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +79,13 @@ class ShelfApp extends StatelessWidget {
       darkTheme: shelfTheme(Brightness.dark),
       home: AuthGate(
         auth: auth,
-        signedIn: ShelfPage(auth: auth, shelf: shelf, search: search),
+        signedIn: ShelfPage(
+          auth: auth,
+          shelf: shelf,
+          search: search,
+          links: links,
+          inbox: inbox,
+        ),
       ),
     );
   }

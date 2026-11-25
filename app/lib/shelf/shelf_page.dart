@@ -7,6 +7,9 @@ import '../auth/sign_out.dart';
 import '../preview/preview_page.dart';
 import '../search/album_search.dart';
 import '../search/search_page.dart';
+import '../share/link_resolver.dart';
+import '../share/resolve_page.dart';
+import '../share/shared_link_inbox.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/shelf_board.dart';
@@ -17,17 +20,22 @@ import 'shelf_data.dart';
 import 'spines_view.dart';
 
 /// The signed-in user's albums as covers or spines, with the filter bar.
+/// Opens links shared into the app once the shelf has loaded.
 class ShelfPage extends StatefulWidget {
   const ShelfPage({
     super.key,
     required this.auth,
     required this.shelf,
     required this.search,
+    required this.links,
+    required this.inbox,
   });
 
   final Auth auth;
   final ShelfRepository shelf;
   final AlbumSearch search;
+  final LinkResolver links;
+  final SharedLinkInbox inbox;
 
   @override
   State<ShelfPage> createState() => _ShelfPageState();
@@ -47,9 +55,13 @@ class _ShelfPageState extends State<ShelfPage> {
   /// Removed but still undoable: hidden until the snackbar closes.
   final _removing = <String>{};
 
+  /// A shared link's screen is open; the next link waits in the inbox.
+  bool _resolving = false;
+
   @override
   void initState() {
     super.initState();
+    widget.inbox.addListener(_openSharedLink);
     _load();
     SharedPreferences.getInstance().then((prefs) {
       final spines = prefs.getBool(_spinesKey);
@@ -65,6 +77,54 @@ class _ShelfPageState extends State<ShelfPage> {
       setState(() => _shelf = shelf);
     } catch (_) {
       if (mounted) setState(() => _failed = true);
+      return;
+    }
+    _openSharedLink();
+  }
+
+  @override
+  void dispose() {
+    widget.inbox.removeListener(_openSharedLink);
+    super.dispose();
+  }
+
+  /// The user's entries by MusicBrainz ID, to open instead of adding twice.
+  Map<String, ShelfEntry> get _onShelf => {
+    for (final e in _shelf?.entries ?? const <ShelfEntry>[])
+      ?e.album.musicbrainzId: e,
+  };
+
+  Future<void> _openSharedLink() async {
+    // Waits for the shelf, which tells which albums are on it already.
+    if (_shelf == null || _resolving || !mounted) return;
+    final link = widget.inbox.take();
+    if (link == null) return;
+    _resolving = true;
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute<EntryResult>(
+        builder: (_) => ResolvePage(
+          link: link,
+          resolver: widget.links,
+          shelf: widget.shelf,
+          search: widget.search,
+          groups: _shelf?.groups ?? const [],
+          onShelf: _onShelf,
+          openEntry: (entry) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Already on your shelf')),
+            );
+            _open(entry);
+          },
+        ),
+      ),
+    );
+    _resolving = false;
+    if (!mounted) return;
+    if (result == null) {
+      _openSharedLink();
+    } else {
+      // Loading opens the next link.
+      await _added(result);
     }
   }
 
@@ -103,14 +163,15 @@ class _ShelfPageState extends State<ShelfPage> {
           search: widget.search,
           shelf: widget.shelf,
           groups: _shelf?.groups ?? const [],
-          onShelf: {
-            for (final e in _shelf?.entries ?? const <ShelfEntry>[])
-              ?e.album.musicbrainzId: e,
-          },
+          onShelf: _onShelf,
         ),
       ),
     );
-    if (!mounted || result == null) return;
+    if (mounted && result != null) await _added(result);
+  }
+
+  /// Reloads after a search or shared link led to [result].
+  Future<void> _added(EntryResult result) async {
     await _load();
     if (result == EntryResult.added && mounted) {
       ScaffoldMessenger.of(context)

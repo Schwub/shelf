@@ -13,6 +13,9 @@
     MusicBrainz and copies their covers into the public `covers` bucket;
     users can't add albums or covers themselves
     ([features/search.md](features/search.md)).
+  - Edge function `resolve-link` turns a shared Spotify or Bandcamp link
+    into a MusicBrainz album, or the page's own data when MusicBrainz
+    doesn't know it ([features/sharing.md](features/sharing.md)).
   - Auth for accounts: email sign-in with a 6-digit code or the link in
     the same email; no passwords. The app reads `SUPABASE_URL` and
     `SUPABASE_PUBLISHABLE_KEY` from `--dart-define` and defaults to the
@@ -26,7 +29,9 @@
 - `app/lib/share/share_receiver.dart` is the only code that imports the
   plugin; it yields the link that launched the app, then links shared while
   it runs. `shared_link.dart` takes the first http(s) URL from shared text
-  (Spotify shares a sentence ending in the URL).
+  (Spotify shares a sentence ending in the URL). `main.dart` puts the links
+  into a `SharedLinkInbox` from the start; My shelf opens them with
+  `ResolvePage` once it has loaded ([features/sharing.md](features/sharing.md)).
 - Android: `SEND` `text/plain` intent filter on `MainActivity`; the plugin
   needs `compileSdk = 37`.
 - iOS: `ShareExtension` target (principal class, no storyboard) subclasses
