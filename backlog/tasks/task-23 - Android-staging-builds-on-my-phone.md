@@ -1,10 +1,10 @@
 ---
 id: TASK-23
 title: Android staging builds on my phone
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-24T10:50:00Z'
-updated_date: '2026-11-24T22:35:00Z'
+updated_date: '2026-11-25T00:03:00Z'
 labels: []
 dependencies:
   - TASK-21
@@ -19,7 +19,7 @@ CI builds a release Android app against staging Supabase on every push to main a
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The build talks to staging Supabase; sign-in works with the code
-- [ ] #2 Each push to main that changes the app publishes a new release that Obtainium installs on the tester's phone
-- [ ] #3 New builds install over the previous one (one staging key); no production key in the repo
+- [x] #1 Each push to main that changes the app publishes a new release that Obtainium installs on the tester's phone
+- [x] #2 New builds install over the previous one (one staging key); no production key in the repo
+- [x] #3 The build talks to staging Supabase; signing in by the email's link works on the phone
 <!-- AC:END -->
