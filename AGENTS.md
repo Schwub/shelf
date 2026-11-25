@@ -11,7 +11,8 @@ aliased to fvm with a different version.
 - Web deploys run in CI (`web` workflow, Cloudflare Pages): `main` goes to
   production, each PR gets a preview URL posted on the PR. No local deploy
   command; setup in `docs/architecture.md`, "Web deploys".
-- Native builds (iOS not in CI; Android also built by the `android` workflow;
+- Native builds (iOS not in CI; Android also built by the `android` workflow
+  on pull requests that change `app/android`, pubspec or `mise.toml`;
   run after changing `app/ios` or `app/android`):
   `mise exec -- flutter build ios --debug --no-codesign` and
   `mise exec -- flutter build apk --debug` (~2.5 min), both in `app/`.

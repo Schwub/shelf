@@ -80,6 +80,11 @@
   The built-in sender only reaches members of the Supabase organization,
   a few emails an hour. Other testers and production need an SMTP sender
   (then the workflow pushes our template again).
+- **CI minutes:** the repository is private, so Actions minutes are limited
+  (2,000 a month on the free plan; used up on 2026-11-25). Workflows run on
+  pull requests and on `main` only, a newer push cancels a pull request's
+  run in progress, and the `android` build runs only when the native side
+  can break (`app/android`, pubspec, `mise.toml`).
 - **Android on staging:** the `android-staging` workflow builds a release
   APK against staging on every push to `main` that touches the app and
   publishes it as a GitHub release (`v1.0.<run>`). Obtainium on the phone
