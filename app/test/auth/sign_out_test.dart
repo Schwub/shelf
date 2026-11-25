@@ -4,7 +4,9 @@ import 'package:shelf_app/auth/auth_gate.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
+import 'package:shelf_app/theme/theme_choice.dart';
 
 import '../shelf/fake_shelf.dart';
 import 'fake_auth.dart';
@@ -18,7 +20,7 @@ void main() {
     auth = FakeAuth(signedIn: true);
     await tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(Brightness.dark),
+        theme: shelfTheme(ShelfColors.tobacco),
         home: AuthGate(
           auth: auth,
           signedIn: ShelfPage(
@@ -27,6 +29,7 @@ void main() {
             search: FakeSearch({}),
             links: FakeLinks(UnsupportedLink()),
             inbox: SharedLinkInbox(const Stream.empty()),
+            theme: ThemeChoice(),
           ),
         ),
       ),

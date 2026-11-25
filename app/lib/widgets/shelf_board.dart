@@ -14,11 +14,11 @@ class ShelfBoard extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Positioned.fill(
+          Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: ShelfColors.teak,
-                border: Border(top: BorderSide(color: Color(0x33FFFFFF))),
+                color: context.shelf.teak,
+                border: const Border(top: BorderSide(color: Color(0x33FFFFFF))),
               ),
             ),
           ),

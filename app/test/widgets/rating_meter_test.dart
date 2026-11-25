@@ -19,7 +19,9 @@ void main() {
   ];
 
   testWidgets('five 6 px bars, half a star fills half a bar', (tester) async {
-    await tester.pumpWidget(themed(const Center(child: RatingMeter(7))));
+    await tester.pumpWidget(
+      themed(const Center(child: RatingMeter(7)), theme: AppTheme.evening),
+    );
     final c = ShelfColors.evening;
 
     final bars = find.descendant(

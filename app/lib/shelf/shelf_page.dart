@@ -12,6 +12,8 @@ import '../tags/tags_page.dart';
 import '../share/resolve_page.dart';
 import '../share/shared_link_inbox.dart';
 import '../theme/shelf_colors.dart';
+import '../theme/theme_choice.dart';
+import '../theme/theme_sheet.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/shelf_board.dart';
 import '../widgets/shelf_key.dart';
@@ -30,6 +32,7 @@ class ShelfPage extends StatefulWidget {
     required this.search,
     required this.links,
     required this.inbox,
+    required this.theme,
   });
 
   final Auth auth;
@@ -37,6 +40,7 @@ class ShelfPage extends StatefulWidget {
   final AlbumSearch search;
   final LinkResolver links;
   final SharedLinkInbox inbox;
+  final ThemeChoice theme;
 
   @override
   State<ShelfPage> createState() => _ShelfPageState();
@@ -406,6 +410,11 @@ class _ShelfPageState extends State<ShelfPage> {
           child: Text('Tags', style: style),
         ),
         PopupMenuItem(
+          value: 'theme',
+          height: 48,
+          child: Text('Theme', style: style),
+        ),
+        PopupMenuItem(
           value: 'sign out',
           height: 48,
           child: Text('Sign out', style: style),
@@ -425,6 +434,8 @@ class _ShelfPageState extends State<ShelfPage> {
         );
         // Names, filters and hidden groups may have changed.
         await _load();
+      case 'theme':
+        await showThemeSheet(context, widget.theme);
       case 'sign out':
         await confirmSignOut(context, widget.auth);
     }

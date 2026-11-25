@@ -18,7 +18,17 @@ five-segment rating meter. Nothing else is decorative: no textures, glows,
 round buttons or illustrations.
 
 ## Colour
-Two themes; the app follows the system setting.
+Three themes, chosen in the ⋮ menu (Theme) and remembered on the device;
+the default is **Tobacco & copper** (2026-11-25, TASK-31). It's warmer and
+calmer than the original: no gradients and no light windows, so the covers
+carry the colour. A chosen key is pressed down, its face takes 14 % of the
+signal colour and its label the signal colour; the primary key and the
+rating bars are flat copper. Mockup:
+[visual/variations/themes-warm.html](visual/variations/themes-warm.html),
+2. Tokens: bg #231812, surface #2E2019, teak #94603F, text #F0E2D2, muted
+#B79E8A, signal #C88A63, off #806B5C, primary key #B4764F (side #7A4A2E).
+The original **Evening** and **Daylight** below stay selectable, with
+their amber-to-coral gradient and light windows.
 
 | Token | Evening | Daylight | Use |
 |---|---|---|---|

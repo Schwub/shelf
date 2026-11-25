@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/auth/auth.dart';
 import 'package:shelf_app/auth/auth_gate.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 
 import 'fake_auth.dart';
@@ -13,7 +14,7 @@ void main() {
     auth = FakeAuth(signedIn: signedIn);
     return tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(Brightness.dark),
+        theme: shelfTheme(ShelfColors.tobacco),
         home: AuthGate(
           auth: auth,
           signedIn: Scaffold(

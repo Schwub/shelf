@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf_app/main.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
+import 'package:shelf_app/theme/theme_choice.dart';
 
 import 'auth/fake_auth.dart';
 import 'shelf/fake_shelf.dart';
@@ -17,6 +18,7 @@ void main() {
         search: FakeSearch({}),
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
+        theme: ThemeChoice(),
       ),
     );
     await tester.pumpAndSettle();
@@ -33,6 +35,7 @@ void main() {
         search: FakeSearch({}),
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
+        theme: ThemeChoice(),
       ),
     );
 
@@ -52,6 +55,7 @@ void main() {
         search: FakeSearch({}),
         links: links,
         inbox: SharedLinkInbox(Stream.value(shared)),
+        theme: ThemeChoice(),
       ),
     );
     await tester.pumpAndSettle();

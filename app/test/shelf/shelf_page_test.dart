@@ -9,7 +9,9 @@ import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/tags/tags_page.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/spines_view.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
+import 'package:shelf_app/theme/theme_choice.dart';
 import 'package:shelf_app/widgets/filter_bar.dart';
 import 'package:shelf_app/widgets/rating_keys.dart';
 import 'package:shelf_app/widgets/rating_meter.dart';
@@ -30,7 +32,7 @@ void main() {
   Future<void> pumpShelf(
     WidgetTester tester,
     FakeShelf fake, {
-    Brightness brightness = Brightness.dark,
+    AppTheme theme = AppTheme.tobacco,
     Uri? shared,
     Resolved? resolved,
   }) async {
@@ -42,13 +44,14 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(brightness),
+        theme: shelfTheme(theme.colors),
         home: ShelfPage(
           auth: FakeAuth(signedIn: true),
           shelf: fake,
           search: FakeSearch({}),
           links: links,
           inbox: inbox,
+          theme: ThemeChoice(),
         ),
       ),
     );
@@ -206,12 +209,12 @@ void main() {
     expect(find.text('2 albums'), findsOneWidget);
   });
 
-  for (final brightness in Brightness.values) {
-    testWidgets('meets the accessibility guidelines ($brightness)', (
+  for (final theme in AppTheme.values) {
+    testWidgets('meets the accessibility guidelines (${theme.label})', (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
-      await pumpShelf(tester, FakeShelf(three), brightness: brightness);
+      await pumpShelf(tester, FakeShelf(three), theme: theme);
 
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));

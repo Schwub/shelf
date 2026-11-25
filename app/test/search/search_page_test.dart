@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/search/search_page.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf_data.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 
 import '../shelf/fake_shelf.dart';
@@ -30,7 +31,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(Brightness.dark),
+        theme: shelfTheme(ShelfColors.tobacco),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async {
@@ -75,6 +76,40 @@ void main() {
     expect(find.text('OK Computer'), findsOneWidget);
     expect(find.text('Kid A'), findsOneWidget);
     expect(find.text('Radiohead · 1997'), findsNWidgets(2));
+  });
+
+  testWidgets('shows a spinner from the first letter, searching after 0.5 s', (
+    tester,
+  ) async {
+    await pumpSearch(tester);
+
+    await tester.enterText(find.byType(TextField), 'radiohead');
+    await tester.pump();
+    expect(find.bySemanticsLabel('Searching'), findsWidgets);
+    await tester.pump(const Duration(milliseconds: 499));
+    expect(search.queries, isEmpty);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pumpAndSettle();
+
+    expect(search.queries, ['radiohead']);
+    expect(find.bySemanticsLabel('Searching'), findsNothing);
+  });
+
+  testWidgets('typing back to the last search stops the spinner', (
+    tester,
+  ) async {
+    await pumpSearch(tester);
+    await type(tester, 'radiohead');
+
+    await tester.enterText(find.byType(TextField), 'radiohea');
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'radiohead');
+    await tester.pump(SearchPage.pause);
+    await tester.pumpAndSettle();
+
+    expect(search.queries, ['radiohead']);
+    expect(find.bySemanticsLabel('Searching'), findsNothing);
+    expect(find.text('OK Computer'), findsOneWidget);
   });
 
   testWidgets('no results says so', (tester) async {

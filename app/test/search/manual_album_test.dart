@@ -8,6 +8,7 @@ import 'package:shelf_app/search/manual_album_page.dart';
 import 'package:shelf_app/search/search_page.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf_data.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 
 import '../shelf/fake_shelf.dart';
@@ -32,7 +33,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(Brightness.dark),
+        theme: shelfTheme(ShelfColors.tobacco),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async => outcome = await Navigator.of(context).push(
@@ -141,7 +142,7 @@ void main() {
     shelf = FakeShelf([]);
     await tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(Brightness.dark),
+        theme: shelfTheme(ShelfColors.tobacco),
         home: SearchPage(search: search, shelf: shelf, onShelf: const {}),
       ),
     );

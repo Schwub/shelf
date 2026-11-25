@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/preview/preview_page.dart';
 
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 
 void main() {
@@ -16,7 +17,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: shelfTheme(Brightness.light),
+          theme: shelfTheme(ShelfColors.daylight),
           home: const PreviewPage(),
         ),
       );

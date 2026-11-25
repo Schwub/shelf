@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 import 'package:shelf_app/widgets/shelf_key.dart';
 
@@ -20,7 +21,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
-        theme: shelfTheme(Brightness.dark),
+        theme: shelfTheme(ShelfColors.tobacco),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async {

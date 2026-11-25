@@ -30,7 +30,9 @@ class SearchPage extends StatefulWidget {
   final List<TagGroup> groups;
 
   /// Searching starts this long after typing stops.
-  static const pause = Duration(milliseconds: 300);
+  /// Typing pause before a search, so MusicBrainz isn't asked for every
+  /// few letters.
+  static const pause = Duration(milliseconds: 500);
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -42,6 +44,9 @@ class _SearchPageState extends State<SearchPage> {
   String _searched = '';
   List<SearchResult>? _results;
   bool _loading = false, _failed = false;
+
+  /// The newest search is waiting for its answer.
+  bool _running = false;
 
   /// Answers to older queries that arrive late are dropped.
   int _request = 0;
@@ -61,7 +66,12 @@ class _SearchPageState extends State<SearchPage> {
 
   void _typed() {
     final text = _query.text.trim();
-    if (text == _searched) return;
+    if (text == _searched) {
+      // Typed back to what's shown (or still being searched).
+      _timer?.cancel();
+      if (!_running && _loading) setState(() => _loading = false);
+      return;
+    }
     _timer?.cancel();
     if (text.isEmpty) {
       setState(() {
@@ -71,6 +81,11 @@ class _SearchPageState extends State<SearchPage> {
       });
       return;
     }
+    // Searching shows from the first letter, through the pause.
+    setState(() {
+      _loading = true;
+      _failed = false;
+    });
     _timer = Timer(SearchPage.pause, () => _run(text));
   }
 
@@ -78,7 +93,7 @@ class _SearchPageState extends State<SearchPage> {
     final request = ++_request;
     setState(() {
       _searched = text;
-      _loading = true;
+      _loading = _running = true;
       _failed = false;
     });
     try {
@@ -86,12 +101,12 @@ class _SearchPageState extends State<SearchPage> {
       if (!mounted || request != _request) return;
       setState(() {
         _results = results;
-        _loading = false;
+        _loading = _running = false;
       });
     } catch (_) {
       if (!mounted || request != _request) return;
       setState(() {
-        _loading = false;
+        _loading = _running = false;
         _failed = true;
       });
     }
@@ -184,6 +199,20 @@ class _SearchPageState extends State<SearchPage> {
         constraints: const BoxConstraints(minHeight: 48),
         contentPadding: const EdgeInsets.all(14),
         prefixIcon: Icon(Icons.search, size: 18, color: c.muted),
+        suffixIcon: _loading
+            ? Padding(
+                padding: const EdgeInsets.all(15),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: c.signal,
+                  semanticsLabel: 'Searching',
+                ),
+              )
+            : null,
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 48,
+          maxHeight: 48,
+        ),
         prefixIconConstraints: const BoxConstraints(minWidth: 38),
         border: border(c.line),
         enabledBorder: border(c.line),
