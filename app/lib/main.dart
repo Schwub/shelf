@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth/auth.dart';
 import 'auth/auth_gate.dart';
 import 'search/album_search.dart';
+import 'search/musicbrainz.dart';
 import 'share/link_resolver.dart';
 import 'share/share_receiver.dart';
 import 'share/shared_link_inbox.dart';
@@ -45,14 +46,15 @@ Future<void> main() async {
     publishableKey: _supabaseKey,
   );
   final client = http.Client();
+  final musicBrainz = MusicBrainz(client, contact: _musicBrainzContact);
   runApp(
     ShelfApp(
       auth: SupabaseAuth(supabase.client.auth),
       shelf: SupabaseShelfRepository(
         supabase.client,
-        MusicBrainzTracks(client, contact: _musicBrainzContact),
+        MusicBrainzTracks(musicBrainz),
       ),
-      search: MusicBrainzSearch(client, contact: _musicBrainzContact),
+      search: MusicBrainzSearch(musicBrainz),
       links: SupabaseLinkResolver(supabase.client, client),
       inbox: inbox,
     ),

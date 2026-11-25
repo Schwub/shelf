@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../search/album_search.dart';
+import '../search/musicbrainz.dart';
 import '../shelf/shelf_data.dart';
 
 /// Track lists to suggest for an album. An interface so the screens can be
@@ -14,31 +14,17 @@ abstract class TrackSource {
 }
 
 class MusicBrainzTracks implements TrackSource {
-  MusicBrainzTracks(
-    this._client, {
-    String contact = '',
-    this.retryAfter = const Duration(milliseconds: 1100),
-  }) : _headers = musicBrainzHeaders(contact);
+  MusicBrainzTracks(this._musicBrainz);
 
-  final http.Client _client;
-  final Map<String, String> _headers;
-
-  /// MusicBrainz allows one request a second; it answers 503 otherwise.
-  final Duration retryAfter;
+  final MusicBrainz _musicBrainz;
 
   Future<Map<String, dynamic>> _get(
     String path,
     Map<String, String> query,
   ) async {
-    final url = Uri.https('musicbrainz.org', '/ws/2/$path', {
-      ...query,
-      'fmt': 'json',
-    });
-    var response = await _client.get(url, headers: _headers);
-    if (response.statusCode == 503) {
-      await Future<void>.delayed(retryAfter);
-      response = await _client.get(url, headers: _headers);
-    }
+    final response = await _musicBrainz.get(
+      Uri.https('musicbrainz.org', '/ws/2/$path', {...query, 'fmt': 'json'}),
+    );
     if (response.statusCode != 200) {
       throw http.ClientException('MusicBrainz answered ${response.statusCode}');
     }
@@ -57,7 +43,6 @@ class MusicBrainzTracks implements TrackSource {
             as List;
     final id = pickRelease(releases);
     if (id == null) return const [];
-    await Future<void>.delayed(retryAfter);
     final release = await _get('release/$id', {'inc': 'recordings'});
     return [
       for (final medium in release['media'] as List)

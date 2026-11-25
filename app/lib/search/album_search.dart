@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import 'musicbrainz.dart';
+
 /// An album found on MusicBrainz (a release group).
 @immutable
 class SearchResult {
@@ -29,19 +31,14 @@ abstract class AlbumSearch {
   Future<List<SearchResult>> search(String query);
 }
 
-/// The headers MusicBrainz asks for: a User-Agent with a contact. Browsers
-/// don't let a page set it.
-Map<String, String> musicBrainzHeaders(String contact) => {
-  if (!kIsWeb)
-    'User-Agent': contact.isEmpty ? 'shelf/1.0' : 'shelf/1.0 ( $contact )',
-};
-
 class MusicBrainzSearch implements AlbumSearch {
-  MusicBrainzSearch(this._client, {String contact = ''})
-    : _headers = musicBrainzHeaders(contact);
+  MusicBrainzSearch(this._musicBrainz);
 
-  final http.Client _client;
-  final Map<String, String> _headers;
+  final MusicBrainz _musicBrainz;
+
+  /// Only the newest search is sent; older ones still waiting for their
+  /// turn are dropped.
+  int _latest = 0;
 
   /// Lucene's special characters, which MusicBrainz queries would otherwise
   /// read as syntax ("AC/DC", "Sigur Rós: …").
@@ -59,13 +56,14 @@ class MusicBrainzSearch implements AlbumSearch {
 
   @override
   Future<List<SearchResult>> search(String text) async {
-    final response = await _client.get(
+    final search = ++_latest;
+    final response = await _musicBrainz.get(
       Uri.https('musicbrainz.org', '/ws/2/release-group', {
         'query': query(text),
         'fmt': 'json',
         'limit': '25',
       }),
-      headers: _headers,
+      wanted: () => search == _latest,
     );
     if (response.statusCode != 200) {
       throw http.ClientException('MusicBrainz answered ${response.statusCode}');

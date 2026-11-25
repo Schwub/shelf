@@ -41,8 +41,14 @@ As in [../design/flows.md](../design/flows.md), "Add by search":
   `GET https://musicbrainz.org/ws/2/release-group?query=<q> AND primarytype:album&fmt=json&limit=25`.
 - Each result: release group ID, title, artist credit, first release year.
 - MusicBrainz asks every client for a User-Agent with a contact and allows
-  about one request per second per IP. The 300 ms pause and one request in
-  flight keep a single user well below that.
+  about one request per second per IP, answering 503 beyond that. The
+  300 ms pause alone wasn't enough: typing with short pauses got 503s,
+  shown as errors (fixed 2026-11-25, TASK-33). All MusicBrainz requests now
+  go through `app/lib/search/musicbrainz.dart`: one at a time, at most one
+  per 1.1 s, a 503 tried again twice, and a search replaced by a newer one
+  dropped before it's sent. Shared mobile IPs make 503s more likely, and
+  MusicBrainz is stricter with clients that send no contact
+  (`MUSICBRAINZ_CONTACT`).
 - Thumbnails in the results come straight from the Cover Art Archive
   (`/release-group/<id>/front-250`). Only added albums are copied.
 - Web: browsers don't let the app set the User-Agent. MusicBrainz still
