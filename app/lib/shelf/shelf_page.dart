@@ -8,6 +8,7 @@ import '../preview/preview_page.dart';
 import '../search/album_search.dart';
 import '../search/search_page.dart';
 import '../share/link_resolver.dart';
+import '../tags/tags_page.dart';
 import '../share/resolve_page.dart';
 import '../share/shared_link_inbox.dart';
 import '../theme/shelf_colors.dart';
@@ -257,7 +258,7 @@ class _ShelfPageState extends State<ShelfPage> {
   }
 
   Widget _filterBar(Shelf shelf) {
-    final visible = Shelf(entries: _visible, filters: shelf.filters);
+    final visible = Shelf(entries: _visible, allFilters: shelf.filters);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: FilterBar(
@@ -288,7 +289,7 @@ class _ShelfPageState extends State<ShelfPage> {
       );
     }
     if (shelf == null) return const _Loading();
-    final visible = Shelf(entries: _visible, filters: shelf.filters);
+    final visible = Shelf(entries: _visible, allFilters: shelf.filters);
     final filter = _filter;
     final entries = visible.matching(filter);
     if (visible.entries.isEmpty) {
@@ -400,6 +401,11 @@ class _ShelfPageState extends State<ShelfPage> {
             child: Text('Components', style: style),
           ),
         PopupMenuItem(
+          value: 'tags',
+          height: 48,
+          child: Text('Tags', style: style),
+        ),
+        PopupMenuItem(
           value: 'sign out',
           height: 48,
           child: Text('Sign out', style: style),
@@ -411,6 +417,14 @@ class _ShelfPageState extends State<ShelfPage> {
       case 'components':
         await Navigator.of(context)
             .push(MaterialPageRoute<void>(builder: (_) => const PreviewPage()));
+      case 'tags':
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => TagsPage(shelf: widget.shelf),
+          ),
+        );
+        // Names, filters and hidden groups may have changed.
+        await _load();
       case 'sign out':
         await confirmSignOut(context, widget.auth);
     }

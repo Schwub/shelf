@@ -1,6 +1,13 @@
 # Tags
 
-Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor, filters and import not built (TASK-17 to TASK-19).
+Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor built (TASK-17); filters and import not built (TASK-18, TASK-19).
+
+Tag editor (TASK-17): `app/lib/tags/` (Tags list, Tag group, tag actions
+sheet), reached from My shelf's ⋮ menu and "Edit tags" on the album entry,
+which keeps the album's draft. The database enforces every rule; the app
+turns its refusals into the designed messages (`DuplicateName`,
+`SeveralTags` in `shelf_data.dart`) and works out counts and what a delete
+takes along from the loaded shelf (`Shelf.allGroups`, `allFilters`).
 
 ## Goal
 One tag system for every media type. Tags live in groups; a group is

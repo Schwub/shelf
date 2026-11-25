@@ -1,7 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../search/album_search.dart';
+import '../tags/tags_page.dart';
 import '../theme/shelf_colors.dart';
+import '../widgets/confirm_dialog.dart';
 import '../widgets/cover.dart';
 import '../widgets/help_line.dart';
 import '../widgets/rating_keys.dart';
@@ -79,7 +81,7 @@ class EntryPage extends StatefulWidget {
 class _EntryPageState extends State<EntryPage> {
   late int? _rating = widget.entry?.rating;
   late final _comment = TextEditingController(text: widget.entry?.comment);
-  late final Set<String> _initialTags = widget.entry?.tagIds ?? const {};
+  late Set<String> _initialTags = widget.entry?.tagIds ?? const {};
   late TagChoice _tags = TagChoice(widget.groups, _initialTags);
   bool _saving = false;
   bool _saveFailed = false;
@@ -156,57 +158,52 @@ class _EntryPageState extends State<EntryPage> {
     }
   }
 
-  Future<bool> _confirmDiscard() async {
-    final c = context.shelf;
-    final text = Theme.of(context).textTheme;
-    final discard = await showDialog<bool>(
-      context: context,
-      barrierColor: const Color(0x73000000),
-      builder: (context) => Dialog(
-        backgroundColor: c.bg,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: BorderSide(color: c.line),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Discard changes?', style: text.titleLarge),
-              const SizedBox(height: 8),
-              Text(
-                "Your changes to this entry won't be saved.",
-                style: text.bodyMedium!.copyWith(color: c.muted),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: ShelfKey(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Keep editing'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ShelfKey(
-                      primary: true,
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text('Discard'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+  /// Opens the tag editor; the draft stays, on the edited tags.
+  Future<void> _editTags() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => TagsPage(shelf: widget.shelf)),
     );
-    return discard ?? false;
+    final Shelf shelf;
+    try {
+      shelf = await widget.shelf.load();
+    } catch (_) {
+      return; // The tags shown stay as they were.
+    }
+    if (!mounted) return;
+    final existing = {
+      for (final g in shelf.allGroups)
+        for (final t in g.tags) t.id,
+    };
+    // Tags on the album from a hidden group stay on it.
+    final shown = {
+      for (final g in shelf.groups)
+        for (final t in g.tags) t.id,
+    };
+    final chosen = {
+      for (final id in _tags.chosen.intersection(existing))
+        if (!shown.contains(id)) id,
+    };
+    for (final g in shelf.groups) {
+      final inGroup = [
+        for (final t in g.tags)
+          if (_tags.chosen.contains(t.id)) t.id,
+      ];
+      // A group made one per album keeps the first of its chosen tags.
+      chosen.addAll(g.exclusive ? inGroup.take(1) : inGroup);
+    }
+    setState(() {
+      _initialTags = _initialTags.intersection(existing);
+      _tags = TagChoice(shelf.groups, chosen);
+    });
   }
+
+  Future<bool> _confirmDiscard() => confirm(
+    context,
+    title: 'Discard changes?',
+    text: "Your changes to this entry won't be saved.",
+    cancel: 'Keep editing',
+    confirm: 'Discard',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -248,6 +245,7 @@ class _EntryPageState extends State<EntryPage> {
                             onChanged: (t) => setState(() => _tags = t),
                             onCreate: (group, name) =>
                                 widget.shelf.createTag(group.id, name),
+                            onEditTags: _editTags,
                           ),
                           const SizedBox(height: 16),
                           Row(
