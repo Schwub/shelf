@@ -29,12 +29,19 @@ abstract class AlbumSearch {
   Future<List<SearchResult>> search(String query);
 }
 
+/// The headers MusicBrainz asks for: a User-Agent with a contact. Browsers
+/// don't let a page set it.
+Map<String, String> musicBrainzHeaders(String contact) => {
+  if (!kIsWeb)
+    'User-Agent': contact.isEmpty ? 'shelf/1.0' : 'shelf/1.0 ( $contact )',
+};
+
 class MusicBrainzSearch implements AlbumSearch {
   MusicBrainzSearch(this._client, {String contact = ''})
-    : _agent = contact.isEmpty ? 'shelf/1.0' : 'shelf/1.0 ( $contact )';
+    : _headers = musicBrainzHeaders(contact);
 
   final http.Client _client;
-  final String _agent;
+  final Map<String, String> _headers;
 
   /// Lucene's special characters, which MusicBrainz queries would otherwise
   /// read as syntax ("AC/DC", "Sigur Rós: …").
@@ -58,9 +65,7 @@ class MusicBrainzSearch implements AlbumSearch {
         'fmt': 'json',
         'limit': '25',
       }),
-      // MusicBrainz asks for a User-Agent with a contact; browsers don't let
-      // a page set it.
-      headers: {if (!kIsWeb) 'User-Agent': _agent},
+      headers: _headers,
     );
     if (response.statusCode != 200) {
       throw http.ClientException('MusicBrainz answered ${response.statusCode}');

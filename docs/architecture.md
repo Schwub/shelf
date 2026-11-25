@@ -60,6 +60,9 @@
   groups, exclusive or multiple choice, sub-groups under a tag, built-in
   groups Collection and Listening shared in meaning across users; suggested
   groups created for each new user. Details: `docs/features/tags.md`.
+- `entry_tracks`: the user's own track list of a shelf entry, with a
+  `favorite` flag per track; replaced as a whole by `set_entry_tracks` (one
+  transaction). Owner-only. Details: `docs/features/tracks.md`.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 

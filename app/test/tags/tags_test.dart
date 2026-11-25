@@ -45,6 +45,7 @@ void main() {
 
   Future<void> tapText(WidgetTester tester, String text) async {
     await tester.ensureVisible(find.text(text).last);
+    await tester.pumpAndSettle();
     await tester.tap(find.text(text).last);
     await tester.pumpAndSettle();
   }

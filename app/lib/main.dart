@@ -13,6 +13,7 @@ import 'share/shared_link_inbox.dart';
 import 'shelf/shelf_data.dart';
 import 'shelf/shelf_page.dart';
 import 'theme/shelf_theme.dart';
+import 'tracks/track_source.dart';
 
 // Defaults: the local Supabase (`supabase start`). Builds for the hosted
 // project pass both with --dart-define.
@@ -47,7 +48,10 @@ Future<void> main() async {
   runApp(
     ShelfApp(
       auth: SupabaseAuth(supabase.client.auth),
-      shelf: SupabaseShelfRepository(supabase.client),
+      shelf: SupabaseShelfRepository(
+        supabase.client,
+        MusicBrainzTracks(client, contact: _musicBrainzContact),
+      ),
       search: MusicBrainzSearch(client, contact: _musicBrainzContact),
       links: SupabaseLinkResolver(supabase.client, client),
       inbox: inbox,

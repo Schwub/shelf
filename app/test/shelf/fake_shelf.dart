@@ -93,6 +93,23 @@ class FakeShelf implements ShelfRepository {
 
   /// Makes the next tag editor change fail.
   bool failEdit = false;
+
+  /// MusicBrainz track lists by MusicBrainz ID; [failTracks] makes the next
+  /// lookup fail.
+  Map<String, List<Track>> trackLists = {};
+  bool failTracks = false;
+  final trackLookups = <String>[];
+
+  @override
+  Future<List<Track>> trackList(String musicbrainzId) async {
+    trackLookups.add(musicbrainzId);
+    if (failTracks) {
+      failTracks = false;
+      throw Exception('offline');
+    }
+    return trackLists[musicbrainzId] ?? const [];
+  }
+
   int loads = 0;
 
   @override
@@ -116,6 +133,7 @@ class FakeShelf implements ShelfRepository {
     String? comment,
     Set<String> removeTags = const {},
     List<String> addTags = const [],
+    List<Track>? tracks,
   }) async {
     if (failSave) {
       failSave = false;
@@ -131,6 +149,7 @@ class FakeShelf implements ShelfRepository {
       rating: rating,
       comment: comment == null || comment.isEmpty ? null : comment,
       tagIds: {...e.tagIds.difference(removeTags), ...addTags},
+      tracks: tracks ?? e.tracks,
     );
   }
 
@@ -140,6 +159,7 @@ class FakeShelf implements ShelfRepository {
     int? rating,
     String? comment,
     List<String> tags = const [],
+    List<Track> tracks = const [],
   }) async {
     if (failAdd) {
       failAdd = false;
@@ -159,6 +179,7 @@ class FakeShelf implements ShelfRepository {
         rating: rating,
         comment: comment == null || comment.isEmpty ? null : comment,
         tagIds: tags.toSet(),
+        tracks: tracks,
       ),
     );
   }
@@ -171,6 +192,7 @@ class FakeShelf implements ShelfRepository {
     int? rating,
     String? comment,
     List<String> tags = const [],
+    List<Track> tracks = const [],
   }) async {
     if (failAdd) {
       failAdd = false;
@@ -190,6 +212,7 @@ class FakeShelf implements ShelfRepository {
         ),
         rating: rating,
         tagIds: tags.toSet(),
+        tracks: tracks,
       ),
     );
   }
@@ -298,6 +321,7 @@ class FakeShelf implements ShelfRepository {
         rating: e.rating,
         comment: e.comment,
         tagIds: e.tagIds.difference(ids),
+        tracks: e.tracks,
       );
     }
     filters.removeWhere((f) => ids.contains(f.tagId));

@@ -176,6 +176,8 @@ void main() {
 
     await tester.tap(find.text('Blue'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Remove from shelf'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Remove from shelf'));
     await tester.pumpAndSettle();
     expect(find.text('Blue'), findsNothing);
@@ -191,6 +193,8 @@ void main() {
     await pumpShelf(tester, FakeShelf(three));
 
     await tester.tap(find.text('Blue'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Remove from shelf'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Remove from shelf'));
     await tester.pumpAndSettle();
