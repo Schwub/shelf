@@ -16,6 +16,7 @@ class SearchPage extends StatefulWidget {
     required this.search,
     required this.shelf,
     required this.onShelf,
+    this.groups = const [],
   });
 
   final AlbumSearch search;
@@ -23,6 +24,9 @@ class SearchPage extends StatefulWidget {
 
   /// The user's entries by MusicBrainz ID, to mark and edit them.
   final Map<String, ShelfEntry> onShelf;
+
+  /// The user's tag groups, for the album entry.
+  final List<TagGroup> groups;
 
   /// Searching starts this long after typing stops.
   static const pause = Duration(milliseconds: 300);
@@ -97,8 +101,16 @@ class _SearchPageState extends State<SearchPage> {
     final outcome = await Navigator.of(context).push(
       MaterialPageRoute<EntryResult>(
         builder: (_) => entry != null
-            ? EntryPage(entry: entry, shelf: widget.shelf)
-            : EntryPage.add(result: result, shelf: widget.shelf),
+            ? EntryPage(
+                entry: entry,
+                shelf: widget.shelf,
+                groups: widget.groups,
+              )
+            : EntryPage.add(
+                result: result,
+                shelf: widget.shelf,
+                groups: widget.groups,
+              ),
       ),
     );
     if (outcome != null && mounted) Navigator.of(context).pop(outcome);

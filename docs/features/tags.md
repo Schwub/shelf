@@ -1,6 +1,6 @@
 # Tags
 
-Status: data model and schema done (56 pgTAP checks); wireframes and visual mockups done; screens not built (TASK-16 to TASK-19).
+Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor, filters and import not built (TASK-17 to TASK-19).
 
 ## Goal
 One tag system for every media type. Tags live in groups; a group is
