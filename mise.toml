@@ -41,6 +41,16 @@ run = "flutter test"
 description = "Run the database tests in supabase/tests (needs Docker)"
 run = "supabase db start && supabase db reset && supabase test db"
 
+[tasks."test:integration"]
+description = "Run the app's Supabase repository against a local Supabase (needs Docker)"
+run = """
+supabase start -x studio,imgproxy,mailpit,realtime,logflare,vector,supavisor,edge-runtime,storage-api,postgres-meta
+supabase db reset
+eval "$(supabase status -o env | grep -E '^(API_URL|SERVICE_ROLE_KEY|PUBLISHABLE_KEY)=')"
+export API_URL SERVICE_ROLE_KEY PUBLISHABLE_KEY
+cd app && flutter test test_integration
+"""
+
 [tasks."check:build"]
 description = "Build the web app (iOS and Android need local SDKs)"
 dir = "app"

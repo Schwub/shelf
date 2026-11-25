@@ -8,6 +8,12 @@ aliased to fvm with a different version.
 - Full check before finishing: `mise run check` (format, analyze, tests,
   web build; ~30 s warm, a few minutes cold)
 - Database tests (Docker; run after changing `supabase/`): `mise run test:db`
+- Integration tests (Docker; run after changing `app/lib/shelf/shelf_data.dart`
+  or migrations): `mise run test:integration` (the Supabase repository against
+  a local Supabase, `app/test_integration/`)
+- Cloud sessions: use the "shelf" environment (its setup script installs the
+  tools). Docker isn't started for you: if `docker info` fails, run
+  `dockerd >/tmp/dockerd.log 2>&1 &` and wait a few seconds.
 - Web deploys run in CI (`web` workflow, Cloudflare Pages): `main` goes to
   production, each PR gets a preview URL posted on the PR. No local deploy
   command; setup in `docs/architecture.md`, "Web deploys".

@@ -35,3 +35,38 @@ Only what would help other projects; project-specific fixes go in AGENTS.md.
   mistakes. Suggestion: before showing a design, define a radius and
   spacing scale and check every element against it (shape, 4/8 px grid,
   shared left edge), and avoid asymmetric control shapes unless asked.
+- 2026-11-25 – `.github/workflows/check.yml` (managed): runs on every push
+  and every pull request, so each push to a PR branch runs twice, and
+  nothing cancels superseded runs. This project used up GitHub's 2,000 free
+  Actions minutes in three days (private repo). I edited check.yml to fix it,
+  which breaks the "don't edit managed files" rule; `agentic:update` will
+  undo it. Suggestion: in the blueprint's check.yml, `push: branches: [main]`
+  plus `pull_request`, and `concurrency` with
+  `cancel-in-progress: ${{ github.event_name == 'pull_request' }}`; and in
+  project-setup, run slow native builds only on paths that can break them.
+- 2026-11-25 – Cloud sessions: one session branch plus a stop hook that
+  insists on pushing unpushed commits bundles unrelated work into an open PR
+  (here five tasks in one PR). Suggestion: let deliver use one branch per
+  PR, or let the hook accept unpushed commits while a PR from the branch is
+  open.
+- 2026-11-25 – Cloud sessions: every command needed a long prefix (Supabase
+  CLI from a scratch folder, `MISE_DISABLE_TOOLS`, restarting dockerd).
+  Suggestion: project-setup proposes a cloud environment with a setup script
+  (installs mise and the tools; this project's is the "shelf" environment)
+  and an AGENTS.md line on starting Docker.
+- 2026-11-25 – Verification: checks against a real local Supabase were
+  written as throwaway tests six times and found real bugs (a nested order
+  PostgREST ignored, record equality on sets). Suggestion: project-setup
+  adds an integration test task next to the unit and database tests.
+- 2026-11-25 – frontend-design / ux-design: nothing compares the built
+  screens with the mockups, so look and mockup drift apart and the agent
+  asks the user to check on their phone. Suggestion: a visual-check step
+  (screenshots of the web build against local data) before a UI task is
+  done; this project adds a `visual-check` skill.
+- 2026-11-25 – Skills built here that other projects could use:
+  `visual-check` (screenshots of the web build against local Supabase,
+  signed in by a one-time link, tapping through screens by their
+  accessibility labels) and `release` (merge, database before app on
+  staging, report the published version). `theme-variations` is specific to
+  this app's ShelfColors but its approach (mockups from JSON, then generated
+  code checked by contrast tests) carries over.
