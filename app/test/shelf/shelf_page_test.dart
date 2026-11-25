@@ -6,6 +6,7 @@ import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/resolve_page.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
+import 'package:shelf_app/tags/tags_page.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/spines_view.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
@@ -228,6 +229,23 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await pumpShelf(tester, FakeShelf(three));
     expect(find.byType(SpinesView), findsOneWidget);
+  });
+
+  testWidgets('the menu opens the tags, and the shelf reloads after', (
+    tester,
+  ) async {
+    await pumpShelf(tester, FakeShelf(three));
+    final loads = shelf.loads;
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tags'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TagsPage), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await tester.pumpAndSettle();
+    expect(shelf.loads, loads + 2);
   });
 
   testWidgets('Add album opens the search', (tester) async {

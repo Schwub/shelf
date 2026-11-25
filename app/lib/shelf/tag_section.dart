@@ -60,6 +60,7 @@ class TagSection extends StatelessWidget {
     required this.choice,
     required this.onChanged,
     required this.onCreate,
+    required this.onEditTags,
   });
 
   final TagChoice choice;
@@ -67,6 +68,9 @@ class TagSection extends StatelessWidget {
 
   /// Creates a tag in a group (from the Add sheet) and returns it.
   final Future<Tag> Function(TagGroup group, String name) onCreate;
+
+  /// Opens the tag editor.
+  final VoidCallback onEditTags;
 
   static const showAllUpTo = 6;
 
@@ -77,6 +81,14 @@ class TagSection extends StatelessWidget {
       children: [
         for (final g in choice.groups)
           if (g.parentTagId == null) ..._group(context, g),
+        // Space around it, so it doesn't read as part of the last group.
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _TextLink(label: 'Edit tags', onPressed: onEditTags),
+          ),
+        ),
       ],
     );
   }
@@ -117,8 +129,10 @@ class TagSection extends StatelessWidget {
               ),
             ),
             if (!group.exclusive)
-              _AddLink(
-                group: group,
+              _TextLink(
+                label: 'Add',
+                icon: Icons.add,
+                semanticLabel: 'Add ${group.name.toLowerCase()}',
                 onPressed: () => _openSheet(context, group),
               ),
           ],
@@ -190,10 +204,19 @@ class TagSection extends StatelessWidget {
   }
 }
 
-class _AddLink extends StatelessWidget {
-  const _AddLink({required this.group, required this.onPressed});
+/// An underlined muted link with a 48 px touch area: "Add" on a group's
+/// label line, "Edit tags" under the groups.
+class _TextLink extends StatelessWidget {
+  const _TextLink({
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.semanticLabel,
+  });
 
-  final TagGroup group;
+  final String label;
+  final IconData? icon;
+  final String? semanticLabel;
   final VoidCallback onPressed;
 
   @override
@@ -206,7 +229,7 @@ class _AddLink extends StatelessWidget {
     );
     return Semantics(
       button: true,
-      label: 'Add ${group.name.toLowerCase()}',
+      label: semanticLabel ?? label,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -217,9 +240,11 @@ class _AddLink extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Icon(Icons.add, size: 16, color: c.muted),
-              const SizedBox(width: 4),
-              Text('Add', style: style),
+              if (icon != null) ...[
+                Icon(icon, size: 16, color: c.muted),
+                const SizedBox(width: 4),
+              ],
+              Text(label, style: style),
             ],
           ),
         ),
