@@ -1,10 +1,10 @@
 ---
 id: TASK-8
 title: Add albums by search
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-23T17:42:00Z'
-updated_date: '2026-11-25T08:20:00Z'
+updated_date: '2026-11-25T08:24:00Z'
 labels: []
 dependencies:
   - TASK-5
