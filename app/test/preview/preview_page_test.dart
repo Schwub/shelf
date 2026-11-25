@@ -7,11 +7,11 @@ import 'package:shelf_app/theme/shelf_theme.dart';
 
 void main() {
   testWidgets(
-    'every component in both themes meets the accessibility guidelines',
+    'every component in every theme meets the accessibility guidelines',
     (tester) async {
       final semantics = tester.ensureSemantics();
       // Tall enough to show the whole page: the guidelines check what's on screen.
-      tester.view.physicalSize = const Size(412, 2600);
+      tester.view.physicalSize = Size(412, 1300.0 * AppTheme.values.length);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
 
@@ -22,8 +22,9 @@ void main() {
         ),
       );
 
-      expect(find.text('Evening'), findsOneWidget);
-      expect(find.text('Daylight'), findsOneWidget);
+      for (final theme in AppTheme.values) {
+        expect(find.text(theme.label), findsOneWidget);
+      }
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
