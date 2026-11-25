@@ -9,6 +9,7 @@ Future<void> showThemeSheet(BuildContext context, ThemeChoice theme) {
   final c = context.shelf;
   return showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
     backgroundColor: c.bg,
     barrierColor: const Color(0x73000000),
     shape: RoundedRectangleBorder(
@@ -18,11 +19,13 @@ Future<void> showThemeSheet(BuildContext context, ThemeChoice theme) {
     // Rebuilt with the new theme's colours as soon as one is picked.
     builder: (_) => ValueListenableBuilder(
       valueListenable: theme,
-      builder: (context, chosen, _) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (context, chosen, _) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        ),
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
           children: [
             Center(
               child: Container(
@@ -36,18 +39,75 @@ Future<void> showThemeSheet(BuildContext context, ThemeChoice theme) {
               ),
             ),
             Text('Theme', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            for (final t in AppTheme.values) ...[
-              ShelfKey(
-                light: true,
-                selected: chosen == t,
-                onPressed: () => theme.choose(t),
-                child: Text(t.label),
+            for (final family in ThemeFamily.values) ...[
+              const SizedBox(height: 16),
+              Text(
+                family.label,
+                style: Theme.of(context).textTheme.labelSmall!
+                    .copyWith(color: context.shelf.muted),
               ),
               const SizedBox(height: 8),
+              LayoutBuilder(
+                builder: (context, box) => Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (final t in AppTheme.values)
+                      if (t.family == family)
+                        SizedBox(
+                          width: (box.maxWidth - 8) / 2,
+                          child: ShelfKey(
+                            light: true,
+                            selected: chosen == t,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            onPressed: () => theme.choose(t),
+                            child: Row(
+                              children: [
+                                _Swatch(t.colors),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    t.label,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                  ],
+                ),
+              ),
             ],
           ],
         ),
+      ),
+    ),
+  );
+}
+
+/// A theme at a glance: its background with its accent.
+class _Swatch extends StatelessWidget {
+  const _Swatch(this.colors);
+
+  final ShelfColors colors;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 16,
+    height: 16,
+    decoration: BoxDecoration(
+      color: colors.bg,
+      borderRadius: BorderRadius.circular(2),
+      border: Border.all(color: context.shelf.line),
+    ),
+    alignment: Alignment.bottomRight,
+    child: Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: colors.signal,
+        borderRadius: BorderRadius.circular(1),
       ),
     ),
   );

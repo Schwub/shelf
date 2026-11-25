@@ -55,4 +55,42 @@ void main() {
     expect(theme.value, AppTheme.evening);
     expect(background(), ShelfColors.evening.bg);
   });
+
+  testWidgets('the sheet groups the themes in their families', (tester) async {
+    final theme = ThemeChoice();
+    tester.view.physicalSize = const Size(412, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ShelfApp(
+        auth: FakeAuth(signedIn: true),
+        shelf: FakeShelf([]),
+        search: FakeSearch({}),
+        links: FakeLinks(UnsupportedLink()),
+        inbox: SharedLinkInbox(const Stream.empty()),
+        theme: theme,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Theme'));
+    await tester.pumpAndSettle();
+
+    for (final family in ['Woodgrain', 'Finishes', 'Classic']) {
+      expect(find.text(family), findsOneWidget);
+    }
+    expect(
+      tester.getTopLeft(find.text('Woodgrain')).dy,
+      lessThan(tester.getTopLeft(find.text('Tobacco & copper')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('Finishes')).dy,
+      lessThan(tester.getTopLeft(find.text('Surf green')).dy),
+    );
+
+    await tester.tap(find.text('Surf green'));
+    await tester.pumpAndSettle();
+    expect(theme.value, AppTheme.surfGreen);
+  });
 }

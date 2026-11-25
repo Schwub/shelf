@@ -18,17 +18,29 @@ five-segment rating meter. Nothing else is decorative: no textures, glows,
 round buttons or illustrations.
 
 ## Colour
-Three themes, chosen in the ⋮ menu (Theme) and remembered on the device;
-the default is **Tobacco & copper** (2026-11-25, TASK-31). It's warmer and
-calmer than the original: no gradients and no light windows, so the covers
-carry the colour. A chosen key is pressed down, its face takes 14 % of the
-signal colour and its label the signal colour; the primary key and the
-rating bars are flat copper. Mockup:
-[visual/variations/themes-warm.html](visual/variations/themes-warm.html),
-2. Tokens: bg #231812, surface #2E2019, teak #94603F, text #F0E2D2, muted
-#B79E8A, signal #C88A63, off #806B5C, primary key #B4764F (side #7A4A2E).
-The original **Evening** and **Daylight** below stay selectable, with
-their amber-to-coral gradient and light windows.
+Seventeen themes in three families, chosen in the ⋮ menu (Theme, which
+shows each theme's background and accent as a swatch) and remembered on the
+device (2026-11-25, TASK-31):
+- **Woodgrain:** Tobacco & copper (the default), Ember, Cognac & cream,
+  Space age, Tube amp, Cassette chrome, Atomic cream (light). Warm browns.
+- **Finishes:** Sunburst, Sonic blue, Surf green, Candy red, Shell pink
+  (light), Tangerine night, Studio orange (light), Teal & mustard. Colours
+  after guitar finishes and retro gear; names stay generic, no brands.
+- **Classic:** the original Evening and Daylight below, with their
+  amber-to-coral gradient and light windows.
+
+Woodgrain and Finishes have no light windows: a chosen key is pressed down,
+its face takes 14 % of the signal colour (10 % in light themes) and its
+label the signal colour; the primary key and the rating bars are flat or a
+soft gradient. Mockups:
+[visual/variations/themes-warm.html](visual/variations/themes-warm.html)
+(Tobacco & copper is 2),
+[themes-warm-2.html](visual/variations/themes-warm-2.html) and
+[themes-retro.html](visual/variations/themes-retro.html); the values are in
+`app/lib/theme/shelf_colors.dart`. A few were adjusted for contrast (13 px
+labels need 4.5:1): Atomic cream and Studio orange have dark text on their
+orange keys, Candy red a lighter label red, Sunburst and Surf green
+lighter or darker gradient ends. The accessibility tests check every theme.
 
 | Token | Evening | Daylight | Use |
 |---|---|---|---|
