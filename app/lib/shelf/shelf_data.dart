@@ -184,12 +184,77 @@ class ManualAlbum {
   };
 }
 
-/// A key of the shelf's filter bar: one of the user's tags.
+/// A key of the shelf's filter bar: albums with its tags (any or all of
+/// them), a minimum rating or none, favorite tracks
+/// (docs/features/filters.md). A filter with one tag and nothing else shows
+/// the tag's name; others carry their own [name].
 @immutable
 class ShelfFilter {
-  const ShelfFilter({required this.tagId, required this.label});
+  const ShelfFilter({
+    this.id = '',
+    this.name,
+    this.label = '',
+    this.tagIds = const [],
+    this.matchAll = false,
+    this.minRating,
+    this.unrated = false,
+    this.favoriteTracks = false,
+  });
 
-  final String tagId, label;
+  /// The simple filter: albums with [tagId].
+  ShelfFilter.tag(String tagId, String label, {String? id})
+    : this(id: id ?? tagId, label: label, tagIds: [tagId]);
+
+  /// Empty for a filter not saved yet.
+  final String id;
+  final String? name;
+
+  /// What the filter bar shows: [name], or the tag's name.
+  final String label;
+
+  final List<String> tagIds;
+  final bool matchAll, unrated, favoriteTracks;
+
+  /// In half stars, like [ShelfEntry.rating].
+  final int? minRating;
+
+  /// One tag and nothing else: shown by the tag's name.
+  bool get isTag =>
+      tagIds.length == 1 && minRating == null && !unrated && !favoriteTracks;
+
+  bool get hasConditions =>
+      tagIds.isNotEmpty || minRating != null || unrated || favoriteTracks;
+
+  ShelfFilter copyWith({
+    String? label,
+    String? name,
+    List<String>? tagIds,
+    bool? matchAll,
+    int? Function()? minRating,
+    bool? unrated,
+    bool? favoriteTracks,
+  }) => ShelfFilter(
+    id: id,
+    name: name ?? this.name,
+    label: label ?? this.label,
+    tagIds: tagIds ?? this.tagIds,
+    matchAll: matchAll ?? this.matchAll,
+    minRating: minRating != null ? minRating() : this.minRating,
+    unrated: unrated ?? this.unrated,
+    favoriteTracks: favoriteTracks ?? this.favoriteTracks,
+  );
+
+  bool matches(ShelfEntry e) {
+    final t = tagIds;
+    if (t.isNotEmpty &&
+        !(matchAll ? t.every(e.tagIds.contains) : t.any(e.tagIds.contains))) {
+      return false;
+    }
+    if (minRating case final min? when (e.rating ?? 0) < min) return false;
+    if (unrated && e.rating != null) return false;
+    if (favoriteTracks && !e.tracks.any((t) => t.favorite)) return false;
+    return true;
+  }
 }
 
 class Shelf {
@@ -226,7 +291,8 @@ class Shelf {
     ];
   }();
 
-  /// The filter bar's filters, on tags that are shown; "All" is implicit.
+  /// The filter bar's filters: those whose tags are all shown (a hidden
+  /// group hides its filters); "All" is implicit.
   late final List<ShelfFilter> filters = () {
     final shown = {
       for (final g in groups)
@@ -234,7 +300,7 @@ class Shelf {
     };
     return [
       for (final f in allFilters)
-        if (shown.contains(f.tagId)) f,
+        if (f.tagIds.every(shown.contains)) f,
     ];
   }();
 
@@ -247,9 +313,8 @@ class Shelf {
       entries.where((e) => e.tagIds.contains(tagId)).length;
 
   /// Entries with [filter]'s tag, or all of them for null ("All").
-  List<ShelfEntry> matching(ShelfFilter? filter) => filter == null
-      ? entries
-      : entries.where((e) => e.tagIds.contains(filter.tagId)).toList();
+  List<ShelfEntry> matching(ShelfFilter? filter) =>
+      filter == null ? entries : entries.where(filter.matches).toList();
 }
 
 /// The signed-in user's shelf. An interface so the screens can be tested
@@ -333,6 +398,13 @@ abstract class ShelfRepository {
   /// Groups or tags in this new order.
   Future<void> reorderGroups(List<String> groupIds);
   Future<void> reorderTags(List<String> tagIds);
+
+  // Filters (docs/features/filters.md).
+
+  /// Adds [filter] at the end (no [ShelfFilter.id]) or saves its changes.
+  Future<void> saveFilter(ShelfFilter filter);
+  Future<void> deleteFilter(String filterId);
+  Future<void> reorderFilters(List<String> filterIds);
 }
 
 /// A tag or group name already used on its level, ignoring case.
@@ -366,7 +438,10 @@ class SupabaseShelfRepository implements ShelfRepository {
           .order('created_at', ascending: false),
       _db
           .from('shelf_filters')
-          .select('tag_id')
+          .select(
+            'id, name, tags_match, min_rating, unrated, favorite_tracks, '
+            'shelf_filter_tags(tag_id)',
+          )
           .order('position', ascending: true),
       // New rows and reordered ones can share a position for a moment.
       _db
@@ -411,7 +486,9 @@ class SupabaseShelfRepository implements ShelfRepository {
       ],
       allFilters: [
         for (final f in filters)
-          ShelfFilter(tagId: f['tag_id'], label: tagNames[f['tag_id']]),
+          _filter(f, [
+            for (final t in f['shelf_filter_tags']) t['tag_id'] as String,
+          ], tagNames),
       ],
       allGroups: [
         for (final g in groups)
@@ -435,6 +512,25 @@ class SupabaseShelfRepository implements ShelfRepository {
             ],
           ),
       ],
+    );
+  }
+
+  static ShelfFilter _filter(
+    Map<String, dynamic> f,
+    List<String> tagIds,
+    Map<String, dynamic> tagNames,
+  ) {
+    final filter = ShelfFilter(
+      id: f['id'],
+      name: f['name'],
+      tagIds: tagIds,
+      matchAll: f['tags_match'] == 'all',
+      minRating: f['min_rating'],
+      unrated: f['unrated'],
+      favoriteTracks: f['favorite_tracks'],
+    );
+    return filter.copyWith(
+      label: f['name'] ?? (filter.isTag ? tagNames[tagIds.single] : 'Filter'),
     );
   }
 
@@ -667,6 +763,58 @@ class SupabaseShelfRepository implements ShelfRepository {
 
   @override
   Future<void> reorderTags(List<String> tagIds) => _reorder('tags', tagIds);
+
+  @override
+  Future<void> saveFilter(ShelfFilter filter) async {
+    final fields = {
+      'name': filter.isTag ? null : filter.name?.trim(),
+      'tags_match': filter.matchAll ? 'all' : 'any',
+      'min_rating': filter.minRating,
+      'unrated': filter.unrated,
+      'favorite_tracks': filter.favoriteTracks,
+    };
+    final String id;
+    if (filter.id.isEmpty) {
+      final last = await _db
+          .from('shelf_filters')
+          .select('position')
+          .order('position', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      final row = await _db
+          .from('shelf_filters')
+          .insert({
+            ...fields,
+            'position': last == null ? 0 : last['position'] + 1,
+          })
+          .select('id')
+          .single();
+      id = row['id'];
+    } else {
+      id = filter.id;
+      await _db.from('shelf_filters').update(fields).eq('id', id);
+    }
+    // New tags before old ones go: a filter emptied of tags and other
+    // conditions is deleted by the database.
+    if (filter.tagIds.isNotEmpty) {
+      await _db.from('shelf_filter_tags').upsert([
+        for (final tag in filter.tagIds) {'filter_id': id, 'tag_id': tag},
+      ], ignoreDuplicates: true);
+    }
+    var gone = _db.from('shelf_filter_tags').delete().eq('filter_id', id);
+    if (filter.tagIds.isNotEmpty) {
+      gone = gone.not('tag_id', 'in', '(${filter.tagIds.join(',')})');
+    }
+    await gone;
+  }
+
+  @override
+  Future<void> deleteFilter(String filterId) =>
+      _db.from('shelf_filters').delete().eq('id', filterId);
+
+  @override
+  Future<void> reorderFilters(List<String> filterIds) =>
+      _reorder('shelf_filters', filterIds);
 
   Future<void> _reorder(String table, List<String> ids) => [
     for (final (i, id) in ids.indexed)

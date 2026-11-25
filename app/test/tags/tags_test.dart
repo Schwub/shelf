@@ -26,7 +26,7 @@ void main() {
     FakeShelf? fake,
     AppTheme theme = AppTheme.tobacco,
   }) async {
-    shelf = fake ?? FakeShelf(albums, filters: const [own, want]);
+    shelf = fake ?? FakeShelf(albums, filters: [own, want]);
     tester.view.physicalSize = const Size(412, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -296,7 +296,7 @@ void main() {
     });
 
     testWidgets('delete asks first, with what goes too', (tester) async {
-      await pumpTags(tester, fake: FakeShelf(albums, filters: const [own]));
+      await pumpTags(tester, fake: FakeShelf(albums, filters: [own]));
       await openGroup(tester, 'Genre');
 
       await tapText(tester, 'Delete group');
@@ -345,7 +345,7 @@ void main() {
         tester,
         fake: FakeShelf(
           albums,
-          filters: const [ShelfFilter(tagId: 'vinyl', label: 'Vinyl')],
+          filters: [ShelfFilter.tag('vinyl', 'Vinyl')],
           groups: [
             ...suggestedGroups.take(2),
             TagGroup(

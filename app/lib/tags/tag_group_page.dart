@@ -735,7 +735,17 @@ String _goesToo(Shelf shelf, Iterable<Tag> tags) {
   for (final s in subs) {
     ids.addAll(s.tags.map((t) => t.id));
   }
-  final filters = shelf.allFilters.where((f) => ids.contains(f.tagId)).length;
+  // Filters left with nothing to match by go with their tags.
+  final filters = shelf.allFilters
+      .where(
+        (f) =>
+            f.tagIds.isNotEmpty &&
+            f.tagIds.every(ids.contains) &&
+            f.minRating == null &&
+            !f.unrated &&
+            !f.favoriteTracks,
+      )
+      .length;
   final items = [
     for (final s in subs)
       'sub-group “${s.name}” (${_count(s.tags.length, 'tag')})',

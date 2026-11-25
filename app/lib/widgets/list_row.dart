@@ -2,9 +2,11 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/shelf_colors.dart';
 
-/// A 56 px row of the editor's lists: an optional 44 px [leading] slot
-/// (reorder handle, or the + of an "Add" row), title and muted [subtitle],
-/// an optional muted [mark] ("Built-in") and a 44 px [trailing] slot.
+/// A 56 px row of the editor's lists: an optional [leading] slot (reorder
+/// handle, or the + of an "Add" row), title and muted [subtitle], an
+/// optional muted [mark] ("Built-in") and a [trailing] slot, both 48 px
+/// touch areas. The leading one reaches 14 px past the row's start, so
+/// handles line up with the text above and below.
 class ListRow extends StatelessWidget {
   const ListRow({
     super.key,
@@ -31,7 +33,7 @@ class ListRow extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     Widget slot(Widget child) => IconTheme.merge(
       data: IconThemeData(color: c.muted, size: 20),
-      child: SizedBox.square(dimension: 44, child: Center(child: child)),
+      child: SizedBox.square(dimension: 48, child: Center(child: child)),
     );
     return InkWell(
       onTap: onTap,
@@ -44,7 +46,7 @@ class ListRow extends StatelessWidget {
           children: [
             if (leading != null)
               Transform.translate(
-                offset: const Offset(-12, 0),
+                offset: const Offset(-14, 0),
                 child: slot(leading!),
               ),
             Expanded(
@@ -78,11 +80,9 @@ class ListRow extends StatelessWidget {
                   style: text.labelSmall!.copyWith(color: c.muted),
                 ),
               ),
-            if (trailing != null)
-              Transform.translate(
-                offset: const Offset(12, 0),
-                child: slot(trailing!),
-              ),
+            // Inside the row: a list would cut off a touch area reaching
+            // past it.
+            if (trailing != null) slot(trailing!),
           ],
         ),
       ),

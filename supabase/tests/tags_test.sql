@@ -40,7 +40,8 @@ select results_eq(
     where g.user_id = '11111111-1111-1111-1111-111111111111' and g.name = 'Format' order by t.position$$,
   array['Vinyl', 'CD', 'Tape', 'File'], 'Format offers Vinyl, CD, Tape, File');
 select results_eq(
-  $$select t.name from public.shelf_filters f join public.tags t on t.id = f.tag_id
+  $$select t.name from public.shelf_filters f
+    join public.shelf_filter_tags ft on ft.filter_id = f.id join public.tags t on t.id = ft.tag_id
     where f.user_id = '11111111-1111-1111-1111-111111111111' order by f.position$$,
   array['Own', 'Want', 'Want to listen', 'Listened'], 'the filter bar starts with the built-in tags');
 
@@ -153,7 +154,8 @@ select results_eq(
 
 -- Filters.
 select lives_ok(
-  $$insert into public.shelf_filters (tag_id, position) values (pg_temp.tag('Format', 'Vinyl'), 5)$$,
+  $$with f as (insert into public.shelf_filters (position) values (5) returning id)
+    insert into public.shelf_filter_tags (filter_id, tag_id) select id, pg_temp.tag('Format', 'Vinyl') from f$$,
   'users add filters for their own tags');
 
 -- Nothing of Bob's can be read or used.
