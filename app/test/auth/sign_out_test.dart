@@ -1,9 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/auth/auth_gate.dart';
-import 'package:shelf_app/preview/preview_page.dart';
+import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 
+import '../shelf/fake_shelf.dart';
 import 'fake_auth.dart';
 
 void main() {
@@ -16,10 +17,11 @@ void main() {
         theme: shelfTheme(Brightness.dark),
         home: AuthGate(
           auth: auth,
-          signedIn: PreviewPage(auth: auth, links: const Stream.empty()),
+          signedIn: ShelfPage(auth: auth, shelf: FakeShelf([])),
         ),
       ),
     );
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.more_vert));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign out'));

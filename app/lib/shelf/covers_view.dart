@@ -1,0 +1,107 @@
+import 'package:material_ui/material_ui.dart';
+
+import '../theme/shelf_colors.dart';
+import '../widgets/cover.dart';
+import '../widgets/rating_meter.dart';
+import '../widgets/shelf_board.dart';
+import 'shelf_data.dart';
+
+/// Covers in rows of three, each row standing on a teak board, with title,
+/// artist and rating under the board.
+class CoversView extends StatelessWidget {
+  const CoversView({super.key, required this.entries, required this.onOpen});
+
+  final List<ShelfEntry> entries;
+  final ValueChanged<ShelfEntry> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = [
+      for (var i = 0; i < entries.length; i += 3)
+        entries.sublist(i, (i + 3).clamp(0, entries.length)),
+    ];
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 24),
+      itemCount: rows.length,
+      itemBuilder: (context, i) => _row(context, rows[i]),
+    );
+  }
+
+  Widget _row(BuildContext context, List<ShelfEntry> row) {
+    final c = context.shelf;
+    final text = Theme.of(context).textTheme;
+    Widget cells(Widget Function(ShelfEntry) cell) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < 3; i++) ...[
+            if (i > 0) const SizedBox(width: 12),
+            Expanded(child: i < row.length ? cell(row[i]) : const SizedBox()),
+          ],
+        ],
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 20),
+        cells(
+          (e) => GestureDetector(
+            onTap: () => onOpen(e),
+            child: DecoratedBox(
+              // Contact shadow where the cover stands on the board.
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: c.shadow,
+                    offset: const Offset(0, 2),
+                    blurRadius: 2,
+                    spreadRadius: -1,
+                  ),
+                ],
+              ),
+              child: Cover(e.album),
+            ),
+          ),
+        ),
+        const ShelfBoard(),
+        const SizedBox(height: 12),
+        cells(
+          (e) => MergeSemantics(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onOpen(e),
+              child: ConstrainedBox(
+                // A full tap target even with one line of text.
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      e.album.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.labelMedium,
+                    ),
+                    Text(
+                      e.album.artist,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.bodySmall!.copyWith(color: c.muted),
+                    ),
+                    const SizedBox(height: 8),
+                    if (e.rating case final rating?)
+                      RatingMeter(rating)
+                    else
+                      const SizedBox(height: 6),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

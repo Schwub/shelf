@@ -1,0 +1,31 @@
+name: staging-test-albums
+
+# By hand: adds the test albums (supabase/dev/test_albums.sql) to one
+# account's shelf on staging, until albums can be added in the app (TASK-8).
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Email of the staging account (it must have signed in once)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  add:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+      PROJECT: ${{ vars.SUPABASE_STAGING_PROJECT_ID }}
+      EMAIL: ${{ inputs.email }}
+      MISE_EXEC_AUTO_INSTALL: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jdx/mise-action@v3
+        with:
+          install_args: supabase
+      - run: mise exec -- supabase link --project-ref="$PROJECT"
+      - run: mise exec -- supabase/dev/test-albums.sh "$EMAIL" --remote

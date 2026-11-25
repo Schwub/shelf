@@ -75,6 +75,11 @@
   committed in `app/android/app/staging.jks`, so updates install over each
   other; Play Store releases get their own private key. Firebase App
   Distribution was the plan, but the account hit its project limit.
+- **Test albums:** `supabase/dev/test_albums.sql` puts nine albums with
+  ratings and built-in tags on one account's shelf, until albums can be
+  added in the app (TASK-8). Locally `mise run dev:albums -- <email>`; on
+  staging the `staging-test-albums` workflow (by hand, email as input). The
+  account must have signed in once; running it again changes nothing.
 - **Production:** later, a second hosted project the same way.
 
 One-time Android setup (TASK-23):

@@ -54,6 +54,19 @@ ThemeData shelfTheme(Brightness brightness) {
       outline: c.line,
     ),
     textTheme: text,
+    // Always dark, in both themes (visual-system.md, Snackbar).
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: ShelfColors.evening.surface,
+      contentTextStyle: plex(14).copyWith(color: ShelfColors.evening.text),
+      actionTextColor: ShelfColors.amberStart,
+      behavior: SnackBarBehavior.floating,
+      insetPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(4),
+        side: BorderSide(color: ShelfColors.evening.line),
+      ),
+    ),
     extensions: [c],
   );
 }
