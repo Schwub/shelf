@@ -40,9 +40,15 @@ class MusicBrainzSearch implements AlbumSearch {
   /// read as syntax ("AC/DC", "Sigur Rós: …").
   static final _special = RegExp(r'[+\-&|!(){}\[\]^"~*?:\\/]');
 
-  static String query(String text) =>
-      '(${text.trim().replaceAllMapped(_special, (m) => '\\${m[0]}')}) '
-      'AND primarytype:album';
+  /// Every word must match: MusicBrainz joins words with OR otherwise, and
+  /// a made-up title still brings 25 loose matches.
+  static String query(String text) {
+    final words = [
+      for (final w in text.trim().split(RegExp(r'\s+')))
+        w.replaceAllMapped(_special, (m) => '\\${m[0]}'),
+    ];
+    return '(${words.join(' AND ')}) AND primarytype:album';
+  }
 
   @override
   Future<List<SearchResult>> search(String text) async {

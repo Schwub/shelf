@@ -92,6 +92,7 @@ void main() {
 
     await type(tester, 'radiohead');
     expect(find.text("Couldn't search"), findsOneWidget);
+    expect(find.text('Add it yourself'), findsOneWidget);
 
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();

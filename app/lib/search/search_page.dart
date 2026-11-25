@@ -7,6 +7,7 @@ import '../shelf/shelf_data.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/shelf_key.dart';
 import 'album_search.dart';
+import 'manual_album_page.dart';
 
 /// Find an album on MusicBrainz and open it to add it (or, when it's on the
 /// shelf already, to edit it). Pops with [EntryResult.added] after adding.
@@ -94,6 +95,19 @@ class _SearchPageState extends State<SearchPage> {
         _failed = true;
       });
     }
+  }
+
+  Future<void> _addYourself() async {
+    final outcome = await Navigator.of(context).push(
+      MaterialPageRoute<EntryResult>(
+        builder: (_) => ManualAlbumPage(
+          shelf: widget.shelf,
+          groups: widget.groups,
+          title: _searched,
+        ),
+      ),
+    );
+    if (outcome != null && mounted) Navigator.of(context).pop(outcome);
   }
 
   Future<void> _open(SearchResult result) async {
@@ -207,6 +221,14 @@ class _SearchPageState extends State<SearchPage> {
             child: const Text('Try again'),
           ),
         ),
+        // MusicBrainz can be busy for a while; adding stays possible.
+        const SizedBox(height: 8),
+        Center(
+          child: ShelfKey(
+            onPressed: _addYourself,
+            child: const Text('Add it yourself'),
+          ),
+        ),
       ]);
     }
     if (_loading) return const _Loading();
@@ -251,16 +273,36 @@ class _SearchPageState extends State<SearchPage> {
           style: muted,
           textAlign: TextAlign.center,
         ),
+        const SizedBox(height: 20),
+        Center(
+          child: ShelfKey(
+            onPressed: _addYourself,
+            child: const Text('Add it yourself'),
+          ),
+        ),
       ]);
     }
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: results.length,
-      itemBuilder: (context, i) => _Result(
-        result: results[i],
-        onShelf: widget.onShelf.containsKey(results[i].musicbrainzId),
-        onTap: () => _open(results[i]),
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      itemCount: results.length + 1,
+      itemBuilder: (context, i) => i == results.length
+          ? Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Row(
+                children: [
+                  Expanded(child: Text('Not the right one?', style: muted)),
+                  ShelfKey(
+                    onPressed: _addYourself,
+                    child: const Text('Add it yourself'),
+                  ),
+                ],
+              ),
+            )
+          : _Result(
+              result: results[i],
+              onShelf: widget.onShelf.containsKey(results[i].musicbrainzId),
+              onTap: () => _open(results[i]),
+            ),
     );
   }
 }
