@@ -131,6 +131,7 @@ void main() {
 
       await tester.enterText(find.byType(TextField).first, 'Mood');
       await tapText(tester, 'One');
+      await tapText(tester, 'Pick from a list');
       for (final tag in ['Calm', 'Late night', 'calm']) {
         if (find.text('Add tag').evaluate().isNotEmpty) {
           await tapText(tester, 'Add tag');
@@ -144,6 +145,7 @@ void main() {
 
       final mood = groupWith('mood');
       expect(mood.exclusive, isTrue);
+      expect(mood.pickFromList, isTrue);
       expect([for (final t in mood.tags) t.name], ['Calm', 'Late night']);
       expect(find.byType(TagsPage), findsOneWidget);
       expect(find.text('One per album · 2 tags'), findsNWidgets(3));
@@ -199,6 +201,19 @@ void main() {
       // The albums to change, which open their entry.
       await tapText(tester, 'Promises');
       expect(find.byType(EntryPage), findsOneWidget);
+    });
+
+    testWidgets('chooses how it shows on albums', (tester) async {
+      await pumpTags(tester);
+      await openGroup(tester, 'Genre');
+      expect(
+        find.text('Albums show only their chosen tags; Add picks more.'),
+        findsOneWidget,
+      );
+
+      await tapText(tester, 'All as keys');
+      expect(groupWith('genre').pickFromList, isFalse);
+      expect(find.text('Albums show every tag as a key.'), findsOneWidget);
     });
 
     testWidgets('switches when every album has at most one', (tester) async {

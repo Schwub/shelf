@@ -57,7 +57,7 @@ class _TagGroupPageState extends State<TagGroupPage> {
   List<Tag> _tags = [];
 
   // A new group's choices, saved with "Create group".
-  bool _exclusive = false;
+  bool _exclusive = false, _pickFromList = false;
 
   @override
   void initState() {
@@ -166,6 +166,19 @@ class _TagGroupPageState extends State<TagGroupPage> {
     await _save(
       'the change to ${exclusive ? 'one' : 'several'} per album',
       () => widget.shelf.updateGroup(group.id, exclusive: exclusive),
+    );
+  }
+
+  Future<void> _setPickFromList(bool pick) async {
+    if (_creating) {
+      setState(() => _pickFromList = pick);
+      return;
+    }
+    final group = _group!;
+    if (group.pickFromList == pick) return;
+    await _save(
+      'how “${group.name}” shows on albums',
+      () => widget.shelf.updateGroup(group.id, pickFromList: pick),
     );
   }
 
@@ -302,6 +315,7 @@ class _TagGroupPageState extends State<TagGroupPage> {
       await widget.shelf.createGroup(
         name,
         exclusive: _exclusive,
+        pickFromList: _pickFromList,
         parentTagId: widget.parentTag?.id,
         tags: [for (final t in _tags) t.name],
       );
@@ -406,6 +420,7 @@ class _TagGroupPageState extends State<TagGroupPage> {
     );
     final parent = widget.parentTag?.name ?? _parentName(group);
     final exclusive = _creating ? _exclusive : group!.exclusive;
+    final pickFromList = _creating ? _pickFromList : group!.pickFromList;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       children: [
@@ -478,6 +493,32 @@ class _TagGroupPageState extends State<TagGroupPage> {
               ],
             ],
           ),
+        heading('On albums'),
+        Row(
+          children: [
+            for (final (pick, name) in [
+              (false, 'All as keys'),
+              (true, 'Pick from a list'),
+            ]) ...[
+              if (pick) const SizedBox(width: 8),
+              Expanded(
+                child: ShelfKey(
+                  light: true,
+                  selected: pickFromList == pick,
+                  onPressed: () => _setPickFromList(pick),
+                  child: Text(name),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          pickFromList
+              ? 'Albums show only their chosen tags; Add picks more.'
+              : 'Albums show every tag as a key.',
+          style: hint,
+        ),
         heading('Tags'),
         ReorderableListView(
           shrinkWrap: true,

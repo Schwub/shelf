@@ -1,6 +1,6 @@
 # Tags
 
-Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor built (TASK-17); filters and import not built (TASK-18, TASK-19).
+Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor built (TASK-17); groups picked from a list (TASK-28); filters and import not built (TASK-18, TASK-19).
 
 Tag editor (TASK-17): `app/lib/tags/` (Tags list, Tag group, tag actions
 sheet), reached from My shelf's ⋮ menu and "Edit tags" on the album entry,
@@ -55,9 +55,12 @@ menu.
   remembers whose shelf it came from (`added_from_user_id`, and
   `added_from_name` kept as it was, so "Added from Anna's shelf" stays
   after Anna's account is deleted).
-- Album entry: groups with up to six tags show them all as keys;
-  multiple-choice groups have an "Add" action on their label line, which
-  searches and can create a tag. "Edit tags" opens the Tags list and keeps the album draft.
+- Album entry: a group shows all its tags as keys, or, picked from a list
+  (`pick_from_list`, TASK-28; Genre for new and existing users), only the
+  album's tags, each removable. List groups and multiple-choice key groups
+  have an "Add" action on their label line: an alphabetical list to scroll
+  or search, which can create a tag. A list group stays ordinary tags in an
+  ordinary group, so filters, the editor and importing work the same. "Edit tags" opens the Tags list and keeps the album draft.
 - Editor: changes save immediately; deletes ask first (with the albums,
   sub-groups and filters affected) and take effect at once. Sub-groups go
   one level deep in the editor (the model allows deeper). Only built-in
@@ -76,7 +79,8 @@ IDs after deletes) and text labels like `collection:own/vinyl` (renaming
 rewrites every item, breaks the editor).
 
 - `tag_groups`: `user_id`, `name`, `exclusive`, `parent_tag_id` (set for a
-  sub-group), `builtin`, `position`, `hidden`. A built-in group is
+  sub-group), `builtin`, `position`, `hidden`, `pick_from_list` (how it
+  shows on albums). A built-in group is
   top-level and exclusive.
 - `tags`: `user_id`, `group_id`, `name` (unique per group, case-insensitive),
   `builtin`, `position`.

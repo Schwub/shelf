@@ -117,10 +117,15 @@ class TagGroup {
     this.parentTagId,
     this.builtin = false,
     this.hidden = false,
+    this.pickFromList = false,
     this.tags = const [],
   });
 
   final String id, name;
+
+  /// On albums, only the chosen tags show, picked from an alphabetical list
+  /// (Genre); otherwise all tags show as keys.
+  final bool pickFromList;
 
   /// Built-in groups (Collection, Listening) can be renamed and hidden, not
   /// deleted; only they can be hidden.
@@ -134,6 +139,7 @@ class TagGroup {
     String? name,
     bool? exclusive,
     bool? hidden,
+    bool? pickFromList,
     List<Tag>? tags,
   }) => TagGroup(
     id: id,
@@ -142,6 +148,7 @@ class TagGroup {
     parentTagId: parentTagId,
     builtin: builtin,
     hidden: hidden ?? this.hidden,
+    pickFromList: pickFromList ?? this.pickFromList,
     tags: tags ?? this.tags,
   );
 }
@@ -300,6 +307,7 @@ abstract class ShelfRepository {
   Future<void> createGroup(
     String name, {
     required bool exclusive,
+    bool pickFromList = false,
     String? parentTagId,
     List<String> tags = const [],
   });
@@ -311,6 +319,7 @@ abstract class ShelfRepository {
     String? name,
     bool? exclusive,
     bool? hidden,
+    bool? pickFromList,
   });
 
   /// Also removes its tags from albums, its sub-groups and their filters.
@@ -367,7 +376,9 @@ class SupabaseShelfRepository implements ShelfRepository {
           .order('created_at', ascending: true),
       _db
           .from('tag_groups')
-          .select('id, name, exclusive, parent_tag_id, builtin, hidden')
+          .select(
+            'id, name, exclusive, parent_tag_id, builtin, hidden, pick_from_list',
+          )
           .order('position', ascending: true)
           .order('created_at', ascending: true),
     ).wait;
@@ -411,6 +422,7 @@ class SupabaseShelfRepository implements ShelfRepository {
             parentTagId: g['parent_tag_id'],
             builtin: g['builtin'] != null,
             hidden: g['hidden'],
+            pickFromList: g['pick_from_list'],
             tags: [
               for (final t in tags)
                 if (t['group_id'] == g['id'])
@@ -581,6 +593,7 @@ class SupabaseShelfRepository implements ShelfRepository {
   Future<void> createGroup(
     String name, {
     required bool exclusive,
+    bool pickFromList = false,
     String? parentTagId,
     List<String> tags = const [],
   }) async {
@@ -591,6 +604,7 @@ class SupabaseShelfRepository implements ShelfRepository {
           .insert({
             'name': name.trim(),
             'exclusive': exclusive,
+            'pick_from_list': pickFromList,
             'parent_tag_id': parentTagId,
             'position': position,
           })
@@ -612,6 +626,7 @@ class SupabaseShelfRepository implements ShelfRepository {
     String? name,
     bool? exclusive,
     bool? hidden,
+    bool? pickFromList,
   }) async {
     try {
       await _db
@@ -620,6 +635,7 @@ class SupabaseShelfRepository implements ShelfRepository {
             'name': ?name?.trim(),
             'exclusive': ?exclusive,
             'hidden': ?hidden,
+            'pick_from_list': ?pickFromList,
           })
           .eq('id', groupId);
     } on PostgrestException catch (e) {
