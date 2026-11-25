@@ -30,14 +30,19 @@ class ManualAlbumPage extends StatefulWidget {
     required this.shelf,
     this.groups = const [],
     this.title = '',
+    this.artist = '',
+    this.year,
+    this.photo,
     this.pick = pickPhoto,
   });
 
   final ShelfRepository shelf;
   final List<TagGroup> groups;
 
-  /// Prefilled from the search.
-  final String title;
+  /// Prefilled from the search, or from a shared link's page.
+  final String title, artist;
+  final int? year;
+  final Uint8List? photo;
   final PickPhoto pick;
 
   @override
@@ -46,9 +51,9 @@ class ManualAlbumPage extends StatefulWidget {
 
 class _ManualAlbumPageState extends State<ManualAlbumPage> {
   late final _title = TextEditingController(text: widget.title);
-  final _artist = TextEditingController();
-  final _year = TextEditingController();
-  Uint8List? _photo;
+  late final _artist = TextEditingController(text: widget.artist);
+  late final _year = TextEditingController(text: widget.year?.toString());
+  late Uint8List? _photo = widget.photo;
   String? _error;
 
   @override

@@ -2,6 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelf_app/search/search_page.dart';
+import 'package:shelf_app/share/link_resolver.dart';
+import 'package:shelf_app/share/resolve_page.dart';
+import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/spines_view.dart';
@@ -14,9 +17,12 @@ import 'package:shelf_app/widgets/shelf_key.dart';
 import '../auth/fake_auth.dart';
 import 'fake_shelf.dart';
 import '../search/fake_search.dart';
+import '../share/fake_links.dart';
 
 void main() {
   late FakeShelf shelf;
+  late SharedLinkInbox inbox;
+  late FakeLinks links;
 
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
@@ -24,8 +30,12 @@ void main() {
     WidgetTester tester,
     FakeShelf fake, {
     Brightness brightness = Brightness.dark,
+    Uri? shared,
+    Resolved? resolved,
   }) async {
     shelf = fake;
+    inbox = SharedLinkInbox(const Stream.empty())..value = shared;
+    links = FakeLinks(resolved ?? UnsupportedLink());
     tester.view.physicalSize = const Size(412, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -36,6 +46,8 @@ void main() {
           auth: FakeAuth(signedIn: true),
           shelf: fake,
           search: FakeSearch({}),
+          links: links,
+          inbox: inbox,
         ),
       ),
     );
@@ -225,5 +237,52 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SearchPage), findsOneWidget);
+  });
+
+  final shared = Uri.parse(
+    'https://open.spotify.com/album/6dVIqQ8qmQ5GBnJ9shOYGE',
+  );
+
+  testWidgets('a shared link opens once the shelf has loaded', (tester) async {
+    await pumpShelf(
+      tester,
+      FakeShelf([]),
+      shared: shared,
+      resolved: FoundAlbum(result('mb-ok', 'OK Computer')),
+    );
+
+    expect(links.links, [shared]);
+    expect(find.byType(EntryPage), findsOneWidget);
+    await tester.tap(find.text('Add to shelf'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Added to your shelf'), findsOneWidget);
+    expect(find.text('Added mb-ok'), findsOneWidget);
+    expect(inbox.value, isNull);
+  });
+
+  testWidgets('a link shared while the app runs opens too', (tester) async {
+    await pumpShelf(tester, FakeShelf([]));
+
+    inbox.value = shared;
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ResolvePage), findsOneWidget);
+  });
+
+  testWidgets('a shared album already on the shelf opens its entry', (
+    tester,
+  ) async {
+    await pumpShelf(
+      tester,
+      FakeShelf(three),
+      shared: shared,
+      resolved: FoundAlbum(result('mb2', 'Discovery')),
+    );
+
+    expect(find.byType(ResolvePage), findsNothing);
+    expect(find.byType(EntryPage), findsOneWidget);
+    expect(find.text('Remove from shelf'), findsOneWidget);
+    expect(find.text('Already on your shelf'), findsOneWidget);
   });
 }

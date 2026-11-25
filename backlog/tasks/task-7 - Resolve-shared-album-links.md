@@ -1,9 +1,10 @@
 ---
 id: TASK-7
 title: Resolve shared album links
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-23T17:42:00Z'
+updated_date: '2026-11-25T16:09:00Z'
 labels: []
 dependencies:
   - TASK-5
@@ -18,7 +19,7 @@ Turn a shared Spotify or Bandcamp link into album data without a Spotify develop
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 MusicBrainz hit rate measured on at least 10 real shared links and noted in docs/project.md
-- [ ] #2 A shared Spotify and Bandcamp link each resolve to title, artist and cover
-- [ ] #3 Tests use recorded responses, no live network
+- [x] #1 MusicBrainz hit rate measured on at least 10 real shared links and noted in docs/project.md
+- [x] #2 A shared Spotify and Bandcamp link each resolve to title, artist and cover
+- [x] #3 Tests use recorded responses, no live network
 <!-- AC:END -->

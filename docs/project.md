@@ -72,6 +72,13 @@ or more albums and look at the feed every week.
   as a fallback. Test: look up a few real shared links in M1 and measure how
   many MusicBrainz finds. The Web API is the last resort: its development
   mode (checked 2026-11-23) allows only 5 users and needs a Premium owner.
+  **Measured 2026-11-25** on 20 real links (10 Spotify, 10 Bandcamp, taken
+  from the pages' own "more by" lists): MusicBrainz URL lookup found 16;
+  page metadata (Spotify `og:title`/`og:description`, Bandcamp JSON-LD) plus
+  a MusicBrainz search found 16; both together 19. The search picked the
+  single instead of the album 3 times, so it filters by type. The one miss
+  isn't on MusicBrainz at all; it goes to "Add it yourself" with the page's
+  title, artist and cover. No Spotify developer app needed.
 - **Bandcamp has no public API for a fan's collection.** Assumption: a shared
   album link can be resolved from the page's metadata (title, artist,
   artwork). Importing a whole collection means reading the public
