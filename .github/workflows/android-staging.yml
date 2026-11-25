@@ -23,6 +23,7 @@ jobs:
       VERSION: 1.0.${{ github.run_number }}
       SUPABASE_URL: https://${{ vars.SUPABASE_STAGING_PROJECT_ID }}.supabase.co
       SUPABASE_KEY: ${{ vars.SUPABASE_STAGING_PUBLISHABLE_KEY }}
+      MUSICBRAINZ_CONTACT: ${{ vars.MUSICBRAINZ_CONTACT }}
     steps:
       - name: Check configuration
         run: |
@@ -43,6 +44,7 @@ jobs:
           --build-name="$VERSION" --build-number=${{ github.run_number }}
           --dart-define=SUPABASE_URL="$SUPABASE_URL"
           --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_KEY"
+          --dart-define=MUSICBRAINZ_CONTACT="$MUSICBRAINZ_CONTACT"
         working-directory: app
       - name: Publish the release
         env:

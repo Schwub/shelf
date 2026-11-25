@@ -72,8 +72,8 @@ Deno.test("an unknown ID is NotFound, other errors fail", async () => {
     NotFound,
   );
   await assert.rejects(
-    releaseGroup(id, fakeFetch(() => new Response("", { status: 503 })).fn, ""),
-    /503/,
+    releaseGroup(id, fakeFetch(() => new Response("", { status: 500 })).fn, ""),
+    /500/,
   );
 });
 
@@ -113,4 +113,22 @@ Deno.test("the User-Agent carries the contact when one is set", () => {
   );
   assert.equal(userAgent(undefined), "shelf/1.0");
   assert.equal(userAgent(""), "shelf/1.0");
+});
+
+Deno.test("a busy MusicBrainz (503) gets one retry", async () => {
+  let calls = 0;
+  const busyOnce = fakeFetch(() =>
+    calls++ === 0
+      ? new Response("", { status: 503 })
+      : Response.json(okComputer)
+  );
+  assert.equal(
+    (await releaseGroup(id, busyOnce.fn, "", 0)).title,
+    "OK Computer",
+  );
+  assert.equal(busyOnce.requests.length, 2);
+
+  const busy = fakeFetch(() => new Response("", { status: 503 }));
+  await assert.rejects(releaseGroup(id, busy.fn, "", 0), /503/);
+  assert.equal(busy.requests.length, 2);
 });

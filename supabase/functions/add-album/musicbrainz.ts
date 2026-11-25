@@ -19,16 +19,27 @@ export interface ReleaseGroup {
 
 export class NotFound extends Error {}
 
-/** The album (release group) with this MusicBrainz ID. */
+/**
+ * The album (release group) with this MusicBrainz ID. MusicBrainz answers
+ * 503 when its rate limit is hit (servers share addresses), so that is
+ * retried once after [retryAfter] milliseconds.
+ */
 export async function releaseGroup(
   id: string,
   fetchFn: Fetch,
   agent: string,
+  retryAfter = 1100,
 ): Promise<ReleaseGroup> {
-  const response = await fetchFn(
-    `https://musicbrainz.org/ws/2/release-group/${id}?inc=artist-credits&fmt=json`,
-    { headers: { "User-Agent": agent, Accept: "application/json" } },
-  );
+  const get = () =>
+    fetchFn(
+      `https://musicbrainz.org/ws/2/release-group/${id}?inc=artist-credits&fmt=json`,
+      { headers: { "User-Agent": agent, Accept: "application/json" } },
+    );
+  let response = await get();
+  if (response.status === 503) {
+    await new Promise((resolve) => setTimeout(resolve, retryAfter));
+    response = await get();
+  }
   if (response.status === 404) throw new NotFound(id);
   if (!response.ok) {
     throw new Error(`MusicBrainz answered ${response.status}`);
