@@ -6,7 +6,8 @@ insert into auth.users (id, email) values
   ('22222222-2222-2222-2222-222222222222', 'bob@example.com');
 
 insert into public.albums (id, title, artist) values
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Album A', 'Artist A');
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Album A', 'Artist A'),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Album B', 'Artist B');
 
 insert into public.shelf_entries (user_id, album_id, comment) values
   ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Bob''s');
@@ -31,12 +32,11 @@ select set_config('request.jwt.claims',
   '{"sub": "11111111-1111-1111-1111-111111111111", "role": "authenticated"}', true);
 set local role authenticated;
 
-select results_eq('select count(*)::int from public.albums', array[1],
+select results_eq('select count(*)::int from public.albums', array[2],
   'signed-in users read albums');
-select lives_ok(
-  $$insert into public.albums (id, title, artist)
-    values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Album B', 'Artist B')$$,
-  'signed-in users add albums');
+select throws_ok(
+  $$insert into public.albums (title, artist) values ('X', 'Y')$$,
+  '42501', null, 'only the add-album function adds albums');
 
 update public.albums set title = 'Changed' where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 delete from public.albums where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';

@@ -7,11 +7,13 @@ class Album {
     required this.id,
     required this.title,
     required this.artist,
+    this.musicbrainzId,
     this.year,
     this.coverUrl,
   });
 
   final String id, title, artist;
+  final String? musicbrainzId;
   final int? year;
   final String? coverUrl;
 }
@@ -67,6 +69,10 @@ abstract class ShelfRepository {
   Future<void> save(String entryId, {int? rating, String? comment});
 
   Future<void> remove(String entryId);
+
+  /// Adds the album with this MusicBrainz ID to the shelf: the add-album
+  /// function puts it in the shared catalog (with its cover) if needed.
+  Future<void> add(String musicbrainzId, {int? rating, String? comment});
 }
 
 class SupabaseShelfRepository implements ShelfRepository {
@@ -82,7 +88,7 @@ class SupabaseShelfRepository implements ShelfRepository {
           .from('shelf_entries')
           .select(
             'id, rating, comment, '
-            'album:albums(id, title, artist, year, cover_url), '
+            'album:albums(id, musicbrainz_id, title, artist, year, cover_url), '
             'entry_tags(tag_id)',
           )
           .order('created_at', ascending: false),
@@ -122,6 +128,7 @@ class SupabaseShelfRepository implements ShelfRepository {
 
   static Album _album(Map<String, dynamic> a) => Album(
     id: a['id'],
+    musicbrainzId: a['musicbrainz_id'],
     title: a['title'],
     artist: a['artist'],
     year: a['year'],
@@ -131,11 +138,24 @@ class SupabaseShelfRepository implements ShelfRepository {
   @override
   Future<void> save(String entryId, {int? rating, String? comment}) => _db
       .from('shelf_entries')
-      .update({
-        'rating': rating,
-        'comment': comment == null || comment.trim().isEmpty ? null : comment,
-      })
+      .update({'rating': rating, 'comment': _comment(comment)})
       .eq('id', entryId);
+
+  static String? _comment(String? c) =>
+      c == null || c.trim().isEmpty ? null : c.trim();
+
+  @override
+  Future<void> add(String musicbrainzId, {int? rating, String? comment}) async {
+    final response = await _db.functions.invoke(
+      'add-album',
+      body: {'musicbrainz_id': musicbrainzId},
+    );
+    await _db.from('shelf_entries').insert({
+      'album_id': (response.data as Map<String, dynamic>)['id'],
+      'rating': rating,
+      'comment': _comment(comment),
+    });
+  }
 
   @override
   Future<void> remove(String entryId) =>

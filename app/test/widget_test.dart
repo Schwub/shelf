@@ -3,6 +3,7 @@ import 'package:shelf_app/main.dart';
 
 import 'auth/fake_auth.dart';
 import 'shelf/fake_shelf.dart';
+import 'search/fake_search.dart';
 
 void main() {
   testWidgets('starts on the shelf when signed in', (tester) async {
@@ -10,6 +11,7 @@ void main() {
       ShelfApp(
         auth: FakeAuth(signedIn: true),
         shelf: FakeShelf([entry('1', 'Blue')]),
+        search: FakeSearch({}),
       ),
     );
     await tester.pumpAndSettle();
@@ -19,7 +21,9 @@ void main() {
   });
 
   testWidgets('starts on sign-in when signed out', (tester) async {
-    await tester.pumpWidget(ShelfApp(auth: FakeAuth(), shelf: FakeShelf([])));
+    await tester.pumpWidget(
+      ShelfApp(auth: FakeAuth(), shelf: FakeShelf([]), search: FakeSearch({})),
+    );
 
     expect(find.text('Send sign-in code'), findsOneWidget);
   });

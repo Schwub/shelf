@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../search/album_search.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/cover.dart';
 import '../widgets/help_line.dart';
@@ -9,23 +10,48 @@ import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
 import 'shelf_data.dart';
 
-enum EntryResult { saved, removed }
+enum EntryResult { added, saved, removed }
 
-/// An album on the shelf: change its rating and comment, or remove it. The
-/// shelf removes it after the snackbar's Undo has passed. Tags are TASK-16.
+/// An album on the shelf: change its rating and comment, or remove it (the
+/// shelf removes it after the snackbar's Undo has passed). [EntryPage.add]
+/// shows a search result to add instead. Tags are TASK-16.
 class EntryPage extends StatefulWidget {
-  const EntryPage({super.key, required this.entry, required this.shelf});
+  const EntryPage({
+    super.key,
+    required ShelfEntry this.entry,
+    required this.shelf,
+  }) : result = null;
 
-  final ShelfEntry entry;
+  const EntryPage.add({
+    super.key,
+    required SearchResult this.result,
+    required this.shelf,
+  }) : entry = null;
+
+  final ShelfEntry? entry;
+  final SearchResult? result;
   final ShelfRepository shelf;
+
+  bool get adding => entry == null;
+
+  Album get album =>
+      entry?.album ??
+      Album(
+        id: '',
+        musicbrainzId: result!.musicbrainzId,
+        title: result!.title,
+        artist: result!.artist,
+        year: result!.year,
+        coverUrl: result!.coverUrl,
+      );
 
   @override
   State<EntryPage> createState() => _EntryPageState();
 }
 
 class _EntryPageState extends State<EntryPage> {
-  late int? _rating = widget.entry.rating;
-  late final _comment = TextEditingController(text: widget.entry.comment);
+  late int? _rating = widget.entry?.rating;
+  late final _comment = TextEditingController(text: widget.entry?.comment);
   bool _saving = false;
   bool _saveFailed = false;
 
@@ -42,11 +68,11 @@ class _EntryPageState extends State<EntryPage> {
   }
 
   bool get _changed =>
-      _rating != widget.entry.rating ||
-      _comment.text.trim() != (widget.entry.comment ?? '').trim();
+      _rating != widget.entry?.rating ||
+      _comment.text.trim() != (widget.entry?.comment ?? '').trim();
 
   Future<void> _save() async {
-    if (!_changed) {
+    if (!widget.adding && !_changed) {
       Navigator.of(context).pop();
       return;
     }
@@ -55,12 +81,23 @@ class _EntryPageState extends State<EntryPage> {
       _saveFailed = false;
     });
     try {
-      await widget.shelf.save(
-        widget.entry.id,
-        rating: _rating,
-        comment: _comment.text.trim(),
-      );
-      if (mounted) Navigator.of(context).pop(EntryResult.saved);
+      if (widget.adding) {
+        await widget.shelf.add(
+          widget.result!.musicbrainzId,
+          rating: _rating,
+          comment: _comment.text.trim(),
+        );
+      } else {
+        await widget.shelf.save(
+          widget.entry!.id,
+          rating: _rating,
+          comment: _comment.text.trim(),
+        );
+      }
+      if (mounted) {
+        Navigator.of(context)
+            .pop(widget.adding ? EntryResult.added : EntryResult.saved);
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -134,7 +171,7 @@ class _EntryPageState extends State<EntryPage> {
   Widget build(BuildContext context) {
     final c = context.shelf;
     final text = Theme.of(context).textTheme;
-    final album = widget.entry.album;
+    final album = widget.album;
     final label = text.labelSmall!.copyWith(color: c.muted);
     return PopScope(
       canPop: !_changed,
@@ -190,16 +227,18 @@ class _EntryPageState extends State<EntryPage> {
                             minLines: 3,
                             maxLines: 8,
                           ),
-                          const SizedBox(height: 24),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: ShelfKey(
-                              onPressed: () =>
-                                  Navigator.of(context)
-                                      .pop(EntryResult.removed),
-                              child: const Text('Remove from shelf'),
+                          if (!widget.adding) ...[
+                            const SizedBox(height: 24),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: ShelfKey(
+                                onPressed: () =>
+                                    Navigator.of(context)
+                                        .pop(EntryResult.removed),
+                                child: const Text('Remove from shelf'),
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
@@ -259,7 +298,12 @@ class _EntryPageState extends State<EntryPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (_saveFailed) ...[
-              const HelpLine("Couldn't save. Try again.", error: true),
+              HelpLine(
+                widget.adding
+                    ? "Couldn't add the album. Try again."
+                    : "Couldn't save. Try again.",
+                error: true,
+              ),
               const SizedBox(height: 8),
             ],
             Row(
@@ -275,7 +319,11 @@ class _EntryPageState extends State<EntryPage> {
                   child: ShelfKey(
                     primary: true,
                     onPressed: _saving ? null : _save,
-                    child: Text(_saving ? 'Saving…' : 'Save'),
+                    child: Text(
+                      widget.adding
+                          ? (_saving ? 'Adding…' : 'Add to shelf')
+                          : (_saving ? 'Saving…' : 'Save'),
+                    ),
                   ),
                 ),
               ],

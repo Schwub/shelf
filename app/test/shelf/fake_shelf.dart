@@ -8,7 +8,13 @@ const want = ShelfFilter(tagId: 'want', label: 'Want');
 ShelfEntry entry(String id, String title, {int? rating, Set<String>? tags}) =>
     ShelfEntry(
       id: id,
-      album: Album(id: 'a$id', title: title, artist: 'Artist $id', year: 1997),
+      album: Album(
+        id: 'a$id',
+        musicbrainzId: 'mb$id',
+        title: title,
+        artist: 'Artist $id',
+        year: 1997,
+      ),
       rating: rating,
       tagIds: tags ?? const {},
     );
@@ -21,7 +27,7 @@ class FakeShelf implements ShelfRepository {
   final List<ShelfEntry> entries;
   final List<ShelfFilter> filters;
   final removed = <String>[];
-  bool failLoad = false, failSave = false;
+  bool failLoad = false, failSave = false, failAdd = false;
   int loads = 0;
 
   @override
@@ -48,6 +54,28 @@ class FakeShelf implements ShelfRepository {
       rating: rating,
       comment: comment == null || comment.isEmpty ? null : comment,
       tagIds: e.tagIds,
+    );
+  }
+
+  @override
+  Future<void> add(String musicbrainzId, {int? rating, String? comment}) async {
+    if (failAdd) {
+      failAdd = false;
+      throw Exception('offline');
+    }
+    entries.insert(
+      0,
+      ShelfEntry(
+        id: 'new-$musicbrainzId',
+        album: Album(
+          id: 'album-$musicbrainzId',
+          musicbrainzId: musicbrainzId,
+          title: 'Added $musicbrainzId',
+          artist: 'Someone',
+        ),
+        rating: rating,
+        comment: comment == null || comment.isEmpty ? null : comment,
+      ),
     );
   }
 

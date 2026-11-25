@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../auth/auth.dart';
 import '../auth/sign_out.dart';
 import '../preview/preview_page.dart';
+import '../search/album_search.dart';
+import '../search/search_page.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/shelf_board.dart';
@@ -16,10 +18,16 @@ import 'spines_view.dart';
 
 /// The signed-in user's albums as covers or spines, with the filter bar.
 class ShelfPage extends StatefulWidget {
-  const ShelfPage({super.key, required this.auth, required this.shelf});
+  const ShelfPage({
+    super.key,
+    required this.auth,
+    required this.shelf,
+    required this.search,
+  });
 
   final Auth auth;
   final ShelfRepository shelf;
+  final AlbumSearch search;
 
   @override
   State<ShelfPage> createState() => _ShelfPageState();
@@ -75,12 +83,33 @@ class _ShelfPageState extends State<ShelfPage> {
     );
     if (!mounted) return;
     switch (result) {
-      case EntryResult.saved:
+      case EntryResult.saved || EntryResult.added:
         await _load();
       case EntryResult.removed:
         _remove(entry);
       case null:
         break;
+    }
+  }
+
+  Future<void> _addAlbum() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute<EntryResult>(
+        builder: (_) => SearchPage(
+          search: widget.search,
+          shelf: widget.shelf,
+          onShelf: {
+            for (final e in _shelf?.entries ?? const <ShelfEntry>[])
+              ?e.album.musicbrainzId: e,
+          },
+        ),
+      ),
+    );
+    if (!mounted || result == null) return;
+    await _load();
+    if (result == EntryResult.added && mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Added to your shelf')));
     }
   }
 
@@ -197,11 +226,23 @@ class _ShelfPageState extends State<ShelfPage> {
     final filter = _filter;
     final entries = visible.matching(filter);
     if (visible.entries.isEmpty) {
-      return const _Message(
+      return _Message(
         title: 'Your shelf is empty',
         text:
             'Search for an album, or share one from Spotify or Bandcamp: '
             'tap Share, then shelf.',
+        action: ShelfKey(
+          primary: true,
+          onPressed: _addAlbum,
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.search),
+              SizedBox(width: 8),
+              Text('Search for an album'),
+            ],
+          ),
+        ),
       );
     }
     if (entries.isEmpty) {
@@ -249,6 +290,20 @@ class _ShelfPageState extends State<ShelfPage> {
                 ),
                 const SizedBox(width: 8),
               ],
+              Expanded(
+                child: ShelfKey(
+                  primary: true,
+                  onPressed: _addAlbum,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add),
+                      SizedBox(width: 8),
+                      Text('Add album'),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

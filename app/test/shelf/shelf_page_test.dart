@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shelf_app/search/search_page.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/spines_view.dart';
@@ -11,6 +12,7 @@ import 'package:shelf_app/widgets/shelf_key.dart';
 
 import '../auth/fake_auth.dart';
 import 'fake_shelf.dart';
+import '../search/fake_search.dart';
 
 void main() {
   late FakeShelf shelf;
@@ -29,7 +31,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: shelfTheme(brightness),
-        home: ShelfPage(auth: FakeAuth(signedIn: true), shelf: fake),
+        home: ShelfPage(
+          auth: FakeAuth(signedIn: true),
+          shelf: fake,
+          search: FakeSearch({}),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -209,5 +215,14 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await pumpShelf(tester, FakeShelf(three));
     expect(find.byType(SpinesView), findsOneWidget);
+  });
+
+  testWidgets('Add album opens the search', (tester) async {
+    await pumpShelf(tester, FakeShelf([]));
+
+    await tester.tap(find.text('Add album'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SearchPage), findsOneWidget);
   });
 }
