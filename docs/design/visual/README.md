@@ -19,4 +19,8 @@
 - `variations/themes-warm-2.html` – six more: two warmer takes on Tobacco
   & copper (Ember, Cognac) and four in the retro-futurism direction of the
   original Evening (Space age, Tube amp, Cassette chrome, Atomic cream).
+- `variations/themes-retro.html` – eight away from brown: guitar finishes
+  (Sunburst, Sonic blue, Surf green, Candy red, Shell pink), retro orange
+  (Tangerine night, Studio orange) and Teal & mustard. App names would stay
+  generic.
 - `screens/signin.html` predates sign-in by code: the built screens (TASK-6) add a code field to Check your email.
