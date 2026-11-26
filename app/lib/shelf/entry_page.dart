@@ -8,12 +8,11 @@ import '../search/album_search.dart';
 import '../theme/shelf_colors.dart';
 import '../tracks/track_editor_page.dart';
 import '../tracks/track_section.dart';
+import '../widgets/album_stage.dart';
 import '../widgets/confirm_dialog.dart';
-import '../widgets/cover.dart';
 import '../widgets/help_line.dart';
 import '../widgets/note.dart';
 import '../widgets/rating_keys.dart';
-import '../widgets/shelf_board.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
 import 'shelf.dart';
@@ -283,7 +282,16 @@ class _EntryPageState extends State<EntryPage> {
               Expanded(
                 child: ListView(
                   children: [
-                    _stage(album),
+                    AlbumStage(
+                      album,
+                      photo: widget.manual?.cover,
+                      action: ShelfKey(
+                        semanticLabel: 'Close',
+                        padding: EdgeInsets.zero,
+                        onPressed: _leave,
+                        child: const Icon(Icons.close),
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
                       child: Column(
@@ -418,50 +426,6 @@ class _EntryPageState extends State<EntryPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  /// The cover standing on its board, with the close key.
-  Widget _stage(Album album) {
-    final photo = widget.manual?.cover;
-    return SizedBox(
-      height: 260,
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Column(
-              children: [
-                SizedBox(
-                  width: 200,
-                  child: photo != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: AspectRatio(
-                            aspectRatio: 1,
-                            child: Image.memory(photo, fit: BoxFit.cover),
-                          ),
-                        )
-                      : Cover(album),
-                ),
-                const ShelfBoard(),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 12,
-            right: 20,
-            child: ShelfKey(
-              semanticLabel: 'Close',
-              padding: EdgeInsets.zero,
-              onPressed: _leave,
-              child: const Icon(Icons.close),
-            ),
-          ),
-        ],
       ),
     );
   }

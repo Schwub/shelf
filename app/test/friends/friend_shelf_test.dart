@@ -169,6 +169,18 @@ void main() {
     expect(find.text('3. The National Anthem'), findsNothing);
   });
 
+  testWidgets("Back leaves a friend's album", (tester) async {
+    await openAnna(tester);
+    await tester.tap(find.text('Kid A'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.chevron_left));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Anna's rating"), findsNothing);
+    expect(find.byType(FriendShelfPage), findsOneWidget);
+  });
+
   testWidgets("adding a friend's album puts it on My shelf", (tester) async {
     await openAnna(tester);
     await tester.tap(find.text('Kid A'));
