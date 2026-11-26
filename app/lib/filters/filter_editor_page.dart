@@ -5,6 +5,7 @@ import '../shelf/shelf.dart';
 import '../shelf/shelf_repository.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/dates.dart';
 import '../widgets/help_line.dart';
 import '../widgets/rating_keys.dart';
 import '../widgets/shelf_field.dart';
@@ -108,6 +109,36 @@ class _FilterEditorPageState extends State<FilterEditorPage> {
       reportError(e, stack);
       if (mounted) setState(() => _error = 'Couldn’t delete the filter.');
     }
+  }
+
+  bool get _between => _draft.addedFrom != null || _draft.addedTo != null;
+
+  /// Between two days, from the date range picker; tapped again, the range
+  /// goes.
+  Future<void> _pickDays() async {
+    if (_between) {
+      setState(
+        () => _draft = _draft.copyWith(
+          addedFrom: () => null,
+          addedTo: () => null,
+        ),
+      );
+      return;
+    }
+    final now = DateTime.now();
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year, now.month, now.day),
+    );
+    if (range == null || !mounted) return;
+    setState(
+      () => _draft = _draft.copyWith(
+        addedWithinDays: () => null,
+        addedFrom: () => range.start,
+        addedTo: () => range.end,
+      ),
+    );
   }
 
   @override
@@ -277,6 +308,39 @@ class _FilterEditorPageState extends State<FilterEditorPage> {
                       child: const Text('Has favorite tracks'),
                     ),
                   ),
+                  heading(
+                    'Added',
+                    action: Text(
+                      describeAdded(_draft) ?? 'Any time',
+                      style: label,
+                    ),
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final (days, name) in withinDays)
+                        ShelfKey(
+                          light: true,
+                          selected: _draft.addedWithinDays == days,
+                          onPressed: () => setState(
+                            () => _draft = _draft.copyWith(
+                              addedWithinDays: () =>
+                                  _draft.addedWithinDays == days ? null : days,
+                              addedFrom: () => null,
+                              addedTo: () => null,
+                            ),
+                          ),
+                          child: Text(name),
+                        ),
+                      ShelfKey(
+                        light: true,
+                        selected: _between,
+                        onPressed: _pickDays,
+                        child: const Text('Between…'),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 24),
                   Text(switch (matches) {
                     null => 'Choose at least one condition.',
@@ -333,3 +397,23 @@ class _FilterEditorPageState extends State<FilterEditorPage> {
     );
   }
 }
+
+/// The editor's choices for albums added lately.
+const withinDays = [
+  (7, 'Last 7 days'),
+  (30, 'Last 30 days'),
+  (90, 'Last 90 days'),
+  (365, 'Last year'),
+];
+
+/// "Last 30 days", "1 Jun 2026 – 31 Aug 2026", "Since 1 Jun 2026"; null
+/// without a date condition.
+String? describeAdded(ShelfFilter f) => switch (f) {
+  ShelfFilter(addedWithinDays: final days?) =>
+    withinDays.where((w) => w.$1 == days).firstOrNull?.$2 ?? 'Last $days days',
+  ShelfFilter(addedFrom: final from?, addedTo: final to?) =>
+    '${formatDay(from)} – ${formatDay(to)}',
+  ShelfFilter(addedFrom: final from?) => 'Since ${formatDay(from)}',
+  ShelfFilter(addedTo: final to?) => 'Until ${formatDay(to)}',
+  _ => null,
+};

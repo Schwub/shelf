@@ -373,6 +373,38 @@ void main() {
     expect(shelf.allFilters.any((f) => f.label == 'Mine'), isFalse);
   });
 
+  test('filters on when albums were added', () async {
+    final s = await signIn();
+    final entry = await shelve(s);
+
+    await s.repo.saveFilter(
+      ShelfFilter(
+        name: 'Autumn',
+        addedFrom: DateTime(2026, 9, 1),
+        addedTo: DateTime(2026, 11, 30),
+      ),
+    );
+    var shelf = await s.repo.load();
+    final autumn = shelf.allFilters.last;
+    expect(autumn.addedFrom, DateTime(2026, 9, 1));
+    expect(autumn.addedTo, DateTime(2026, 11, 30));
+
+    await s.repo.saveFilter(
+      autumn.copyWith(
+        addedWithinDays: () => 7,
+        addedFrom: () => null,
+        addedTo: () => null,
+      ),
+    );
+    shelf = await s.repo.load();
+    final lately = shelf.allFilters.last;
+    expect(lately.addedWithinDays, 7);
+    expect(lately.addedFrom, isNull);
+    expect(shelf.matching(lately).map((e) => e.id), [
+      entry,
+    ], reason: 'created_at arrives as addedAt');
+  });
+
   test('a tag filter goes when its tag is deleted', () async {
     final s = await signIn();
     final repo = s.repo;

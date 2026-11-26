@@ -71,6 +71,7 @@ class ShelfEntry {
   const ShelfEntry({
     required this.id,
     required this.album,
+    required this.addedAt,
     this.rating,
     this.comment,
     this.tagIds = const {},
@@ -81,6 +82,9 @@ class ShelfEntry {
 
   final String id;
   final Album album;
+
+  /// When it went on the shelf.
+  final DateTime addedAt;
   final int? rating;
   final String? comment;
   final Set<String> tagIds;
@@ -197,8 +201,8 @@ class ManualAlbum {
 }
 
 /// A key of the shelf's filter bar: albums with its tags (any or all of
-/// them), a minimum rating or none, favorite tracks
-/// (docs/features/filters.md). A filter with one tag and nothing else shows
+/// them), a minimum rating or none, favorite tracks, added in the last
+/// days or between two dates (docs/features/filters.md). A filter with one tag and nothing else shows
 /// the tag's name; others carry their own [name].
 @immutable
 class ShelfFilter {
@@ -211,6 +215,9 @@ class ShelfFilter {
     this.minRating,
     this.unrated = false,
     this.favoriteTracks = false,
+    this.addedWithinDays,
+    this.addedFrom,
+    this.addedTo,
   });
 
   /// The simple filter: albums with [tagId].
@@ -230,12 +237,28 @@ class ShelfFilter {
   /// In half stars, like [ShelfEntry.rating].
   final int? minRating;
 
+  /// Added in the last days, or from and to a day (both included, either
+  /// open); never both kinds.
+  final int? addedWithinDays;
+  final DateTime? addedFrom, addedTo;
+
+  bool get _added =>
+      addedWithinDays != null || addedFrom != null || addedTo != null;
+
   /// One tag and nothing else: shown by the tag's name.
   bool get isTag =>
-      tagIds.length == 1 && minRating == null && !unrated && !favoriteTracks;
+      tagIds.length == 1 &&
+      minRating == null &&
+      !unrated &&
+      !favoriteTracks &&
+      !_added;
 
   bool get hasConditions =>
-      tagIds.isNotEmpty || minRating != null || unrated || favoriteTracks;
+      tagIds.isNotEmpty ||
+      minRating != null ||
+      unrated ||
+      favoriteTracks ||
+      _added;
 
   ShelfFilter copyWith({
     String? label,
@@ -245,6 +268,9 @@ class ShelfFilter {
     int? Function()? minRating,
     bool? unrated,
     bool? favoriteTracks,
+    int? Function()? addedWithinDays,
+    DateTime? Function()? addedFrom,
+    DateTime? Function()? addedTo,
   }) => ShelfFilter(
     id: id,
     name: name ?? this.name,
@@ -254,6 +280,11 @@ class ShelfFilter {
     minRating: minRating != null ? minRating() : this.minRating,
     unrated: unrated ?? this.unrated,
     favoriteTracks: favoriteTracks ?? this.favoriteTracks,
+    addedWithinDays: addedWithinDays != null
+        ? addedWithinDays()
+        : this.addedWithinDays,
+    addedFrom: addedFrom != null ? addedFrom() : this.addedFrom,
+    addedTo: addedTo != null ? addedTo() : this.addedTo,
   );
 
   bool matches(ShelfEntry e) {
@@ -265,6 +296,14 @@ class ShelfFilter {
     if (minRating case final min? when (e.rating ?? 0) < min) return false;
     if (unrated && e.rating != null) return false;
     if (favoriteTracks && !e.tracks.any((t) => t.favorite)) return false;
+    final added = e.addedAt.toLocal();
+    if (addedWithinDays case final days?
+        when added.isBefore(DateTime.now().subtract(Duration(days: days)))) {
+      return false;
+    }
+    final day = DateTime(added.year, added.month, added.day);
+    if (addedFrom case final from? when day.isBefore(from)) return false;
+    if (addedTo case final to? when day.isAfter(to)) return false;
     return true;
   }
 }

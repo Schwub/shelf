@@ -56,6 +56,7 @@ void main() {
 
     expect(find.text('Blue'), findsOneWidget);
     expect(find.text('Artist 1, 1997'), findsOneWidget);
+    expect(find.text('Added 1 Nov 2026'), findsOneWidget);
     expect(find.text('3 of 5 stars'), findsOneWidget);
   });
 

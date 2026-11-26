@@ -68,9 +68,13 @@ final suggestedGroups = [
   ),
 ];
 
+/// When the test albums were added.
+final added = DateTime(2026, 11, 1);
+
 ShelfEntry entry(String id, String title, {int? rating, Set<String>? tags}) =>
     ShelfEntry(
       id: id,
+      addedAt: added,
       album: Album(
         id: 'a$id',
         musicbrainzId: 'mb$id',
@@ -176,6 +180,7 @@ class FakeShelf implements ShelfRepository {
     final e = entries[i];
     entries[i] = ShelfEntry(
       id: e.id,
+      addedAt: e.addedAt,
       album: e.album,
       rating: rating,
       comment: comment == null || comment.isEmpty ? null : comment,
@@ -206,6 +211,7 @@ class FakeShelf implements ShelfRepository {
       0,
       ShelfEntry(
         id: 'new-$musicbrainzId',
+        addedAt: DateTime.now(),
         album: Album(
           id: 'album-$musicbrainzId',
           musicbrainzId: musicbrainzId,
@@ -249,6 +255,7 @@ class FakeShelf implements ShelfRepository {
       0,
       ShelfEntry(
         id: 'manual-${manual.length}',
+        addedAt: DateTime.now(),
         album: Album(
           id: 'm${manual.length}',
           title: album.title,
@@ -372,6 +379,7 @@ class FakeShelf implements ShelfRepository {
     for (final (i, e) in entries.indexed) {
       entries[i] = ShelfEntry(
         id: e.id,
+        addedAt: e.addedAt,
         album: e.album,
         rating: e.rating,
         comment: e.comment,
@@ -487,6 +495,9 @@ class FakeShelf implements ShelfRepository {
           minRating: saved.minRating,
           unrated: saved.unrated,
           favoriteTracks: saved.favoriteTracks,
+          addedWithinDays: saved.addedWithinDays,
+          addedFrom: saved.addedFrom,
+          addedTo: saved.addedTo,
         ),
       );
     } else {

@@ -10,6 +10,7 @@ import '../tracks/track_editor_page.dart';
 import '../tracks/track_section.dart';
 import '../widgets/album_stage.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/dates.dart';
 import '../widgets/help_line.dart';
 import '../widgets/note.dart';
 import '../widgets/rating_keys.dart';
@@ -317,6 +318,10 @@ class _EntryPageState extends State<EntryPage> {
                             ].join(', '),
                             style: text.bodyMedium!.copyWith(color: c.muted),
                           ),
+                          if (widget.entry case final entry?) ...[
+                            const SizedBox(height: 4),
+                            HelpLine('Added ${formatDay(entry.addedAt)}'),
+                          ],
                           if (addedFrom != null) ...[
                             const SizedBox(height: 4),
                             HelpLine("Added from $addedFrom's shelf"),

@@ -173,6 +173,7 @@ void main() {
   ) async {
     final mine = ShelfEntry(
       id: 'e1',
+      addedAt: added,
       album: const Album(
         id: 'a1',
         musicbrainzId: 'mb-ok',
