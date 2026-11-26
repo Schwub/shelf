@@ -1,9 +1,10 @@
 ---
 id: TASK-44
 title: Android test builds a friend can install
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T15:21:00Z'
+updated_date: '2026-11-26T15:29:00Z'
 labels: []
 dependencies: []
 priority: high
