@@ -116,9 +116,11 @@
   other; Play Store releases get their own private key. Firebase App
   Distribution was the plan, but the account hit its project limit.
 - **Testers on Android** (TASK-44, decided 2026-11-26): friends who test
-  are added to the repository with the Read role and install like the
+  are added to the repository as collaborators and install like the
   author (step 2 below), so the releases stay private and nothing changes
-  in the build. Considered: a public releases-only repository (anyone with
+  in the build. A personal account's repository has no read-only role:
+  collaborators can push too, so trusted friends only (read-only needs
+  an organisation). Considered: a public releases-only repository (anyone with
   the link could install), Google Play internal testing (the way for the
   public launch: fee, identity check, app bundles) and a download link on
   the web app (Cloudflare Pages caps files at 25 MiB). Testers can read
@@ -144,7 +146,7 @@ One-time Android setup (TASK-23):
    access to `Schwub/shelf` and enter it in Obtainium's settings (GitHub
    source). Then add the app with the URL `https://github.com/Schwub/shelf`.
 3. A tester: invite their GitHub account (repository Settings →
-   Collaborators, role Read); they accept, then do step 2 with their own
+   Collaborators; they can push too); they accept, then do step 2 with their own
    token. Fine-grained tokens only reach repositories of the token's own
    account or organisations, so if `Schwub/shelf` isn't offered they need
    a classic token with the `repo` scope (it can do what their account
