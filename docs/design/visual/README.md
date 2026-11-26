@@ -24,3 +24,7 @@
   (Tangerine night, Studio orange) and Teal & mustard. App names would stay
   generic.
 - `screens/signin.html` predates sign-in by code: the built screens (TASK-6) add a code field to Check your email.
+- `variations/cover-background.html` – TASK-42: the album entry with
+  today's plain stage, A (the cover blurred and zoomed in behind it) and B
+  (a gradient from the cover's prominent colours), in Tobacco, Evening and
+  Daylight, plus an album without a cover.
