@@ -2,10 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelf_app/main.dart';
+import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
-import 'package:shelf_app/settings/settings.dart';
 
 import '../auth/fake_auth.dart';
 import '../search/fake_search.dart';

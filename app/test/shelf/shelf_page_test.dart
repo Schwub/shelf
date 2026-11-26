@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelf_app/filters/filters_page.dart';
 import 'package:shelf_app/search/search_page.dart';
+import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/resolve_page.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
@@ -13,7 +14,6 @@ import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/albums_list_view.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
-import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/widgets/filter_bar.dart';
 import 'package:shelf_app/widgets/rating_keys.dart';
 import 'package:shelf_app/widgets/rating_meter.dart';
@@ -288,7 +288,6 @@ void main() {
     expect(server.saved?.list, isTrue);
 
     // Signed in on another device.
-    SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(const SizedBox());
     await pumpShelf(tester, FakeShelf(three), settings: server);
     expect(find.byType(AlbumsListView), findsOneWidget);

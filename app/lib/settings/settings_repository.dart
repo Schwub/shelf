@@ -8,5 +8,6 @@ abstract class SettingsRepository {
   /// Null if the user never saved any.
   Future<SavedSettings?> load();
 
-  Future<void> save({required String theme, required bool list});
+  /// Saves the given settings and leaves the others.
+  Future<void> save({String? theme, bool? list});
 }

@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/auth/auth_gate.dart';
+import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
-import 'package:shelf_app/settings/settings.dart';
 
 import '../shelf/fake_shelf.dart';
 import 'fake_auth.dart';

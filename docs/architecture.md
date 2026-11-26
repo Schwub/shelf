@@ -179,7 +179,10 @@ GlitchTip (a server to run).
   offline, replaced by the saved row after sign-in; a change shows at once
   and is then saved). One column per setting, so Postgres checks values
   like the other tables do; theme names unchecked so new themes need no
-  migration. Its own `SettingsRepository`, apart from the shelf's.
+  migration. Its own `SettingsRepository`, apart from the shelf's. Each
+  save sends only the changed column, and a sync skips what the user
+  changed meanwhile. The cache outlives sign-out: someone else signing in
+  on the device sees the last user's settings until their own load.
   Considered: a JSON column (no checks), part of `ShelfRepository` (grows
   it, fails with the shelf), settings on the device only (the earlier
   state).

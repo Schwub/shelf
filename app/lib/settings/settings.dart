@@ -35,37 +35,48 @@ class Settings {
     );
   }
 
-  /// Takes the user's saved settings, if they saved any; offline, the
-  /// device's stay.
+  /// Takes the user's saved settings, if they saved any, except what the
+  /// user changed while they loaded. Offline the device's stay; not
+  /// reported, as My shelf's own load reports a failing server.
   Future<void> sync() async {
+    final (themeBefore, listBefore) = (theme.value, list.value);
     final SavedSettings? saved;
     try {
       saved = await _repository.load();
-    } catch (e, stack) {
-      await reportError(e, stack);
+    } catch (_) {
       return;
     }
     if (saved == null) return;
-    theme.value = _theme(saved.theme);
-    list.value = saved.list ?? false;
+    if (theme.value == themeBefore) theme.value = _theme(saved.theme);
+    if (list.value == listBefore) list.value = saved.list ?? false;
     await _cache();
   }
 
-  Future<void> chooseTheme(AppTheme chosen) =>
-      _choose(() => theme.value = chosen);
+  Future<void> chooseTheme(AppTheme chosen) {
+    theme.value = chosen;
+    return _save(theme: chosen.name);
+  }
 
-  Future<void> chooseList(bool chosen) => _choose(() => list.value = chosen);
+  Future<void> chooseList(bool chosen) {
+    list.value = chosen;
+    return _save(list: chosen);
+  }
 
-  /// Shown at once and kept on the device; if saving fails, the next sync
-  /// brings back what the database has.
-  Future<void> _choose(void Function() change) async {
-    change();
+  /// One save at a time, so the last choice is the one saved. Kept on the
+  /// device first; if saving fails, the next sync brings back what the
+  /// database has.
+  Future<void> _saving = Future.value();
+
+  Future<void> _save({String? theme, bool? list}) async {
     await _cache();
-    try {
-      await _repository.save(theme: theme.value.name, list: list.value);
-    } catch (e, stack) {
-      await reportError(e, stack);
-    }
+    _saving = _saving.then((_) async {
+      try {
+        await _repository.save(theme: theme, list: list);
+      } catch (e, stack) {
+        await reportError(e, stack);
+      }
+    });
+    return _saving;
   }
 
   Future<void> _cache() async {

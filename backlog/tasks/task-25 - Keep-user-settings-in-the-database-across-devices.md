@@ -1,10 +1,10 @@
 ---
 id: TASK-25
 title: Keep user settings in the database, across devices
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-25T08:02:00Z'
-updated_date: '2026-11-26T07:56:00Z'
+updated_date: '2026-11-26T08:18:00Z'
 labels: []
 dependencies: []
 ordinal: 26000
@@ -18,7 +18,13 @@ All user configuration lives in Supabase so it follows the user to every device 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A user_settings table with owner-only access and pgTAP tests
-- [ ] #2 The app works offline with the last known settings and shared_preferences only caches them
-- [ ] #3 The covers/list choice and the theme are stored there and restored on any device, also when signed in on a new one
+- [x] #1 A user_settings table with owner-only access and pgTAP tests
+- [x] #2 The app works offline with the last known settings and shared_preferences only caches them
+- [x] #3 The covers/list choice and the theme are stored there and restored on any device, also when signed in on a new one
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+user_settings table (theme, shelf_view; owner-only, column grants) and app/lib/settings/ (Settings replaces ThemeChoice; SettingsRepository + Supabase). The device copy shows before sign-in and offline; My shelf syncs the saved row, skipping what the user changed meanwhile; each save sends only the changed column, one at a time. Tests: settings unit tests incl. both races, widget tests (theme and covers/list follow the user), pgTAP, integration. Not run in a browser or on a phone.
+<!-- SECTION:NOTES:END -->

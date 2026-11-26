@@ -14,8 +14,8 @@ class FakeSettings implements SettingsRepository {
   }
 
   @override
-  Future<void> save({required String theme, required bool list}) async {
+  Future<void> save({String? theme, bool? list}) async {
     if (offline) throw Exception('offline');
-    saved = (theme: theme, list: list);
+    saved = (theme: theme ?? saved?.theme, list: list ?? saved?.list);
   }
 }

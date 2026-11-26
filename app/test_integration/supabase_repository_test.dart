@@ -1,7 +1,8 @@
-// SupabaseShelfRepository and SupabaseSettingsRepository against a local Supabase (`mise run
-// test:integration` starts it and passes its URL and keys). Checks what the
-// in-memory fake can't: PostgREST queries, database errors mapped to app
-// errors, triggers and row-level security as the app meets them.
+// SupabaseShelfRepository and SupabaseSettingsRepository against a local
+// Supabase (`mise run test:integration` starts it and passes its URL and
+// keys). Checks what the in-memory fakes can't: PostgREST queries,
+// database errors mapped to app errors, triggers and row-level security as
+// the app meets them.
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -66,7 +67,7 @@ Map<String, String> tagIds(Shelf shelf) => {
 };
 
 void main() {
-  test('settings: none at first, then saved and replaced', () async {
+  test('settings: none at first, then saved one at a time', () async {
     final s = await signIn();
     final settings = SupabaseSettingsRepository(s.db);
     expect(await settings.load(), isNull);
@@ -74,7 +75,10 @@ void main() {
     await settings.save(theme: 'evening', list: true);
     expect(await settings.load(), (theme: 'evening', list: true));
 
-    await settings.save(theme: 'tobacco', list: false);
+    await settings.save(list: false);
+    expect(await settings.load(), (theme: 'evening', list: false));
+
+    await settings.save(theme: 'tobacco');
     expect(await settings.load(), (theme: 'tobacco', list: false));
 
     final other = await signIn();

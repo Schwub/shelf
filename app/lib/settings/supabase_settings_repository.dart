@@ -25,8 +25,11 @@ class SupabaseSettingsRepository implements SettingsRepository {
     );
   }
 
+  // An upsert updates only the columns it sends.
   @override
-  Future<void> save({required String theme, required bool list}) => _db
-      .from('user_settings')
-      .upsert({'theme': theme, 'shelf_view': list ? 'list' : 'covers'});
+  Future<void> save({String? theme, bool? list}) =>
+      _db.from('user_settings').upsert({
+        'theme': ?theme,
+        if (list != null) 'shelf_view': list ? 'list' : 'covers',
+      });
 }

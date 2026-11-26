@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(10);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -23,7 +23,8 @@ set local role authenticated;
 
 select is_empty('select * from public.user_settings',
   'users cannot read others'' settings');
-update public.user_settings set theme = 'daylight';
+select lives_ok($$update public.user_settings set theme = 'daylight'$$,
+  'changing others'' settings changes nothing (see the end)');
 
 select lives_ok(
   $$insert into public.user_settings (theme, shelf_view) values ('evening', 'covers')

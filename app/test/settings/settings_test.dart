@@ -1,9 +1,37 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelf_app/settings/settings.dart';
+import 'package:shelf_app/settings/settings_repository.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
 
 import 'fake_settings.dart';
+
+/// [FakeSettings] whose loads and saves wait until the test lets them go.
+class SlowSettings extends FakeSettings {
+  SlowSettings([super.saved]);
+
+  final loads = <Completer<void>>[];
+  final saves = <Completer<void>>[];
+
+  @override
+  Future<SavedSettings?> load() async {
+    final saved = this.saved;
+    final wait = Completer<void>();
+    loads.add(wait);
+    await wait.future;
+    return saved;
+  }
+
+  @override
+  Future<void> save({String? theme, bool? list}) async {
+    final wait = Completer<void>();
+    saves.add(wait);
+    await wait.future;
+    return super.save(theme: theme, list: list);
+  }
+}
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -72,5 +100,39 @@ void main() {
     expect(settings.theme.value, AppTheme.evening);
     expect(server.saved, isNull);
     expect((await Settings.load(server)).theme.value, AppTheme.evening);
+  });
+
+  test('a choice made while the settings load is kept', () async {
+    final server = SlowSettings((theme: 'evening', list: false));
+    final settings = await Settings.load(server);
+
+    final syncing = settings.sync();
+    await pumpEventQueue();
+    final choosing = settings.chooseList(true);
+    server.loads.single.complete();
+    await syncing;
+    await pumpEventQueue();
+    server.saves.single.complete();
+    await choosing;
+
+    expect(settings.list.value, isTrue, reason: 'the choice');
+    expect(settings.theme.value, AppTheme.evening, reason: 'from the server');
+    expect(server.saved, (theme: 'evening', list: true));
+  });
+
+  test('quick choices are saved in order', () async {
+    final server = SlowSettings();
+    final settings = await Settings.load(server);
+
+    final first = settings.chooseList(true);
+    final second = settings.chooseList(false);
+    await pumpEventQueue();
+    expect(server.saves, hasLength(1), reason: 'the second waits');
+    server.saves.single.complete();
+    await pumpEventQueue();
+    server.saves.last.complete();
+    await Future.wait([first, second]);
+
+    expect(server.saved?.list, isFalse);
   });
 }
