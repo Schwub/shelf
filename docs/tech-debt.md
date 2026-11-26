@@ -16,15 +16,18 @@ Resolved since the last review: users can no longer add albums themselves
 "shelf" cloud environment's setup script installs the toolchain (fixed
 2026-11-26; still needs its first fresh session to confirm).
 
+Done at this review: stale docs fixed (albums, test albums, the edge-function
+bullet, covers/list in TASK-25 and the shelf wireframe, `test:functions` in
+AGENTS.md); one `Message` widget (`app/lib/widgets/message.dart`) instead of
+two copies.
+
 ## Items
 
 Ranked by value for effort.
 
 | What | Where | Why it hurts | Effort | Risk | Suggested action |
 |---|---|---|---|---|---|
-| Stale docs: architecture says signed-in users add albums and test albums wait for TASK-8; the edge-function bullet repeats `resolve-link`; TASK-25 and the shelf wireframe still talk about covers/spines; AGENTS.md doesn't mention `mise run test:functions` (not part of `mise run check`, only of the `db` workflow) | `docs/architecture.md`, `backlog/tasks/task-25…`, `docs/design/wireframes/shelf.html`, `AGENTS.md` | A session following the docs works from wrong facts and skips the edge-function tests | S | None | Quick cleanup |
-| `_Message` (title, text, actions, centred) exists twice with small differences | `app/lib/shelf/shelf_page.dart`, `app/lib/share/resolve_page.dart` | Empty and error screens drift apart in look | S | Low | Move one version to `app/lib/widgets/` and use it in both |
-| One file holds every model, the repository interface for shelf, tags, filters and tracks, and its Supabase implementation | `app/lib/shelf/shelf_data.dart` (827 lines) | Every feature changes this file; the fake in `test/shelf/fake_shelf.dart` (463 lines) grows with it | M | Low (covered by unit and integration tests) | Split models from the Supabase implementation; later per-feature repositories if it keeps growing. A task for deliver |
+| One file holds every model, the repository interface for shelf, tags, filters and tracks, and its Supabase implementation | `app/lib/shelf/shelf_data.dart` (827 lines) | Every feature changes this file; the fake in `test/shelf/fake_shelf.dart` (463 lines) grows with it | M | Low (covered by unit and integration tests) | TASK-34: split models from the Supabase implementation; later per-feature repositories if it keeps growing |
 | `_TagGroupPageState` is one ~670-line state class (editing, reordering, deleting, sub-groups, dialogs) | `app/lib/tags/tag_group_page.dart` | Hard to read and change; the next tag feature (TASK-19 import) lands here | M | Medium (UI behaviour) | Extract the delete/rename dialogs and the tag list into widgets when TASK-19 touches it |
 | The iOS share extension is never built in CI (fragile build-phase order, App Group) | `app/ios`, `.github/workflows/` | An iOS-only change can break share-to-shelf on iPhone unnoticed | M | Medium | An iOS build job on a macOS runner (about 10× the CI minutes of Linux, and minutes already ran out once); until then run the native build locally after `app/ios` changes |
 | The two edge functions each have their own MusicBrainz client with different rate-limit and retry rules (`resolve-link` imports only the `Fetch` type from `add-album`) | `supabase/functions/*/musicbrainz.ts` | A fix to MusicBrainz handling has to be made twice | S | Low | A `supabase/functions/_shared/musicbrainz.ts` with one request helper, when either function changes next |
