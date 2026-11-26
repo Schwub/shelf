@@ -63,7 +63,7 @@ class FakeFriends implements FriendsRepository {
   Future<InvitePreview> preview(String code) async {
     await _fail();
     return codes[_clean(code)] ??
-        (status: InviteStatus.unknown, inviterName: null);
+        (status: InviteStatus.unknown, inviterId: null, inviterName: null);
   }
 
   @override
@@ -72,9 +72,14 @@ class FakeFriends implements FriendsRepository {
     if (preview.status != InviteStatus.valid) {
       throw InviteFailed(preview.status);
     }
-    friends.add((id: _clean(code), name: preview.inviterName!));
+    friends.add((
+      id: preview.inviterId!,
+      name: preview.inviterName!,
+      albums: 0,
+    ));
     codes[_clean(code)] = (
       status: InviteStatus.friends,
+      inviterId: preview.inviterId,
       inviterName: preview.inviterName,
     );
   }

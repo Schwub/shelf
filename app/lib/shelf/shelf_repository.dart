@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'shelf.dart';
 
 /// The signed-in user's shelf. An interface so the screens can be tested
@@ -5,10 +7,18 @@ import 'shelf.dart';
 abstract class ShelfRepository {
   Future<Shelf> load();
 
+  /// Notified after an entry is added, saved or removed, so My shelf
+  /// reloads after edits made from another tab (a friend's album).
+  Listenable get changes;
+
+  /// A friend's shelf, without the entries they hide from friends; its
+  /// filters are their built-in tags.
+  Future<Shelf> loadFriend(String userId);
+
   /// Rating in half stars or null; an empty comment is stored as none.
   /// [addTags] go on in their order (parent tags before their sub-tags),
-  /// after [removeTags] come off. [tracks] replace the track list; null
-  /// leaves it.
+  /// after [removeTags] come off. [tracks] replace the track list and
+  /// [hidden] hides the entry from friends; null leaves them.
   Future<void> save(
     String entryId, {
     int? rating,
@@ -16,6 +26,7 @@ abstract class ShelfRepository {
     Set<String> removeTags = const {},
     List<String> addTags = const [],
     List<Track>? tracks,
+    bool? hidden,
   });
 
   Future<void> remove(String entryId);
@@ -28,6 +39,7 @@ abstract class ShelfRepository {
     String? comment,
     List<String> tags = const [],
     List<Track> tracks = const [],
+    bool hidden = false,
   });
 
   /// Adds an album by hand: the add-album function adds it as the user's
@@ -38,6 +50,7 @@ abstract class ShelfRepository {
     String? comment,
     List<String> tags = const [],
     List<Track> tracks = const [],
+    bool hidden = false,
   });
 
   /// The track list MusicBrainz has for the album [musicbrainzId], to

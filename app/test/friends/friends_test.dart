@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shelf_app/friends/friend_shelf_page.dart';
 import 'package:shelf_app/friends/friends_repository.dart';
 import 'package:shelf_app/friends/invite_sheet.dart';
 import 'package:shelf_app/friends/pending_invite.dart';
@@ -25,6 +26,7 @@ void main() {
     friends = FakeFriends('Michael');
     friends.codes['ANNA2345'] = (
       status: InviteStatus.valid,
+      inviterId: 'anna',
       inviterName: 'Anna',
     );
   });
@@ -132,8 +134,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('You and Anna are friends'), findsOneWidget);
-    expect(find.text('Anna'), findsOneWidget);
-    expect(find.text('Friends'), findsWidgets);
+    expect(find.byType(FriendShelfPage), findsOneWidget, reason: 'opened');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Anna'), findsOneWidget, reason: 'in the list');
   });
 
   testWidgets('a wrong code says so', (tester) async {
@@ -153,7 +157,11 @@ void main() {
     (InviteStatus.friends, 'You and Anna are already friends'),
   ]) {
     testWidgets('an invite that is ${status.name} says so', (tester) async {
-      friends.codes['ANNA2345'] = (status: status, inviterName: 'Anna');
+      friends.codes['ANNA2345'] = (
+        status: status,
+        inviterId: 'anna',
+        inviterName: 'Anna',
+      );
       await pumpFriends(tester);
 
       await enterCode(tester, 'ANNA2345');
@@ -170,6 +178,7 @@ void main() {
     await enterCode(tester, 'ANNA2345');
     friends.codes['ANNA2345'] = (
       status: InviteStatus.gone,
+      inviterId: 'anna',
       inviterName: 'Anna',
     );
 
@@ -203,7 +212,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('You and Anna are friends'), findsOneWidget);
-    expect(find.text('Anna'), findsOneWidget, reason: 'on the Friends tab');
+    expect(find.byType(FriendShelfPage), findsOneWidget, reason: 'opened');
   });
 
   testWidgets('Not now leaves the invite unanswered', (tester) async {
@@ -229,7 +238,7 @@ void main() {
   });
 
   testWidgets('removing a friend asks first', (tester) async {
-    friends.friends.add((id: 'anna', name: 'Anna'));
+    friends.friends.add((id: 'anna', name: 'Anna', albums: 0));
     await pumpFriends(tester);
 
     await tester.tap(find.byTooltip('More for Anna'));
@@ -245,7 +254,7 @@ void main() {
   });
 
   testWidgets('loading friends can fail and be tried again', (tester) async {
-    friends.friends.add((id: 'anna', name: 'Anna'));
+    friends.friends.add((id: 'anna', name: 'Anna', albums: 0));
     friends.loadError = Exception('offline');
     await pumpFriends(tester);
 
@@ -259,7 +268,7 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    friends.friends.add((id: 'ben', name: 'Ben'));
+    friends.friends.add((id: 'ben', name: 'Ben', albums: 0));
     friends.invites.add((
       code: 'K7Q2M9XD',
       expiresAt: DateTime.now().add(const Duration(days: 6, hours: 1)),

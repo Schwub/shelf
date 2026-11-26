@@ -42,17 +42,29 @@ class SupabaseFriendsRepository implements FriendsRepository {
     ).wait;
     final ids = [for (final f in friendships) f['friend_id'] as String];
     // Friendships point at accounts, not profiles, so names come separately.
-    final names = ids.isEmpty
-        ? const <Map<String, dynamic>>[]
-        : await _db
-              .from('profiles')
-              .select('user_id, name')
-              .inFilter('user_id', ids);
+    final (names, entries) = ids.isEmpty
+        ? (const <Map<String, dynamic>>[], const <Map<String, dynamic>>[])
+        : await (
+            _db
+                .from('profiles')
+                .select('user_id, name')
+                .inFilter('user_id', ids),
+            // Row-level security leaves out entries hidden from friends.
+            _db
+                .from('shelf_entries')
+                .select('user_id')
+                .inFilter('user_id', ids),
+          ).wait;
     final nameOf = {for (final p in names) p['user_id']: p['name'] as String};
+    final albums = <String, int>{};
+    for (final e in entries) {
+      albums.update(e['user_id'], (n) => n + 1, ifAbsent: () => 1);
+    }
     return (
       friends: [
         for (final id in ids)
-          if (nameOf[id] case final name?) (id: id, name: name),
+          if (nameOf[id] case final name?)
+            (id: id, name: name, albums: albums[id] ?? 0),
       ],
       invites: [for (final i in invites) _invite(i)],
     );
@@ -88,6 +100,7 @@ class SupabaseFriendsRepository implements FriendsRepository {
     final row = rows.single as Map<String, dynamic>;
     return (
       status: InviteStatus.values.byName(row['status'] as String),
+      inviterId: row['inviter_id'] as String?,
       inviterName: row['inviter_name'] as String?,
     );
   }

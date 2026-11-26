@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../tracks/track_source.dart';
@@ -10,34 +11,54 @@ class SupabaseShelfRepository implements ShelfRepository {
   final SupabaseClient _db;
   final TrackSource _tracks;
 
+  String get _me => _db.auth.currentUser!.id;
+
+  final _changes = ValueNotifier(0);
+
+  @override
+  Listenable get changes => _changes;
+
   @override
   Future<List<Track>> trackList(String musicbrainzId) =>
       _tracks.trackList(musicbrainzId);
 
   @override
-  Future<Shelf> load() async {
-    // Row-level security limits every table to the signed-in user.
+  Future<Shelf> load() => _load(_me);
+
+  @override
+  Future<Shelf> loadFriend(String userId) => _load(userId, friend: true);
+
+  /// [userId]'s shelf. Every query filters by owner: friends can read each
+  /// other's entries, tags and groups (row-level security leaves out hidden
+  /// entries). A friend's filters stay private, so their shelf gets one per
+  /// built-in tag.
+  Future<Shelf> _load(String userId, {bool friend = false}) async {
     final (entries, filters, tags, groups) = await (
       _db
           .from('shelf_entries')
           .select(
-            'id, rating, comment, '
+            'id, rating, comment, hidden, '
             'album:albums(id, musicbrainz_id, title, artist, year, cover_url), '
             'entry_tags(tag_id), '
             'entry_tracks(disc, position, title, length_ms, favorite)',
           )
+          .eq('user_id', userId)
           .order('created_at', ascending: false),
-      _db
-          .from('shelf_filters')
-          .select(
-            'id, name, tags_match, min_rating, unrated, favorite_tracks, '
-            'shelf_filter_tags(tag_id)',
-          )
-          .order('position', ascending: true),
+      friend
+          ? Future.value(const <Map<String, dynamic>>[])
+          : _db
+                .from('shelf_filters')
+                .select(
+                  'id, name, tags_match, min_rating, unrated, favorite_tracks, '
+                  'shelf_filter_tags(tag_id)',
+                )
+                .eq('user_id', userId)
+                .order('position', ascending: true),
       // New rows and reordered ones can share a position for a moment.
       _db
           .from('tags')
           .select('id, name, group_id, builtin')
+          .eq('user_id', userId)
           .order('position', ascending: true)
           .order('created_at', ascending: true),
       _db
@@ -45,6 +66,7 @@ class SupabaseShelfRepository implements ShelfRepository {
           .select(
             'id, name, exclusive, parent_tag_id, builtin, hidden, pick_from_list',
           )
+          .eq('user_id', userId)
           .order('position', ascending: true)
           .order('created_at', ascending: true),
     ).wait;
@@ -57,6 +79,7 @@ class SupabaseShelfRepository implements ShelfRepository {
             album: _album(e['album']),
             rating: e['rating'],
             comment: e['comment'],
+            hidden: e['hidden'],
             tagIds: {for (final t in e['entry_tags']) t['tag_id'] as String},
             tracks:
                 [
@@ -75,12 +98,20 @@ class SupabaseShelfRepository implements ShelfRepository {
                 ),
           ),
       ],
-      allFilters: [
-        for (final f in filters)
-          _filter(f, [
-            for (final t in f['shelf_filter_tags']) t['tag_id'] as String,
-          ], tagNames),
-      ],
+      allFilters: friend
+          ? [
+              for (final g in groups)
+                if (g['builtin'] != null)
+                  for (final t in tags)
+                    if (t['group_id'] == g['id'] && t['builtin'] != null)
+                      ShelfFilter.tag(t['id'], t['name']),
+            ]
+          : [
+              for (final f in filters)
+                _filter(f, [
+                  for (final t in f['shelf_filter_tags']) t['tag_id'] as String,
+                ], tagNames),
+            ],
       allGroups: [
         for (final g in groups)
           TagGroup(
@@ -142,13 +173,19 @@ class SupabaseShelfRepository implements ShelfRepository {
     Set<String> removeTags = const {},
     List<String> addTags = const [],
     List<Track>? tracks,
+    bool? hidden,
   }) async {
     await _db
         .from('shelf_entries')
-        .update({'rating': rating, 'comment': _comment(comment)})
+        .update({
+          'rating': rating,
+          'comment': _comment(comment),
+          'hidden': ?hidden,
+        })
         .eq('id', entryId);
     await _setTags(entryId, removeTags, addTags);
     if (tracks != null) await _setTracks(entryId, tracks);
+    _changes.value++;
   }
 
   /// Replaces the whole list in one transaction.
@@ -189,6 +226,7 @@ class SupabaseShelfRepository implements ShelfRepository {
     String? comment,
     List<String> tags = const [],
     List<Track> tracks = const [],
+    bool hidden = false,
   }) async {
     await _addEntry(
       {'musicbrainz_id': musicbrainzId},
@@ -196,6 +234,7 @@ class SupabaseShelfRepository implements ShelfRepository {
       comment: comment,
       tags: tags,
       tracks: tracks,
+      hidden: hidden,
     );
   }
 
@@ -206,12 +245,14 @@ class SupabaseShelfRepository implements ShelfRepository {
     String? comment,
     List<String> tags = const [],
     List<Track> tracks = const [],
+    bool hidden = false,
   }) => _addEntry(
     album.toJson(),
     rating: rating,
     comment: comment,
     tags: tags,
     tracks: tracks,
+    hidden: hidden,
   );
 
   /// The add-album function returns the album; then the entry and its tags.
@@ -221,6 +262,7 @@ class SupabaseShelfRepository implements ShelfRepository {
     String? comment,
     List<String> tags = const [],
     List<Track> tracks = const [],
+    bool hidden = false,
   }) async {
     final response = await _db.functions.invoke('add-album', body: album);
     final entry = await _db
@@ -229,11 +271,13 @@ class SupabaseShelfRepository implements ShelfRepository {
           'album_id': (response.data as Map<String, dynamic>)['id'],
           'rating': rating,
           'comment': _comment(comment),
+          'hidden': hidden,
         })
         .select('id')
         .single();
     await _setTags(entry['id'], const {}, tags);
     if (tracks.isNotEmpty) await _setTracks(entry['id'], tracks);
+    _changes.value++;
   }
 
   @override
@@ -255,7 +299,7 @@ class SupabaseShelfRepository implements ShelfRepository {
 
   /// The position after the last row where [column] is [value] (or null).
   Future<int> _next(String table, String column, String? value) async {
-    final query = _db.from(table).select('position');
+    final query = _db.from(table).select('position').eq('user_id', _me);
     final last =
         await (value == null
                 ? query.isFilter(column, null)
@@ -413,6 +457,8 @@ class SupabaseShelfRepository implements ShelfRepository {
   ].wait;
 
   @override
-  Future<void> remove(String entryId) =>
-      _db.from('shelf_entries').delete().eq('id', entryId);
+  Future<void> remove(String entryId) async {
+    await _db.from('shelf_entries').delete().eq('id', entryId);
+    _changes.value++;
+  }
 }

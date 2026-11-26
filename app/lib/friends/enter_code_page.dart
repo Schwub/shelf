@@ -9,7 +9,7 @@ import 'friends_repository.dart';
 import 'invitation_page.dart';
 
 /// Type or paste an invite code; a known one opens the Invitation, whose
-/// result this page pops with.
+/// result (the new friend's ID) this page pops with.
 class EnterCodePage extends StatefulWidget {
   const EnterCodePage({super.key, required this.friends});
 

@@ -1,5 +1,6 @@
-/// A friend: mutual, from an accepted invite.
-typedef Friend = ({String id, String name});
+/// A friend: mutual, from an accepted invite. [albums] counts the albums
+/// they don't hide from friends.
+typedef Friend = ({String id, String name, int albums});
 
 /// An invite waiting to be used. [code] is stored as 8 characters.
 typedef Invite = ({String code, DateTime expiresAt});
@@ -22,7 +23,11 @@ enum InviteStatus {
   unknown,
 }
 
-typedef InvitePreview = ({InviteStatus status, String? inviterName});
+typedef InvitePreview = ({
+  InviteStatus status,
+  String? inviterId,
+  String? inviterName,
+});
 
 /// [accept] was refused; [status] says why (never [InviteStatus.valid]).
 class InviteFailed implements Exception {

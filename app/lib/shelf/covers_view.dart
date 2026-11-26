@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/shelf_colors.dart';
 import '../widgets/cover.dart';
+import '../widgets/hidden_mark.dart';
 import '../widgets/rating_meter.dart';
 import '../widgets/shelf_board.dart';
 import 'shelf.dart';
@@ -90,6 +91,7 @@ class CoversView extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: text.bodySmall!.copyWith(color: c.muted),
                     ),
+                    if (e.hidden) const HiddenMark(),
                     const SizedBox(height: 8),
                     if (e.rating case final rating?)
                       RatingMeter(rating)

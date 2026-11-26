@@ -86,6 +86,7 @@ class EntryPage extends StatefulWidget {
 
 class _EntryPageState extends State<EntryPage> {
   late int? _rating = widget.entry?.rating;
+  late bool _hidden = widget.entry?.hidden ?? false;
   late final _comment = TextEditingController(text: widget.entry?.comment);
   late final Set<String> _initialTags = widget.entry?.tagIds ?? const {};
   late TagChoice _tags = TagChoice(widget.groups, _initialTags);
@@ -143,6 +144,7 @@ class _EntryPageState extends State<EntryPage> {
 
   bool get _changed =>
       _rating != widget.entry?.rating ||
+      _hidden != (widget.entry?.hidden ?? false) ||
       _comment.text.trim() != (widget.entry?.comment ?? '').trim() ||
       _tags.chosen.length != _initialTags.length ||
       !_tags.chosen.containsAll(_initialTags) ||
@@ -165,6 +167,7 @@ class _EntryPageState extends State<EntryPage> {
           comment: _comment.text.trim(),
           tags: _tags.ordered(_tags.chosen),
           tracks: _tracks,
+          hidden: _hidden,
         );
       } else if (widget.adding) {
         await widget.shelf.add(
@@ -173,6 +176,7 @@ class _EntryPageState extends State<EntryPage> {
           comment: _comment.text.trim(),
           tags: _tags.ordered(_tags.chosen),
           tracks: _tracks,
+          hidden: _hidden,
         );
       } else {
         await widget.shelf.save(
@@ -182,6 +186,7 @@ class _EntryPageState extends State<EntryPage> {
           removeTags: _initialTags.difference(_tags.chosen),
           addTags: _tags.ordered(_tags.chosen.difference(_initialTags)),
           tracks: listEquals(_tracks, _initialTracks) ? null : _tracks,
+          hidden: _hidden != widget.entry!.hidden ? _hidden : null,
         );
       }
       if (mounted) {
@@ -305,6 +310,31 @@ class _EntryPageState extends State<EntryPage> {
                                 : _lookUpTracks,
                             showAll: _allTracks,
                             onShowAll: () => setState(() => _allTracks = true),
+                          ),
+                          const SizedBox(height: 24),
+                          Text('Friends', style: label),
+                          MergeSemantics(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Hide from friends'),
+                                      HelpLine(
+                                        "Friends don't see this album, and "
+                                        'it stays out of the feed.',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: _hidden,
+                                  onChanged: (v) => setState(() => _hidden = v),
+                                ),
+                              ],
+                            ),
                           ),
                           if (!widget.adding) ...[
                             const SizedBox(height: 24),

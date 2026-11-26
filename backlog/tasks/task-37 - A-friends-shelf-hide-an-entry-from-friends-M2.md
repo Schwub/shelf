@@ -1,10 +1,10 @@
 ---
 id: TASK-37
 title: A friend's shelf; hide an entry from friends (M2)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T10:05:00Z'
-updated_date: '2026-11-26T10:05:00Z'
+updated_date: '2026-11-26T11:03:00Z'
 labels: []
 dependencies:
   - TASK-36

@@ -69,8 +69,47 @@ Map<String, String> tagIds(Shelf shelf) => {
 };
 
 void main() {
+  test("friends' shelves: own shelf stays own, hidden stays hidden", () async {
+    final alice = await signIn();
+    final bob = await signIn();
+    await SupabaseFriendsRepository(alice.db).saveName('Alice');
+    await SupabaseFriendsRepository(bob.db).saveName('Bob');
+    final aliceEntry = await shelve(alice);
+    final hiddenEntry = await shelve(alice);
+    await alice.repo.save(hiddenEntry, comment: 'secret', hidden: true);
+    await shelve(bob);
+    final invite = await SupabaseFriendsRepository(alice.db).createInvite();
+    await SupabaseFriendsRepository(bob.db).accept(invite.code);
+
+    final own = await alice.repo.load();
+    expect(own.entries.map((e) => e.id).toSet(), {aliceEntry, hiddenEntry});
+    expect(own.entries.firstWhere((e) => e.id == hiddenEntry).hidden, isTrue);
+    expect(
+      (await bob.repo.load()).entries,
+      hasLength(1),
+      reason: "Alice's albums aren't on Bob's own shelf",
+    );
+    final ownGroups = (await bob.repo.load()).allGroups.length;
+    expect(ownGroups, own.allGroups.length, reason: 'only his own groups');
+
+    final aliceId = alice.db.auth.currentUser!.id;
+    final seen = await bob.repo.loadFriend(aliceId);
+    expect(seen.entries.map((e) => e.id), [aliceEntry]);
+    expect(seen.allFilters.map((f) => f.label), [
+      'Want',
+      'Own',
+      'Want to listen',
+      'Listened',
+    ]);
+
+    // A new group still goes after Bob's own, not Alice's.
+    await bob.repo.createGroup('Mood', exclusive: false);
+    expect((await bob.repo.load()).allGroups.last.name, 'Mood');
+  });
+
   test('friends: invite, accept, both see each other, remove', () async {
-    final alice = SupabaseFriendsRepository((await signIn()).db);
+    final aliceDb = (await signIn()).db;
+    final alice = SupabaseFriendsRepository(aliceDb);
     final bob = SupabaseFriendsRepository((await signIn()).db);
     await alice.saveName('Alice');
     await bob.saveName('Bob');
@@ -79,6 +118,7 @@ void main() {
     expect((await alice.load()).invites.map((i) => i.code), [invite.code]);
     expect(await bob.preview(formatCode(invite.code).toLowerCase()), (
       status: InviteStatus.valid,
+      inviterId: aliceDb.auth.currentUser!.id,
       inviterName: 'Alice',
     ));
     await bob.accept(invite.code);

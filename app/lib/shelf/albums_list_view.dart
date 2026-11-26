@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/shelf_colors.dart';
 import '../widgets/cover.dart';
+import '../widgets/hidden_mark.dart';
 import '../widgets/rating_meter.dart';
 import 'shelf.dart';
 
@@ -54,6 +55,7 @@ class AlbumsListView extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (e.hidden) const HiddenMark(),
                       if (e.rating case final rating?) ...[
                         const SizedBox(height: 8),
                         RatingMeter(rating),

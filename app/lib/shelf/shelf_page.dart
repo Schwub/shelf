@@ -70,6 +70,9 @@ class _ShelfPageState extends State<ShelfPage> {
     widget.inbox.addListener(_openSharedLink);
     _load();
     widget.settings.list.addListener(_rebuild);
+    // Also after this page's own edits, which reload anyway: an extra
+    // request, but no wiring from the other tabs.
+    widget.shelf.changes.addListener(_load);
     widget.settings.sync();
   }
 
@@ -91,6 +94,7 @@ class _ShelfPageState extends State<ShelfPage> {
   void dispose() {
     widget.inbox.removeListener(_openSharedLink);
     widget.settings.list.removeListener(_rebuild);
+    widget.shelf.changes.removeListener(_load);
     super.dispose();
   }
 
