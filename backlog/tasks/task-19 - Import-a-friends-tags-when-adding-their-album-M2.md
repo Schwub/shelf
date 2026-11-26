@@ -1,10 +1,10 @@
 ---
 id: TASK-19
 title: Import a friend's tags when adding their album (M2)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-23T23:51:00Z'
-updated_date: '2026-11-26T10:05:00Z'
+updated_date: '2026-11-26T14:28:00Z'
 labels: []
 dependencies:
   - TASK-37
@@ -22,4 +22,5 @@ From docs/design/visual/screens/import.html and docs/features/tags.md: built-in 
 - [ ] #1 Missing tags are offered and copied as designed
 - [ ] #2 Tests cover matching by key and by name, the type rule and errors
 - [ ] #3 The album stores and shows whose shelf it came from (added_from_user_id, added_from_name)
+- [ ] #4 The friend's track list is copied without their favorites; without one, MusicBrainz's is suggested as for a new album
 <!-- AC:END -->

@@ -5,6 +5,7 @@ import '../search/album_search.dart';
 import '../shelf/entry_page.dart';
 import '../shelf/shelf.dart';
 import '../shelf/shelf_repository.dart';
+import '../shelf/tag_import.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/cover.dart';
 import '../widgets/rating_keys.dart';
@@ -46,6 +47,14 @@ class FriendAlbumPage extends StatelessWidget {
 
   Future<void> _addOrOpen(BuildContext context) async {
     final album = entry.album;
+    final fromFriend = TagImport(
+      from: (userId: friend.id, name: friend.name),
+      theirs: theirs,
+      tagIds: entry.tagIds,
+      mine: mine,
+    );
+    // Their track list, without their favorites.
+    final tracks = [for (final t in entry.tracks) t.copyWith(favorite: false)];
     final page = switch ((_myEntry, album.musicbrainzId)) {
       (final own?, _) => EntryPage(
         entry: own,
@@ -61,6 +70,8 @@ class FriendAlbumPage extends StatelessWidget {
         ),
         shelf: shelf,
         groups: mine.groups,
+        fromFriend: fromFriend,
+        tracks: tracks,
       ),
       // Added by hand: the user gets their own copy.
       (null, null) => EntryPage.manual(
@@ -71,6 +82,8 @@ class FriendAlbumPage extends StatelessWidget {
         ),
         shelf: shelf,
         groups: mine.groups,
+        fromFriend: fromFriend,
+        tracks: tracks,
       ),
     };
     final messenger = ScaffoldMessenger.of(context);

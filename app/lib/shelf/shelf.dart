@@ -76,6 +76,7 @@ class ShelfEntry {
     this.tagIds = const {},
     this.tracks = const [],
     this.hidden = false,
+    this.addedFromName,
   });
 
   final String id;
@@ -90,7 +91,13 @@ class ShelfEntry {
 
   /// Hidden from friends: not on the shelf they see, nor in their feed.
   final bool hidden;
+
+  /// The friend whose shelf it was added from, by their name then.
+  final String? addedFromName;
 }
+
+/// The friend an album is added from.
+typedef AddedFrom = ({String userId, String name});
 
 @immutable
 class Tag {
@@ -98,13 +105,15 @@ class Tag {
     required this.id,
     required this.groupId,
     required this.name,
-    this.builtin = false,
+    this.builtin,
   });
 
   final String id, groupId, name;
 
-  /// Want, Own, Want to listen, Listened: can't be deleted.
-  final bool builtin;
+  /// The key of Want, Own, Want to listen or Listened (`want`, `own`,
+  /// `want_to_listen`, `listened`): can't be deleted, and friends' shelves
+  /// compare on it.
+  final String? builtin;
 }
 
 /// One of the user's tag groups with its tags, in their order. A group with
@@ -116,7 +125,7 @@ class TagGroup {
     required this.name,
     required this.exclusive,
     this.parentTagId,
-    this.builtin = false,
+    this.builtin,
     this.hidden = false,
     this.pickFromList = false,
     this.tags = const [],
@@ -128,9 +137,11 @@ class TagGroup {
   /// (Genre); otherwise all tags show as keys.
   final bool pickFromList;
 
-  /// Built-in groups (Collection, Listening) can be renamed and hidden, not
-  /// deleted; only they can be hidden.
-  final bool exclusive, builtin, hidden;
+  final bool exclusive, hidden;
+
+  /// The key of a built-in group (`collection`, `listening`): it can be
+  /// renamed and hidden, not deleted; only built-in groups can be hidden.
+  final String? builtin;
   final String? parentTagId;
   final List<Tag> tags;
 

@@ -37,7 +37,7 @@ class SupabaseShelfRepository implements ShelfRepository {
       _db
           .from('shelf_entries')
           .select(
-            'id, rating, comment, hidden, '
+            'id, rating, comment, hidden, added_from_name, '
             'album:albums(id, musicbrainz_id, title, artist, year, cover_url), '
             'entry_tags(tag_id), '
             'entry_tracks(disc, position, title, length_ms, favorite)',
@@ -80,6 +80,7 @@ class SupabaseShelfRepository implements ShelfRepository {
             rating: e['rating'],
             comment: e['comment'],
             hidden: e['hidden'],
+            addedFromName: e['added_from_name'],
             tagIds: {for (final t in e['entry_tags']) t['tag_id'] as String},
             tracks:
                 [
@@ -118,7 +119,7 @@ class SupabaseShelfRepository implements ShelfRepository {
             name: g['name'],
             exclusive: g['exclusive'],
             parentTagId: g['parent_tag_id'],
-            builtin: g['builtin'] != null,
+            builtin: g['builtin'],
             hidden: g['hidden'],
             pickFromList: g['pick_from_list'],
             tags: [
@@ -128,7 +129,7 @@ class SupabaseShelfRepository implements ShelfRepository {
                     id: t['id'],
                     groupId: g['id'],
                     name: t['name'],
-                    builtin: t['builtin'] != null,
+                    builtin: t['builtin'],
                   ),
             ],
           ),
@@ -226,6 +227,7 @@ class SupabaseShelfRepository implements ShelfRepository {
     List<String> tags = const [],
     List<Track> tracks = const [],
     bool hidden = false,
+    AddedFrom? addedFrom,
   }) async {
     await _addEntry(
       {'musicbrainz_id': musicbrainzId},
@@ -234,6 +236,7 @@ class SupabaseShelfRepository implements ShelfRepository {
       tags: tags,
       tracks: tracks,
       hidden: hidden,
+      addedFrom: addedFrom,
     );
   }
 
@@ -245,6 +248,7 @@ class SupabaseShelfRepository implements ShelfRepository {
     List<String> tags = const [],
     List<Track> tracks = const [],
     bool hidden = false,
+    AddedFrom? addedFrom,
   }) => _addEntry(
     album.toJson(),
     rating: rating,
@@ -252,6 +256,7 @@ class SupabaseShelfRepository implements ShelfRepository {
     tags: tags,
     tracks: tracks,
     hidden: hidden,
+    addedFrom: addedFrom,
   );
 
   /// The add-album function returns the album; then the entry and its tags.
@@ -262,6 +267,7 @@ class SupabaseShelfRepository implements ShelfRepository {
     List<String> tags = const [],
     List<Track> tracks = const [],
     bool hidden = false,
+    AddedFrom? addedFrom,
   }) async {
     final response = await _db.functions.invoke('add-album', body: album);
     final entry = await _db
@@ -271,6 +277,8 @@ class SupabaseShelfRepository implements ShelfRepository {
           'rating': rating,
           'comment': _comment(comment),
           'hidden': hidden,
+          'added_from_user_id': ?addedFrom?.userId,
+          'added_from_name': ?addedFrom?.name,
         })
         .select('id')
         .single();
@@ -293,6 +301,7 @@ class SupabaseShelfRepository implements ShelfRepository {
           .select('id, group_id, name')
           .single(),
     );
+    _changes.value++;
     return Tag(id: tag['id'], groupId: tag['group_id'], name: tag['name']);
   }
 
@@ -341,13 +350,15 @@ class SupabaseShelfRepository implements ShelfRepository {
           .select('id')
           .single(),
     );
-    if (tags.isEmpty) return;
-    await _unique(
-      () => _db.from('tags').insert([
-        for (final (i, tag) in tags.indexed)
-          {'group_id': group['id'], 'name': tag.trim(), 'position': i},
-      ]),
-    );
+    if (tags.isNotEmpty) {
+      await _unique(
+        () => _db.from('tags').insert([
+          for (final (i, tag) in tags.indexed)
+            {'group_id': group['id'], 'name': tag.trim(), 'position': i},
+        ]),
+      );
+    }
+    _changes.value++;
   }
 
   @override

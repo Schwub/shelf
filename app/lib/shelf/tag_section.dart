@@ -151,7 +151,7 @@ class TagSection extends StatelessWidget {
           ),
         )
       // Built-in two-tag groups fill the row with equal keys.
-      else if (!list && group.builtin && group.tags.length == 2)
+      else if (!list && group.builtin != null && group.tags.length == 2)
         Row(
           children: [
             key(group.tags[0], expand: true),

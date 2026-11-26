@@ -11,12 +11,15 @@ import '../tracks/track_section.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/cover.dart';
 import '../widgets/help_line.dart';
+import '../widgets/note.dart';
 import '../widgets/rating_keys.dart';
 import '../widgets/shelf_board.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
 import 'shelf.dart';
+import 'import_tags_sheet.dart';
 import 'shelf_repository.dart';
+import 'tag_import.dart';
 import 'tag_section.dart';
 
 enum EntryResult { added, saved, removed }
@@ -24,7 +27,7 @@ enum EntryResult { added, saved, removed }
 /// An album on the shelf: change its rating and comment, or remove it (the
 /// shelf removes it after the snackbar's Undo has passed). [EntryPage.add]
 /// shows a search result to add instead, [EntryPage.manual] an album added
-/// by hand.
+/// by hand; either can come [fromFriend], with their tags.
 class EntryPage extends StatefulWidget {
   const EntryPage({
     super.key,
@@ -32,13 +35,17 @@ class EntryPage extends StatefulWidget {
     required this.shelf,
     this.groups = const [],
   }) : result = null,
-       manual = null;
+       manual = null,
+       fromFriend = null,
+       tracks = const [];
 
   const EntryPage.add({
     super.key,
     required SearchResult this.result,
     required this.shelf,
     this.groups = const [],
+    this.fromFriend,
+    this.tracks = const [],
   }) : entry = null,
        manual = null;
 
@@ -47,6 +54,8 @@ class EntryPage extends StatefulWidget {
     required ManualAlbum this.manual,
     required this.shelf,
     this.groups = const [],
+    this.fromFriend,
+    this.tracks = const [],
   }) : entry = null,
        result = null;
 
@@ -57,6 +66,14 @@ class EntryPage extends StatefulWidget {
 
   /// The user's visible tag groups, to tag the album with.
   final List<TagGroup> groups;
+
+  /// Adding a friend's album: their tags the user has are set, and the
+  /// missing ones offered once the page shows.
+  final TagImport? fromFriend;
+
+  /// The track list to start an added album with (a friend's); without one,
+  /// MusicBrainz's is suggested.
+  final List<Track> tracks;
 
   bool get adding => entry == null;
 
@@ -88,12 +105,13 @@ class _EntryPageState extends State<EntryPage> {
   late int? _rating = widget.entry?.rating;
   late bool _hidden = widget.entry?.hidden ?? false;
   late final _comment = TextEditingController(text: widget.entry?.comment);
-  late final Set<String> _initialTags = widget.entry?.tagIds ?? const {};
+  late final Set<String> _initialTags =
+      widget.entry?.tagIds ?? widget.fromFriend?.preset ?? const {};
   late TagChoice _tags = TagChoice(widget.groups, _initialTags);
   bool _saving = false;
   bool _saveFailed = false;
 
-  late final List<Track> _initialTracks = widget.entry?.tracks ?? const [];
+  late final List<Track> _initialTracks = widget.entry?.tracks ?? widget.tracks;
   late List<Track> _tracks = _initialTracks;
 
   /// A MusicBrainz track list waiting for Use it or Not this one.
@@ -108,8 +126,29 @@ class _EntryPageState extends State<EntryPage> {
   void initState() {
     super.initState();
     _comment.addListener(() => setState(() {}));
-    // A new album from MusicBrainz comes with its track list to approve.
-    if (widget.adding && _musicbrainzId != null) _lookUpTracks();
+    // A new album from MusicBrainz without a track list (a friend's) comes
+    // with MusicBrainz's to approve.
+    if (widget.adding && _tracks.isEmpty && _musicbrainzId != null) {
+      _lookUpTracks();
+    }
+    if (widget.fromFriend?.missing.isNotEmpty ?? false) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _importTags());
+    }
+  }
+
+  Future<void> _importTags() async {
+    final copied = await showImportTagsSheet(
+      context,
+      plan: widget.fromFriend!,
+      shelf: widget.shelf,
+    );
+    if (copied == null || !mounted) return;
+    setState(
+      () => _tags = TagChoice(copied.mine.groups, {
+        ..._tags.chosen,
+        ...copied.preset,
+      }),
+    );
   }
 
   Future<void> _lookUpTracks() async {
@@ -168,6 +207,7 @@ class _EntryPageState extends State<EntryPage> {
           tags: _tags.ordered(_tags.chosen),
           tracks: _tracks,
           hidden: _hidden,
+          addedFrom: widget.fromFriend?.from,
         );
       } else if (widget.adding) {
         await widget.shelf.add(
@@ -177,6 +217,7 @@ class _EntryPageState extends State<EntryPage> {
           tags: _tags.ordered(_tags.chosen),
           tracks: _tracks,
           hidden: _hidden,
+          addedFrom: widget.fromFriend?.from,
         );
       } else {
         await widget.shelf.save(
@@ -225,6 +266,9 @@ class _EntryPageState extends State<EntryPage> {
     final text = Theme.of(context).textTheme;
     final album = widget.album;
     final label = text.labelSmall!.copyWith(color: c.muted);
+    final addedFrom =
+        widget.entry?.addedFromName ?? widget.fromFriend?.from.name;
+    final setLike = widget.fromFriend?.builtins ?? const [];
     return PopScope(
       canPop: !_changed,
       onPopInvokedWithResult: (didPop, _) {
@@ -244,6 +288,17 @@ class _EntryPageState extends State<EntryPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          if (setLike.isNotEmpty) ...[
+                            Note(
+                              icon: Icons.info_outline,
+                              child: Text(
+                                '${[for (final t in setLike) t.name].join(' and ')} '
+                                "${setLike.length == 1 ? 'is' : 'are'} set "
+                                "like ${widget.fromFriend!.from.name}'s.",
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                           Text(album.title, style: text.headlineSmall),
                           const SizedBox(height: 4),
                           Text(
@@ -253,6 +308,10 @@ class _EntryPageState extends State<EntryPage> {
                             ].join(', '),
                             style: text.bodyMedium!.copyWith(color: c.muted),
                           ),
+                          if (addedFrom != null) ...[
+                            const SizedBox(height: 4),
+                            HelpLine("Added from $addedFrom's shelf"),
+                          ],
                           const SizedBox(height: 16),
                           TagSection(
                             choice: _tags,
