@@ -120,6 +120,12 @@
   screenshots without adding albums one by one. Locally `mise run dev:albums -- <email>`; on
   staging the `staging-test-albums` workflow (by hand, email as input). The
   account must have signed in once; running it again changes nothing.
+- **Test friend:** `supabase/dev/test_friend.sql` makes "Testa"
+  (`testa@shelf.invalid`, never signs in) one account's friend, with eight
+  albums added and rated over the past week (one hidden), for the Friends
+  tab, a friend's shelf and the feed. Locally `mise run dev:friend --
+  <email>`; on staging the `staging-test-friend` workflow. Both scripts run
+  through `supabase/dev/test-data.sh`.
 - **Production:** later, a second hosted project the same way.
 
 One-time Android setup (TASK-23):

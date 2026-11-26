@@ -28,4 +28,4 @@ jobs:
         with:
           install_args: supabase
       - run: mise exec -- supabase link --project-ref="$PROJECT"
-      - run: mise exec -- supabase/dev/test-albums.sh "$EMAIL" --remote
+      - run: mise exec -- supabase/dev/test-data.sh albums "$EMAIL" --remote
