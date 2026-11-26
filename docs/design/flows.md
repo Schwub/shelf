@@ -252,7 +252,7 @@ flowchart TD
   sheet -- Share --> system[System share sheet: link and code in one message] --> waiting([Friends: invite waiting])
   sheet -- Copy link --> copied[Snackbar: Link copied] --> waiting
   sheet -- Close --> waiting
-  waiting -- Cancel invite --> cancelled[Snackbar: Invite cancelled · Undo] --> friends
+  waiting -- Cancel invite --> cancelled[Snackbar: Invite cancelled] --> friends
 ```
 
 Notes:
@@ -269,12 +269,12 @@ Done: inviter and invitee are friends; the invitee sees the inviter's shelf.
 flowchart TD
   link([Opens the invite link: web]) --> signed{Signed in?}
   code([Friends: Have a code? Enter it]) --> enter[Enter code] --> check
-  signed -- no --> signin[Sign in, with: Anna invited you to shelf] --> named
+  signed -- no --> signin[Sign in; the invite waits on the device] --> named
   signed -- yes --> named{Has a name?}
   named -- no --> name[Your name] --> check
   named -- yes --> check{Invite still valid?}
   check -- yes --> accept[Anna invited you: Accept / Not now]
-  check -- expired, used or cancelled --> gone[This invite has expired or was already used. Ask Anna for a new one.]
+  check -- expired or used --> gone[This invite has expired or was already used. Ask Anna for a new one.]
   check -- unknown code --> wrong[That code isn't right. Check it and try again.] --> enter
   check -- your own --> own[That's your own invite. Send it to a friend.]
   check -- already friends --> already[You and Anna are already friends.] --> fshelf
@@ -283,6 +283,11 @@ flowchart TD
   ok -- no network / error --> acceptErr[Couldn't accept the invite. Try again.] --> accept
   accept -- Not now --> friends2([Friends; the link still works until it expires])
 ```
+
+Built (TASK-36): the sign-in screen doesn't name the inviter (looking up an
+invite needs a signed-in user); Close on an expired, own or already-friends
+invite returns to Enter code, to try another; a cancelled invite reads as
+unknown ("That invite doesn't exist"), since cancelling deletes it.
 
 ## Friends and their shelves
 

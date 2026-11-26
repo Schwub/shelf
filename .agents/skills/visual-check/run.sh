@@ -20,7 +20,8 @@ curl -s -o /dev/null -X POST "$API_URL/auth/v1/admin/users" \
 supabase/dev/test-albums.sh "$email" >/dev/null
 
 # The web build, served where the local Supabase expects the app.
-(cd app && flutter build web >/dev/null)
+# The renderer comes with the build: cloud sessions can't reach its CDN.
+(cd app && flutter build web --no-web-resources-cdn >/dev/null)
 python3 -m http.server 3000 --bind 127.0.0.1 --directory app/build/web >/dev/null 2>&1 &
 server=$!
 trap 'kill $server' EXIT

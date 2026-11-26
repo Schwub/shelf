@@ -22,6 +22,8 @@ Future<TagAction?> showTagActions(
   final c = context.shelf;
   return showModalBottomSheet<TagAction>(
     context: context,
+    // Over the navigation bar, like a dialog.
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: c.bg,
     barrierColor: const Color(0x73000000),

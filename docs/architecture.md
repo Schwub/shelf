@@ -69,9 +69,14 @@
   (covers or list); null is the app's default. Owner-only. The app's
   `Settings` (`app/lib/settings/`) keeps a copy on the device for the
   sign-in screen and offline, and takes the saved row after sign-in.
-- M2 (planned, [features/friends.md](features/friends.md)): `profiles`
-  (the name friends see), `friendships` (two rows per friendship),
-  `invites` (code, 7 days, used once), `shelf_entries.hidden` and
+- `profiles`: the name friends see, one row per user, owner-only until
+  friends (TASK-36). The app asks for it after the first sign-in
+  (`NameGate`).
+- `friendships` (two rows per friendship, written only by `accept_invite`
+  and `remove_friend`) and `invites` (code, 7 days, used once; made by
+  `create_invite`, checked by `invite_preview`); friends read each other's
+  `profiles` through `is_friend()` ([features/friends.md](features/friends.md)).
+- M2 (planned): `shelf_entries.hidden` and
   `rated_at`, a `feed` view; friends read each other's visible data
   through row-level security.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`

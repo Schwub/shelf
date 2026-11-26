@@ -7,6 +7,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth/auth.dart';
 import 'auth/auth_gate.dart';
 import 'errors.dart';
+import 'feed/feed_page.dart';
+import 'friends/friends_page.dart';
+import 'friends/friends_repository.dart';
+import 'friends/name_gate.dart';
+import 'friends/pending_invite.dart';
+import 'friends/supabase_friends_repository.dart';
+import 'home/home_page.dart';
 import 'search/album_search.dart';
 import 'search/musicbrainz.dart';
 import 'settings/settings.dart';
@@ -74,7 +81,9 @@ Future<void> main() async {
           ),
           search: MusicBrainzSearch(musicBrainz),
           links: SupabaseLinkResolver(supabase.client, client),
+          friends: SupabaseFriendsRepository(supabase.client),
           inbox: inbox,
+          pendingInvite: await PendingInvite.load(Uri.base),
           settings: await Settings.load(
             SupabaseSettingsRepository(supabase.client),
           ),
@@ -92,7 +101,9 @@ class ShelfApp extends StatelessWidget {
     required this.search,
     required this.links,
     required this.inbox,
+    required this.pendingInvite,
     required this.settings,
+    required this.friends,
   });
 
   final Auth auth;
@@ -100,7 +111,9 @@ class ShelfApp extends StatelessWidget {
   final AlbumSearch search;
   final LinkResolver links;
   final SharedLinkInbox inbox;
+  final PendingInvite pendingInvite;
   final Settings settings;
+  final FriendsRepository friends;
 
   @override
   Widget build(BuildContext context) {
@@ -113,13 +126,26 @@ class ShelfApp extends StatelessWidget {
       ),
       child: AuthGate(
         auth: auth,
-        signedIn: ShelfPage(
-          auth: auth,
-          shelf: shelf,
-          search: search,
-          links: links,
-          inbox: inbox,
-          settings: settings,
+        signedIn: NameGate(
+          friends: friends,
+          builder: (context, name) => HomePage(
+            inbox: inbox,
+            pendingInvite: pendingInvite,
+            shelf: ShelfPage(
+              auth: auth,
+              shelf: shelf,
+              search: search,
+              links: links,
+              inbox: inbox,
+              settings: settings,
+            ),
+            feed: const FeedPage(),
+            friends: FriendsPage(
+              friends: friends,
+              name: name,
+              pending: pendingInvite,
+            ),
+          ),
         ),
       ),
     );

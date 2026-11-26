@@ -57,8 +57,9 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
   - `is_friend(other uuid) returns boolean`, stable; used by policies.
   - `create_invite() returns text`: a new code; retries on collision.
   - `invite_preview(code) returns (status, inviter_name)`: status is
-    `valid`, `gone` (expired, used, cancelled), `own`, `friends` or
-    `unknown`; the Invitation screen shows it before Accept.
+    `valid`, `gone` (expired or used), `own`, `friends` or
+    `unknown` (also a cancelled one, which is deleted); the Invitation
+    screen shows it before Accept.
   - `accept_invite(code) returns uuid` (the inviter): checks as above,
     then writes both friendship rows and marks the invite used, in one
     transaction; raises a named error otherwise. Needs the accepter's
@@ -106,13 +107,15 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
 - The auth gate adds a step: signed in without a profile → Your name.
 - Invite links: on the web, `main.dart` reads `/invite/<code>` from
   `Uri.base` into a `PendingInvite` notifier (like `SharedLinkInbox`); the
-  shell opens the Invitation screen once signed in and named, then clears
-  it. The link's base is `--dart-define=SITE_URL` (the web app's URL; the
-  local web build's origin by default). Phones use the code until app links
+  shell shows Friends, which opens the Invitation once signed in and
+  named, then clears it. The code is kept in `shared_preferences`, since
+  signing in by the emailed link reloads the app at its start page. Links
+  use the web app's own origin on the web, else `--dart-define=SITE_URL`
+  (default `https://shelf.pages.dev`, staging's `site_url`). Phones use the code until app links
   exist (TASK-20, web deploys TASK-22).
 - Share sheet: the invite message goes through the platform share sheet
-  (`share_plus`, a new production dependency to confirm when building
-  TASK-36; Copy link needs none).
+  (`share_plus`, BSD-3, Flutter Community; agreed 2026-11-26; supports
+  Swift Package Manager). Copy link uses the clipboard.
 
 ### Errors
 Each screen shows the wireframes' "Couldn't …" states and reports the
