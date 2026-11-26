@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../shelf/shelf_data.dart';
+import '../shelf/shelf.dart';
 import '../theme/shelf_colors.dart';
 
 /// An album cover with 2 px corners; a surface block while loading and when

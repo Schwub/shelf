@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/cover.dart';
 import '../widgets/rating_meter.dart';
-import 'shelf_data.dart';
+import 'shelf.dart';
 
 /// The shelf as a list: one row per album with a small cover, title, artist
 /// and rating; tapping a row opens the album.

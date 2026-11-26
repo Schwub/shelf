@@ -15,7 +15,8 @@ import '../widgets/rating_keys.dart';
 import '../widgets/shelf_board.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
-import 'shelf_data.dart';
+import 'shelf.dart';
+import 'shelf_repository.dart';
 import 'tag_section.dart';
 
 enum EntryResult { added, saved, removed }

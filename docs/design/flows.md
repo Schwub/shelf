@@ -206,3 +206,148 @@ Notes:
 - Copies stay even if the user then cancels adding the album.
 - The album remembers whose shelf it came from: "Added from Anna's shelf"
   under the artist, kept even if Anna's account is deleted.
+
+# User flows (M2: friends)
+
+M2 covers core use cases 3 and 4: invite a friend and view their shelf, and
+read a feed of what friends add and rate. Friendships are mutual and start
+from an invite. Friends see the whole shelf except entries hidden from
+them. Screens: [screens.md](screens.md); wireframes:
+[friends](wireframes/friends.html), [friend's shelf](wireframes/friend-shelf.html),
+[feed](wireframes/feed.html).
+
+## Your name (first sign-in)
+
+Done: the user has a display name that friends see; they can change it
+later.
+
+```mermaid
+flowchart TD
+  signedin([Signed in]) --> has{Has a name?}
+  has -- yes --> shelf([My shelf])
+  has -- no --> name[Your name: What should friends call you?]
+  name -- Continue --> valid{1–40 characters?}
+  valid -- no --> nameErr[Enter a name friends will recognise.] --> name
+  valid -- yes --> save{Saved?}
+  save -- yes --> shelf
+  save -- no network / error --> saveErr[Couldn't save your name. Try again.] --> name
+  friends([Friends: Your name · Change]) --> name
+```
+
+Notes:
+- Asked once, right after the first sign-in, before My shelf; an invite
+  being accepted waits until the name is set.
+- No uniqueness: two friends may both be "Anna".
+
+## Invite a friend
+
+Done: the friend received a link (and a code) through any app on the
+inviter's phone; the invite shows as waiting until it is used or expires.
+
+```mermaid
+flowchart TD
+  friends([Friends]) -- Invite a friend --> create{Invite created?}
+  create -- no network / error --> createErr[Snackbar: Couldn't create an invite. Try again.] --> friends
+  create -- yes --> sheet[Invite sheet: link, code, valid 7 days, used once]
+  sheet -- Share --> system[System share sheet: link and code in one message] --> waiting([Friends: invite waiting])
+  sheet -- Copy link --> copied[Snackbar: Link copied] --> waiting
+  sheet -- Close --> waiting
+  waiting -- Cancel invite --> cancelled[Snackbar: Invite cancelled · Undo] --> friends
+```
+
+Notes:
+- The message reads: "Anna invites you to shelf: https://…/invite/K7Q2-M9XD
+  (or enter the code K7Q2-M9XD in the app)". The link opens the web app
+  until app links work (TASK-20, web on staging).
+- Several invites can wait at once; each makes one friend.
+
+## Accept an invite
+
+Done: inviter and invitee are friends; the invitee sees the inviter's shelf.
+
+```mermaid
+flowchart TD
+  link([Opens the invite link: web]) --> signed{Signed in?}
+  code([Friends: Have a code? Enter it]) --> enter[Enter code] --> check
+  signed -- no --> signin[Sign in, with: Anna invited you to shelf] --> named
+  signed -- yes --> named{Has a name?}
+  named -- no --> name[Your name] --> check
+  named -- yes --> check{Invite still valid?}
+  check -- yes --> accept[Anna invited you: Accept / Not now]
+  check -- expired, used or cancelled --> gone[This invite has expired or was already used. Ask Anna for a new one.]
+  check -- unknown code --> wrong[That code isn't right. Check it and try again.] --> enter
+  check -- your own --> own[That's your own invite. Send it to a friend.]
+  check -- already friends --> already[You and Anna are already friends.] --> fshelf
+  accept -- Accept --> ok{Accepted?}
+  ok -- yes --> fshelf([Anna's shelf + snackbar: You and Anna are friends])
+  ok -- no network / error --> acceptErr[Couldn't accept the invite. Try again.] --> accept
+  accept -- Not now --> friends2([Friends; the link still works until it expires])
+```
+
+## Friends and their shelves
+
+Done: the user browses a friend's shelf, opens an album and can add it to
+their own shelf; or removes the friend.
+
+```mermaid
+flowchart TD
+  tab([Friends tab]) --> load{Loaded?}
+  load -- loading --> skel[Skeleton rows]
+  load -- error --> err[Couldn't load your friends. Try again.]
+  load -- no friends --> empty[No friends yet. Invite a friend to see their shelf.]
+  load -- yes --> list[Friends: name, albums, waiting invites]
+  list -- friend --> fshelf[Anna's shelf: covers or list, filter bar with built-in filters]
+  fshelf -- empty --> fempty[Anna hasn't added any albums yet.]
+  fshelf -- album --> falbum[Anna's album: her rating, comment, tags, favorite tracks]
+  falbum -- Add to my shelf --> addflow([Add from a friend])
+  falbum -- On your shelf · Open --> entry([Album entry: edit])
+  list -- ⋮ Remove --> confirm[Remove Anna? You stop seeing each other's shelves.]
+  confirm -- Remove --> removed([Friends + snackbar: Anna removed])
+  confirm -- Cancel --> list
+```
+
+Notes:
+- A friend's shelf is read-only and shows only the built-in filters (All,
+  Own, Want, Want to listen, Listened): their own tags may mean nothing to
+  the viewer.
+- Removing a friend is mutual and immediate; albums already added from
+  them stay, with "Added from Anna's shelf".
+
+## Feed
+
+Done: the user sees what friends added and rated, newest first, and can
+open any of those albums.
+
+```mermaid
+flowchart TD
+  tab([Feed tab]) --> load{Loaded?}
+  load -- loading --> skel[Skeleton items]
+  load -- error --> err[Couldn't load the feed. Try again.]
+  load -- no friends --> nofriends[See what friends add and rate. Invite a friend.] -- Invite a friend --> invite([Invite a friend])
+  load -- friends, nothing yet --> quiet[Nothing yet. When friends add or rate albums, they show here.]
+  load -- yes --> items[Items: Anna added Kid A · 2 h; Ben rated Blue ★★★★½ · yesterday]
+  items -- scroll to end --> more{More?}
+  more -- yes --> items
+  more -- error --> moreErr[Couldn't load more. Try again.]
+  items -- pull to refresh --> load
+  items -- item --> falbum([Friend's album])
+```
+
+Notes:
+- Two kinds of items: an album added, and a rating set or changed (one
+  item per album and friend: a later rating replaces the earlier one).
+- Hidden entries never appear; hiding an entry removes its items.
+
+## Hide an entry from friends
+
+Done: friends don't see the album on the user's shelf or in the feed; the
+user still sees it, marked as hidden.
+
+```mermaid
+flowchart TD
+  entry([Album entry: edit]) -- Hide from friends: on --> save[Save]
+  save --> ok{Saved?}
+  ok -- yes --> shelf([My shelf: album marked hidden])
+  ok -- no --> err[Couldn't save. Try again.] --> entry
+  add([Album entry: add]) -- Hide from friends: on --> added([Added, hidden from the start])
+```

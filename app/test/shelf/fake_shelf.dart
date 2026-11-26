@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:shelf_app/shelf/shelf_data.dart';
+import 'package:shelf_app/shelf/shelf.dart';
+import 'package:shelf_app/shelf/shelf_repository.dart';
 
 final own = ShelfFilter.tag('own', 'Own');
 final want = ShelfFilter.tag('want', 'Want');

@@ -65,6 +65,15 @@
 - `entry_tracks`: the user's own track list of a shelf entry, with a
   `favorite` flag per track; replaced as a whole by `set_entry_tracks` (one
   transaction). Owner-only. Details: `docs/features/tracks.md`.
+- `user_settings`: one row per user with their `theme` and `shelf_view`
+  (covers or list); null is the app's default. Owner-only. The app's
+  `Settings` (`app/lib/settings/`) keeps a copy on the device for the
+  sign-in screen and offline, and takes the saved row after sign-in.
+- M2 (planned, [features/friends.md](features/friends.md)): `profiles`
+  (the name friends see), `friendships` (two rows per friendship),
+  `invites` (code, 7 days, used once), `shelf_entries.hidden` and
+  `rated_at`, a `feed` view; friends read each other's visible data
+  through row-level security.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 
@@ -170,6 +179,32 @@ GlitchTip (a server to run).
   workflow (see Environments).
 
 ## Decisions
+- **2026-11-26 – Friends (M2) through row-level security.** Friends' read
+  access is added to the existing policies (`is_friend()`, hidden entries
+  excluded), so the app reuses its queries; own-data queries filter by
+  `user_id` explicitly from then on. Considered: security-definer
+  functions returning JSON per screen (visibility outside RLS, a second
+  parser). Friendships are two rows written only by `accept_invite` and
+  `remove_friend` (considered: one row per pair, an `or` in every lookup).
+  Invites are a link plus a code, used once, valid 7 days; mutual, no user
+  search.
+- **2026-11-26 – The feed is a view.** A `security_invoker` view over
+  friends' `shelf_entries` (adds by `created_at`, ratings by a
+  trigger-set `rated_at`), paged by time; hiding an entry hides its items
+  with no extra work. Considered: an events table filled by triggers (a
+  second copy to keep in step).
+- **2026-11-26 – User settings in the database.** Settings follow the user
+  to every device; the device keeps only a cache (shown before sign-in and
+  offline, replaced by the saved row after sign-in; a change shows at once
+  and is then saved). One column per setting, so Postgres checks values
+  like the other tables do; theme names unchecked so new themes need no
+  migration. Its own `SettingsRepository`, apart from the shelf's. Each
+  save sends only the changed column, and a sync skips what the user
+  changed meanwhile. The cache outlives sign-out: someone else signing in
+  on the device sees the last user's settings until their own load.
+  Considered: a JSON column (no checks), part of `ShelfRepository` (grows
+  it, fails with the shelf), settings on the device only (the earlier
+  state).
 - **2026-11-24 – Sign in with an emailed code and link.** The email
   carries a 6-digit code and a link. The code works on any device from
   day one, including when the mail is read on another device; the link

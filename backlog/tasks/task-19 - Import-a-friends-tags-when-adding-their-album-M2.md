@@ -4,9 +4,10 @@ title: Import a friend's tags when adding their album (M2)
 status: To Do
 assignee: []
 created_date: '2026-11-23T23:51:00Z'
-updated_date: '2026-11-24T00:06:00Z'
+updated_date: '2026-11-26T10:05:00Z'
 labels: []
-dependencies: []
+dependencies:
+  - TASK-37
 ordinal: 20000
 ---
 

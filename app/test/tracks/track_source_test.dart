@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shelf_app/search/musicbrainz.dart';
-import 'package:shelf_app/shelf/shelf_data.dart';
+import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/tracks/track_source.dart';
 
 Map<String, dynamic> release(String id, String date, List<int> discs) => {

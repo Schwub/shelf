@@ -1,20 +1,24 @@
 name: integration
 
-# The app's Supabase repository against a local Supabase: what the unit
+# The app's Supabase repositories against a local Supabase: what the unit
 # tests' in-memory fake can't check (queries, database errors, triggers).
 # Only when the data code, the database or these tests change.
 on:
   push:
     branches: [main]
     paths:
-      - app/lib/shelf/shelf_data.dart
+      - app/lib/shelf/shelf.dart
+      - app/lib/shelf/supabase_shelf_repository.dart
+      - app/lib/settings/supabase_settings_repository.dart
       - app/test_integration/**
       - supabase/migrations/**
       - mise.toml
       - .github/workflows/integration.yml
   pull_request:
     paths:
-      - app/lib/shelf/shelf_data.dart
+      - app/lib/shelf/shelf.dart
+      - app/lib/shelf/supabase_shelf_repository.dart
+      - app/lib/settings/supabase_settings_repository.dart
       - app/test_integration/**
       - supabase/migrations/**
       - mise.toml

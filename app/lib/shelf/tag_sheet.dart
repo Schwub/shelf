@@ -5,7 +5,7 @@ import '../theme/shelf_colors.dart';
 import '../widgets/help_line.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
-import 'shelf_data.dart';
+import 'shelf.dart';
 
 /// What the Add sheet ends with: the group (with any tags created in it)
 /// and the chosen tags.
