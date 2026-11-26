@@ -39,6 +39,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          # Gradle's downloads, so a build doesn't fetch them all again (Maven
+          # Central answered one with 429 Too Many Requests, 2026-11-26).
+          cache: gradle
       - uses: jdx/mise-action@v3
         with:
           install_args: flutter
