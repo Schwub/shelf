@@ -138,9 +138,13 @@ class FakeShelf implements ShelfRepository {
     throw Exception('offline');
   }
 
+  /// While set, loads wait for it.
+  Completer<void>? holdLoad;
+
   @override
   Future<Shelf> load() async {
     loads++;
+    await holdLoad?.future;
     if (failLoad) {
       failLoad = false;
       throw Exception('offline');

@@ -1,6 +1,6 @@
 # Tags
 
-Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor built (TASK-17); groups picked from a list (TASK-28); filters built (TASK-18, TASK-32); import being built (TASK-19).
+Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor built (TASK-17); groups picked from a list (TASK-28); filters built (TASK-18, TASK-32); import built (TASK-19).
 
 Tag editor (TASK-17): `app/lib/tags/` (Tags list, Tag group, tag actions
 sheet), reached only from My shelf's ⋮ menu (the album entry's "Edit tags"
@@ -102,7 +102,12 @@ copies stay on cancel, so atomicity buys little).
   shows the note on the entry later.
 - `Tag.builtin` and `TagGroup.builtin` hold the key (`own`, `collection`).
 - Creating tags and groups notifies `ShelfRepository.changes`, so My shelf
-  shows copies kept after a cancelled add.
+  shows copies kept after a cancelled add (accepted: several reloads per
+  copy, docs/tech-debt.md). Add plans against a freshly loaded shelf, so a
+  second Add after a cancel finds the copies. The sheet can't be closed
+  while copying, and a sub-tag is ticked and unticked with its parent.
+- The friend's track list is copied without their favorites; without one,
+  MusicBrainz's is suggested as for any new album.
 - Tests: unit tests for `TagImport` (key, name, sub-groups, type rule,
   hidden groups, copying in rounds and after a failure); widget tests for
   each mockup state with the fake; integration test for `added_from`.

@@ -69,9 +69,16 @@ class TagImport {
       final parent? => depth(parent) + 1,
       null => 0,
     };
-    // Groups hidden by the friend are left out of theirs.groups.
-    final groups = [...theirs.groups]
-      ..sort((a, b) => depth(a).compareTo(depth(b)));
+    // Top-level groups, then sub-groups, each in the friend's order (a
+    // stable sort); groups hidden by the friend are left out of
+    // theirs.groups.
+    final levels = <int, List<TagGroup>>{};
+    for (final g in theirs.groups) {
+      (levels[depth(g)] ??= []).add(g);
+    }
+    final groups = [
+      for (final d in levels.keys.toList()..sort()) ...levels[d]!,
+    ];
     final shown = {for (final g in mine.groups) g.id};
     final filled = <String>{};
     for (final group in groups) {

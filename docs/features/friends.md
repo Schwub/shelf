@@ -152,4 +152,4 @@ One task and pull request each, in this order:
 2. TASK-36: invites and friends (list, invite, accept, remove).
 3. TASK-37: a friend's shelf and album; hide an entry from friends.
 4. TASK-38: the feed.
-5. TASK-19: import a friend's tags (any time after TASK-37).
+5. TASK-19: import a friend's tags and track list (any time after TASK-37). Done.

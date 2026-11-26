@@ -20,6 +20,9 @@ Future<TagImport?> showImportTagsSheet(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
+    // Closed by Skip, or the barrier and back while not copying: closed
+    // during a copy, the copies would not reach the album.
+    enableDrag: false,
     backgroundColor: c.bg,
     barrierColor: const Color(0x73000000),
     shape: RoundedRectangleBorder(
@@ -45,6 +48,29 @@ class _ImportTagsSheetState extends State<_ImportTagsSheet> {
     for (final m in widget.plan.missing) m.tag.id,
   };
   bool _copying = false, _failed = false;
+
+  /// The missing tags hanging under [tagId], at any depth.
+  Set<String> _under(String tagId) => {
+    for (final m in widget.plan.missing)
+      if (m.group.parentTagId == tagId) ...{m.tag.id, ..._under(m.tag.id)},
+  };
+
+  /// A sub-tag can't be copied without its parent tag: they go together.
+  void _toggle(MissingTag m) => setState(() {
+    if (_picked.remove(m.tag.id)) {
+      _picked.removeAll(_under(m.tag.id));
+      return;
+    }
+    _picked.add(m.tag.id);
+    final byId = {for (final x in widget.plan.missing) x.tag.id: x};
+    for (
+      var p = byId[m.group.parentTagId];
+      p != null;
+      p = byId[p.group.parentTagId]
+    ) {
+      _picked.add(p.tag.id);
+    }
+  });
 
   Future<void> _copy() async {
     setState(() {
@@ -84,104 +110,101 @@ class _ImportTagsSheetState extends State<_ImportTagsSheet> {
       (sections[_section(m)] ??= []).add(m);
     }
     final count = _picked.length;
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: c.off,
-                  borderRadius: BorderRadius.circular(2),
+    return PopScope(
+      canPop: !_copying,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: c.off,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '${widget.plan.from.name} has ${missing.length} '
-              "${missing.length == 1 ? 'tag' : 'tags'} you don't",
-              style: text.titleLarge,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Copy them to your tags? You can edit them later.',
-              style: text.bodyMedium!.copyWith(color: c.muted),
-            ),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final MapEntry(key: title, value: tags)
-                      in sections.entries) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16, bottom: 4),
-                      child: Text(
-                        title,
-                        style: text.labelSmall!.copyWith(color: c.muted),
+              const SizedBox(height: 16),
+              Text(
+                '${widget.plan.from.name} has ${missing.length} '
+                "${missing.length == 1 ? 'tag' : 'tags'} you don't",
+                style: text.titleLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Copy them to your tags? You can edit them later.',
+                style: text.bodyMedium!.copyWith(color: c.muted),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final MapEntry(key: title, value: tags)
+                        in sections.entries) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 4),
+                        child: Text(
+                          title,
+                          style: text.labelSmall!.copyWith(color: c.muted),
+                        ),
                       ),
-                    ),
-                    for (final m in tags)
-                      TagRow(
-                        title: m.tag.name,
-                        subtitle: m.into == null
-                            ? 'New group and tag'
-                            : 'New tag in your ${m.into!.name}',
-                        chosen: _picked.contains(m.tag.id),
-                        onTap: _copying
-                            ? null
-                            : () => setState(
-                                () => _picked.contains(m.tag.id)
-                                    ? _picked.remove(m.tag.id)
-                                    : _picked.add(m.tag.id),
-                              ),
-                      ),
+                      for (final m in tags)
+                        TagRow(
+                          title: m.tag.name,
+                          subtitle: m.into == null
+                              ? 'New group and tag'
+                              : 'New tag in your ${m.into!.name}',
+                          chosen: _picked.contains(m.tag.id),
+                          onTap: _copying ? null : () => _toggle(m),
+                        ),
+                    ],
                   ],
-                ],
-              ),
-            ),
-            if (_failed) ...[
-              const SizedBox(height: 12),
-              const HelpLine(
-                "Couldn't copy the tags. Check your connection and try again.",
-                error: true,
-              ),
-            ],
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ShelfKey(
-                    onPressed: _copying
-                        ? null
-                        : () => Navigator.of(context).pop(),
-                    child: const Text('Skip'),
-                  ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ShelfKey(
-                    primary: true,
-                    onPressed: _copying || count == 0 ? null : _copy,
-                    child: Text(
-                      _copying
-                          ? 'Copying…'
-                          : _failed
-                          ? 'Try again'
-                          : 'Add $count ${count == 1 ? 'tag' : 'tags'}',
-                    ),
-                  ),
+              ),
+              if (_failed) ...[
+                const SizedBox(height: 12),
+                const HelpLine(
+                  "Couldn't copy the tags. Check your connection and try again.",
+                  error: true,
                 ),
               ],
-            ),
-          ],
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ShelfKey(
+                      onPressed: _copying
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      child: const Text('Skip'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ShelfKey(
+                      primary: true,
+                      onPressed: _copying || count == 0 ? null : _copy,
+                      child: Text(
+                        _copying
+                            ? 'Copying…'
+                            : _failed
+                            ? 'Try again'
+                            : 'Add $count ${count == 1 ? 'tag' : 'tags'}',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

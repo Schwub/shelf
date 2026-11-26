@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -427,6 +429,97 @@ void main() {
 
       expect(shelf.entries.any((e) => e.album.musicbrainzId == 'mb-ok'), false);
       expect(shelf.groups.any((g) => g.name == 'Label'), isTrue);
+    });
+
+    testWidgets('adding again after a cancel starts from the copies', (
+      tester,
+    ) async {
+      await addFromAnna(tester, 'OK Computer');
+      await tester.tap(find.text('Add 2 tags'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add to my shelf'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Anna has 2 tags you don't"), findsNothing);
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+      expect(
+        shelf.addedTags,
+        unorderedEquals(['own', 'listened', 'shoegaze', 'parlophone']),
+      );
+    });
+
+    testWidgets("adding says so when your shelf doesn't load", (tester) async {
+      await openAnna(tester);
+      await tester.tap(find.text('OK Computer'));
+      await tester.pumpAndSettle();
+      shelf.failLoad = true;
+
+      await tester.tap(find.text('Add to my shelf'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't load your shelf. Try again."), findsOneWidget);
+      expect(find.text('Add to shelf'), findsNothing);
+    });
+
+    testWidgets("the sheet stays open while it copies", (tester) async {
+      await addFromAnna(tester, 'OK Computer');
+      shelf.holdLoad = Completer();
+
+      await tester.tap(find.text('Add 2 tags'));
+      await tester.pump();
+      expect(find.text('Copying…'), findsOneWidget);
+      await tester.tapAt(const Offset(200, 40)); // The barrier.
+      await tester.pumpAndSettle();
+      expect(find.text('Copying…'), findsOneWidget);
+
+      shelf.holdLoad!.complete();
+      shelf.holdLoad = null;
+      await tester.pumpAndSettle();
+      expect(find.text('Shoegaze'), findsOneWidget);
+    });
+
+    testWidgets('a sub-tag is ticked and unticked with its parent', (
+      tester,
+    ) async {
+      final anna = shelf.friendShelves['anna']!;
+      shelf.friendShelves['anna'] = Shelf(
+        entries: [
+          for (final e in anna.entries)
+            e.id == 'ok'
+                ? ShelfEntry(
+                    id: e.id,
+                    album: e.album,
+                    tagIds: {...e.tagIds, 'a-first'},
+                  )
+                : e,
+        ],
+        allGroups: [
+          ...anna.allGroups,
+          const TagGroup(
+            id: 'a-pressing',
+            name: 'Pressing',
+            exclusive: true,
+            parentTagId: 'a-parlophone',
+            tags: [Tag(id: 'a-first', groupId: 'a-pressing', name: 'First')],
+          ),
+        ],
+      );
+      await addFromAnna(tester, 'OK Computer');
+      expect(find.text('Add 3 tags'), findsOneWidget);
+
+      await tester.tap(find.text('Parlophone'));
+      await tester.pumpAndSettle();
+      expect(find.text('Add 1 tag'), findsOneWidget, reason: 'First went too');
+
+      await tester.tap(find.text('First'));
+      await tester.pumpAndSettle();
+      expect(find.text('Add 3 tags'), findsOneWidget, reason: 'and came back');
     });
 
     testWidgets('the sheet meets the accessibility guidelines', (tester) async {

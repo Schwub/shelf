@@ -137,6 +137,7 @@ class _EntryPageState extends State<EntryPage> {
   }
 
   Future<void> _importTags() async {
+    if (!mounted) return;
     final copied = await showImportTagsSheet(
       context,
       plan: widget.fromFriend!,
