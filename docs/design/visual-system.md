@@ -173,8 +173,10 @@ Weights: Archivo 600–800, IBM Plex Sans 400 and 600 (no 700).
   colour.
 - **Made-up covers** (2026-11-26): an album without a cover (or whose
   cover fails to load) gets `CoverArt`, like the mockups' test covers: one
-  of nine colour sets and four patterns (split, sun, sky, sweep), chosen
-  from its title and artist so it always looks the same.
+  of 20 four-colour sets and 12 patterns (split, sun, sky, sweep, bands,
+  rings, circle, sunset, blocks, mountain, dots, colour fields), with
+  angles, positions and counts varied too; all of it from its title and
+  artist, so it always looks the same.
 
 - **Launcher icon** (2026-11-26, candidate A of
   [visual/variations/launcher-icon.html](visual/variations/launcher-icon.html)):
