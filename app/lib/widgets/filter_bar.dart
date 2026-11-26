@@ -64,10 +64,7 @@ class FilterBar extends StatelessWidget {
         ),
         // A little air between the keys and their board (asked for
         // 2026-11-26; they used to stand on it).
-        const Padding(
-          padding: EdgeInsets.only(top: 4),
-          child: ShelfBoard(),
-        ),
+        const Padding(padding: EdgeInsets.only(top: 4), child: ShelfBoard()),
       ],
     );
   }
