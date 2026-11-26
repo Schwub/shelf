@@ -1,12 +1,21 @@
 import 'dart:async';
 
-import 'package:shelf_app/shelf/shelf_data.dart';
+import 'package:flutter/foundation.dart';
+
+import 'package:shelf_app/shelf/shelf.dart';
+import 'package:shelf_app/shelf/shelf_repository.dart';
 
 final own = ShelfFilter.tag('own', 'Own');
 final want = ShelfFilter.tag('want', 'Want');
 
-Tag tag(String group, String name, {bool builtin = false}) =>
-    Tag(id: name.toLowerCase(), groupId: group, name: name, builtin: builtin);
+/// A tag with its name in lower case as its ID (and, for a built-in one,
+/// its key: `want_to_listen`).
+Tag tag(String group, String name, {bool builtin = false}) => Tag(
+  id: name.toLowerCase(),
+  groupId: group,
+  name: name,
+  builtin: builtin ? name.toLowerCase().replaceAll(' ', '_') : null,
+);
 
 /// The groups new users start with (docs/features/tags.md), plus genres.
 final suggestedGroups = [
@@ -14,7 +23,7 @@ final suggestedGroups = [
     id: 'collection',
     name: 'Collection',
     exclusive: true,
-    builtin: true,
+    builtin: 'collection',
     tags: [
       tag('collection', 'Want', builtin: true),
       tag('collection', 'Own', builtin: true),
@@ -33,7 +42,7 @@ final suggestedGroups = [
     id: 'listening',
     name: 'Listening',
     exclusive: true,
-    builtin: true,
+    builtin: 'listening',
     tags: [
       tag('listening', 'Want to listen', builtin: true),
       tag('listening', 'Listened', builtin: true),
@@ -115,9 +124,27 @@ class FakeShelf implements ShelfRepository {
 
   int loads = 0;
 
+  final _changes = ValueNotifier(0);
+
+  @override
+  Listenable get changes => _changes;
+
+  /// Friends' shelves by user ID; a missing one fails to load.
+  final friendShelves = <String, Shelf>{};
+
+  @override
+  Future<Shelf> loadFriend(String userId) async {
+    if (friendShelves[userId] case final shelf?) return shelf;
+    throw Exception('offline');
+  }
+
+  /// While set, loads wait for it.
+  Completer<void>? holdLoad;
+
   @override
   Future<Shelf> load() async {
     loads++;
+    await holdLoad?.future;
     if (failLoad) {
       failLoad = false;
       throw Exception('offline');
@@ -137,6 +164,7 @@ class FakeShelf implements ShelfRepository {
     Set<String> removeTags = const {},
     List<String> addTags = const [],
     List<Track>? tracks,
+    bool? hidden,
   }) async {
     if (failSave) {
       failSave = false;
@@ -153,7 +181,9 @@ class FakeShelf implements ShelfRepository {
       comment: comment == null || comment.isEmpty ? null : comment,
       tagIds: {...e.tagIds.difference(removeTags), ...addTags},
       tracks: tracks ?? e.tracks,
+      hidden: hidden ?? e.hidden,
     );
+    _changes.value++;
   }
 
   @override
@@ -163,12 +193,15 @@ class FakeShelf implements ShelfRepository {
     String? comment,
     List<String> tags = const [],
     List<Track> tracks = const [],
+    bool hidden = false,
+    AddedFrom? addedFrom,
   }) async {
     if (failAdd) {
       failAdd = false;
       throw Exception('offline');
     }
     addedTags = tags;
+    this.addedFrom = addedFrom;
     entries.insert(
       0,
       ShelfEntry(
@@ -183,11 +216,17 @@ class FakeShelf implements ShelfRepository {
         comment: comment == null || comment.isEmpty ? null : comment,
         tagIds: tags.toSet(),
         tracks: tracks,
+        hidden: hidden,
+        addedFromName: addedFrom?.name,
       ),
     );
+    _changes.value++;
   }
 
   final manual = <ManualAlbum>[];
+
+  /// What the last add was given.
+  AddedFrom? addedFrom;
 
   @override
   Future<void> addManual(
@@ -196,6 +235,8 @@ class FakeShelf implements ShelfRepository {
     String? comment,
     List<String> tags = const [],
     List<Track> tracks = const [],
+    bool hidden = false,
+    AddedFrom? addedFrom,
   }) async {
     if (failAdd) {
       failAdd = false;
@@ -203,6 +244,7 @@ class FakeShelf implements ShelfRepository {
     }
     manual.add(album);
     addedTags = tags;
+    this.addedFrom = addedFrom;
     entries.insert(
       0,
       ShelfEntry(
@@ -216,8 +258,11 @@ class FakeShelf implements ShelfRepository {
         rating: rating,
         tagIds: tags.toSet(),
         tracks: tracks,
+        hidden: hidden,
+        addedFromName: addedFrom?.name,
       ),
     );
+    _changes.value++;
   }
 
   @override
@@ -230,6 +275,7 @@ class FakeShelf implements ShelfRepository {
     final created = tag(groupId, name);
     final i = groups.indexWhere((g) => g.id == groupId);
     groups[i] = groups[i].withTag(created);
+    _changes.value++;
     return created;
   }
 
@@ -237,6 +283,7 @@ class FakeShelf implements ShelfRepository {
   Future<void> remove(String entryId) async {
     removed.add(entryId);
     entries.removeWhere((e) => e.id == entryId);
+    _changes.value++;
   }
 
   void _edit() {
@@ -288,6 +335,7 @@ class FakeShelf implements ShelfRepository {
         tags: [for (final t in tags) tag(id, t)],
       ),
     );
+    _changes.value++;
   }
 
   @override

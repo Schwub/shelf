@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../shelf/shelf_data.dart';
+import '../shelf/shelf.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/list_row.dart';
 import '../widgets/shelf_key.dart';
@@ -19,6 +19,8 @@ Future<Set<String>?> showTagPicker(
   final c = context.shelf;
   return showModalBottomSheet<Set<String>>(
     context: context,
+    // Over the navigation bar, like a dialog.
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: c.bg,
     barrierColor: const Color(0x73000000),

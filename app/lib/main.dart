@@ -7,15 +7,27 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth/auth.dart';
 import 'auth/auth_gate.dart';
 import 'errors.dart';
+import 'feed/feed_page.dart';
+import 'feed/feed_repository.dart';
+import 'feed/supabase_feed_repository.dart';
+import 'friends/friends_page.dart';
+import 'friends/friends_repository.dart';
+import 'friends/invite_links.dart';
+import 'friends/name_gate.dart';
+import 'friends/pending_invite.dart';
+import 'friends/supabase_friends_repository.dart';
+import 'home/home_page.dart';
 import 'search/album_search.dart';
 import 'search/musicbrainz.dart';
+import 'settings/settings.dart';
+import 'settings/supabase_settings_repository.dart';
 import 'share/link_resolver.dart';
 import 'share/share_receiver.dart';
 import 'share/shared_link_inbox.dart';
-import 'shelf/shelf_data.dart';
+import 'shelf/shelf_repository.dart';
+import 'shelf/supabase_shelf_repository.dart';
 import 'shelf/shelf_page.dart';
 import 'theme/shelf_theme.dart';
-import 'theme/theme_choice.dart';
 import 'tracks/track_source.dart';
 
 // Defaults: the local Supabase (`supabase start`). Builds for the hosted
@@ -75,8 +87,13 @@ Future<void> main() async {
           ),
           search: MusicBrainzSearch(musicBrainz),
           links: SupabaseLinkResolver(supabase.client, client),
+          friends: SupabaseFriendsRepository(supabase.client),
+          feed: SupabaseFeedRepository(supabase.client),
           inbox: inbox,
-          theme: await ThemeChoice.load(),
+          pendingInvite: await PendingInvite.load(inviteCodes()),
+          settings: await Settings.load(
+            SupabaseSettingsRepository(supabase.client),
+          ),
         ),
       );
     },
@@ -91,7 +108,10 @@ class ShelfApp extends StatelessWidget {
     required this.search,
     required this.links,
     required this.inbox,
-    required this.theme,
+    required this.pendingInvite,
+    required this.settings,
+    required this.friends,
+    required this.feed,
   });
 
   final Auth auth;
@@ -99,12 +119,15 @@ class ShelfApp extends StatelessWidget {
   final AlbumSearch search;
   final LinkResolver links;
   final SharedLinkInbox inbox;
-  final ThemeChoice theme;
+  final PendingInvite pendingInvite;
+  final Settings settings;
+  final FriendsRepository friends;
+  final FeedRepository feed;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: theme,
+      valueListenable: settings.theme,
       builder: (context, chosen, home) => MaterialApp(
         title: 'shelf',
         theme: shelfTheme(chosen.colors),
@@ -112,13 +135,27 @@ class ShelfApp extends StatelessWidget {
       ),
       child: AuthGate(
         auth: auth,
-        signedIn: ShelfPage(
-          auth: auth,
-          shelf: shelf,
-          search: search,
-          links: links,
-          inbox: inbox,
-          theme: theme,
+        signedIn: NameGate(
+          friends: friends,
+          builder: (context, name) => HomePage(
+            inbox: inbox,
+            pendingInvite: pendingInvite,
+            shelf: ShelfPage(
+              auth: auth,
+              shelf: shelf,
+              search: search,
+              links: links,
+              inbox: inbox,
+              settings: settings,
+            ),
+            feed: FeedPage(feed: feed, friends: friends, shelf: shelf),
+            friends: FriendsPage(
+              friends: friends,
+              name: name,
+              pending: pendingInvite,
+              shelf: shelf,
+            ),
+          ),
         ),
       ),
     );

@@ -3,7 +3,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../shelf/entry_page.dart';
-import '../shelf/shelf_data.dart';
+import '../shelf/shelf.dart';
+import '../shelf/shelf_repository.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/help_line.dart';
 import '../widgets/shelf_field.dart';

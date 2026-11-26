@@ -1,4 +1,4 @@
-# Screens (M1)
+# Screens (M1, M2)
 
 Material 3 on all platforms (the app already uses `MaterialApp`), phone
 first; the web build uses the same layout, centred at phone width for now.
@@ -16,6 +16,14 @@ Flows are in [flows.md](flows.md), wireframes in [wireframes/](wireframes/).
 | Tag group | Edit a group: name, one or several per album, its tags, sub-groups, hide or delete | Tag editor | new, existing, built-in, delete confirmation, can't make exclusive, duplicate name, save error |
 | Filters | Choose and order the filters of the shelf's filter bar | Filters | loading, list, empty (only All), add picker, error |
 | Import tags (sheet, M2) | After adding an album from a friend: copy their tags you don't have | Add from a friend | missing tags, nothing missing (not shown), save error |
+| Your name (M2) | Set the name friends see; asked once after the first sign-in, changeable from Friends | Your name, Accept an invite | first time, change, too long or empty, save error |
+| Feed (M2, tab) | What friends added and rated, newest first | Feed | loading, no friends, nothing yet, filled, loading more, error, error loading more (no automatic retry) |
+| Friends (M2, tab) | Friends and waiting invites; invite, enter a code, remove | Invite, Accept, Friends | loading, no friends, filled, invites waiting, error |
+| Invite (sheet, M2) | The new invite's link and code; share or copy | Invite a friend | created, creating, error (snackbar) |
+| Enter code (M2) | Type or paste an invite code | Accept an invite | empty, wrong code, checking |
+| Invitation (M2) | "Anna invited you": accept or not now | Accept an invite | valid, expired or used, own invite, already friends, accepting, error |
+| Friend's shelf (M2) | A friend's albums, read-only, with the built-in filters | Friends and their shelves | loading, empty, filled grid, filled list, filter with no matches, error |
+| Friend's album (M2) | One album as the friend has it: rating, comment, tags, favorite tracks; add it | Friends and their shelves, Feed | not on your shelf (Add to my shelf), on your shelf (Open), load error |
 
 One screen, **Album entry**, serves both adding and editing, so tags,
 rating and comment work the same everywhere. In add mode the primary action
@@ -38,13 +46,29 @@ flowchart LR
   shelf -- ⋮ Tags --> tags[Tags]
   tags -- group --> group
   shelf -- ⋮ Filters --> filters[Filters]
-  friend([Friend's shelf, M2]) -- Add to my shelf --> entry
   entry -- missing tags --> import[Import tags sheet]
+  check -- first sign-in --> name[Your name]
+  name --> shelf
+  shelf <-. tab .-> feed[Feed]
+  feed <-. tab .-> friends[Friends]
+  feed -- item --> falbum[Friend's album]
+  friends -- Invite a friend --> invite[Invite sheet]
+  friends -- Have a code? --> code[Enter code] --> invitation[Invitation]
+  link([Invite link, web]) --> invitation
+  invitation -- Accept --> fshelf[Friend's shelf]
+  friends -- friend --> fshelf
+  fshelf -- album --> falbum
+  falbum -- Add to my shelf --> entry
+  falbum -- On your shelf · Open --> entry
+  friends -- Your name · Change --> name
 ```
 
-- My shelf is the only top-level screen in M1, so there is no bottom
-  navigation yet. M2 adds Feed and Friends; then a Material navigation bar
-  with Shelf, Feed and Friends replaces the single screen.
+- M2: a Material navigation bar with Shelf, Feed and Friends (in that
+  order; Shelf is where the app opens). My shelf keeps its own bottom row
+  (Covers / List and Add album) directly above the navigation bar. Each tab
+  keeps its own back stack: a friend's shelf opened from Friends stays
+  there when switching tabs. Sign-in, Your name and the Invitation screen
+  are full screen, without the bar.
 - Back follows the platform: system back / swipe on phones, the app bar back
   arrow everywhere. Back from Album entry after a share goes to My shelf.
 - Overflow menu (⋮) on My shelf: Tags, Filters, Sign out (with a
@@ -93,6 +117,22 @@ flowchart LR
 - **Covers / list** toggle in the bottom bar next to "Add album"; the
   choice is remembered on the device. A filter bar (labels above keys, each key showing its count) sits above
   the albums; it starts with All, Own, Want, Want to listen, Listened. Look and components: [visual-system.md](visual-system.md).
+- **Friends (M2):** mutual, from an invite only (no user search). An
+  invite is a link plus an 8-character code (`K7Q2-M9XD`), used once,
+  valid 7 days, cancellable while waiting (no Undo: invite again). Removing
+  a friend asks first and is mutual. "Invite a friend" is a key at the end
+  of the list rather than a floating button, like the app's other keys;
+  album counts per friend come with TASK-37, when friends' albums are
+  readable.
+- **Hidden from friends (M2):** a switch on the album entry, "Hide from
+  friends", with the help line "Friends don't see this album, and it stays
+  out of the feed." Hidden albums carry a small eye-off mark on My shelf.
+- **A friend's shelf** looks like My shelf without anything to edit: no
+  Add album, no ⋮ menu, only the built-in filters. Their tags show on
+  their album as plain labels. Its Covers / List keys are for that screen
+  only. "Add to my shelf" opens Album entry in add mode (TASK-19 adds
+  copying their tags); an album they added by hand becomes the user's own
+  copy (a new manual album). Changes made there reload My shelf.
 - Confirmation after adding or removing an album is a snackbar; removing
   offers Undo instead of a confirmation dialog. Deletes that affect many
   albums (a tag or group in the editor) ask first with a dialog instead.

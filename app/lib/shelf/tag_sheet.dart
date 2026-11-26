@@ -5,7 +5,7 @@ import '../theme/shelf_colors.dart';
 import '../widgets/help_line.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
-import 'shelf_data.dart';
+import 'shelf.dart';
 
 /// What the Add sheet ends with: the group (with any tags created in it)
 /// and the chosen tags.
@@ -22,6 +22,8 @@ Future<TagSheetResult?> showTagSheet(
   final c = context.shelf;
   return showModalBottomSheet<TagSheetResult>(
     context: context,
+    // Over the navigation bar, like a dialog.
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: c.bg,
     barrierColor: const Color(0x73000000),
@@ -151,7 +153,7 @@ class _TagSheetState extends State<_TagSheet> {
                   shrinkWrap: true,
                   children: [
                     for (final t in matches)
-                      _Row(
+                      TagRow(
                         title: t.name,
                         chosen: _chosen.contains(t.id),
                         onTap: () => setState(
@@ -161,7 +163,7 @@ class _TagSheetState extends State<_TagSheet> {
                         ),
                       ),
                     if (query.isNotEmpty && !exact)
-                      _Row(
+                      TagRow(
                         title: 'Create “$_newName”',
                         subtitle: 'New tag in ${_group.name}',
                         create: true,
@@ -194,8 +196,9 @@ class _TagSheetState extends State<_TagSheet> {
 }
 
 /// A 56 px list row with a light window (lit = chosen), or a + for Create.
-class _Row extends StatelessWidget {
-  const _Row({
+class TagRow extends StatelessWidget {
+  const TagRow({
+    super.key,
     required this.title,
     required this.onTap,
     this.subtitle,

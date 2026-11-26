@@ -4,27 +4,28 @@ import '../errors.dart';
 import '../filters/filters_page.dart';
 
 import 'package:material_ui/material_ui.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../auth/auth.dart';
 import '../auth/sign_out.dart';
 import '../preview/preview_page.dart';
 import '../search/album_search.dart';
 import '../search/search_page.dart';
+import '../settings/settings.dart';
 import '../share/link_resolver.dart';
 import '../tags/tags_page.dart';
 import '../share/resolve_page.dart';
 import '../share/shared_link_inbox.dart';
 import '../theme/shelf_colors.dart';
-import '../theme/theme_choice.dart';
 import '../theme/theme_sheet.dart';
 import '../widgets/filter_bar.dart';
+import '../widgets/message.dart';
 import '../widgets/shelf_board.dart';
 import '../widgets/shelf_key.dart';
 import 'albums_list_view.dart';
 import 'covers_view.dart';
 import 'entry_page.dart';
-import 'shelf_data.dart';
+import 'shelf.dart';
+import 'shelf_repository.dart';
 
 /// The signed-in user's albums as covers or a list, with the filter bar.
 /// Opens links shared into the app once the shelf has loaded.
@@ -36,7 +37,7 @@ class ShelfPage extends StatefulWidget {
     required this.search,
     required this.links,
     required this.inbox,
-    required this.theme,
+    required this.settings,
   });
 
   final Auth auth;
@@ -44,7 +45,7 @@ class ShelfPage extends StatefulWidget {
   final AlbumSearch search;
   final LinkResolver links;
   final SharedLinkInbox inbox;
-  final ThemeChoice theme;
+  final Settings settings;
 
   @override
   State<ShelfPage> createState() => _ShelfPageState();
@@ -57,10 +58,6 @@ class _ShelfPageState extends State<ShelfPage> {
   /// The selected filter; null for All.
   String? _filterId;
 
-  /// Covers or a list, remembered on the device.
-  bool _list = false;
-  static const _listKey = 'shelf.list';
-
   /// Removed but still undoable: hidden until the snackbar closes.
   final _removing = <String>{};
 
@@ -72,10 +69,11 @@ class _ShelfPageState extends State<ShelfPage> {
     super.initState();
     widget.inbox.addListener(_openSharedLink);
     _load();
-    SharedPreferences.getInstance().then((prefs) {
-      final list = prefs.getBool(_listKey);
-      if (mounted && list != null) setState(() => _list = list);
-    });
+    widget.settings.list.addListener(_rebuild);
+    // Also after this page's own edits, which reload anyway: an extra
+    // request, but no wiring from the other tabs.
+    widget.shelf.changes.addListener(_load);
+    widget.settings.sync();
   }
 
   Future<void> _load() async {
@@ -95,6 +93,8 @@ class _ShelfPageState extends State<ShelfPage> {
   @override
   void dispose() {
     widget.inbox.removeListener(_openSharedLink);
+    widget.settings.list.removeListener(_rebuild);
+    widget.shelf.changes.removeListener(_load);
     super.dispose();
   }
 
@@ -287,14 +287,16 @@ class _ShelfPageState extends State<ShelfPage> {
   Widget _body(BuildContext context) {
     final shelf = _shelf;
     if (_failed) {
-      return _Message(
+      return Message(
         title: "Couldn't load your shelf",
         text: 'Check your connection and try again.',
-        action: ShelfKey(
-          primary: true,
-          onPressed: _load,
-          child: const Text('Try again'),
-        ),
+        actions: [
+          ShelfKey(
+            primary: true,
+            onPressed: _load,
+            child: const Text('Try again'),
+          ),
+        ],
       );
     }
     if (shelf == null) return const _Loading();
@@ -302,32 +304,36 @@ class _ShelfPageState extends State<ShelfPage> {
     final filter = _filter;
     final entries = visible.matching(filter);
     if (visible.entries.isEmpty) {
-      return _Message(
+      return Message(
         title: 'Your shelf is empty',
         text:
             'Search for an album, or share one from Spotify or Bandcamp: '
             'tap Share, then shelf.',
-        action: ShelfKey(
-          primary: true,
-          onPressed: _addAlbum,
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.search),
-              SizedBox(width: 8),
-              Text('Search for an album'),
-            ],
+        actions: [
+          ShelfKey(
+            primary: true,
+            onPressed: _addAlbum,
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.search),
+                SizedBox(width: 8),
+                Text('Search for an album'),
+              ],
+            ),
           ),
-        ),
+        ],
       );
     }
     if (entries.isEmpty) {
-      return _Message(
+      return Message(
         title: 'No albums marked ${filter!.label} yet',
-        action: ShelfKey(
-          onPressed: () => setState(() => _filterId = null),
-          child: const Text('Show all albums'),
-        ),
+        actions: [
+          ShelfKey(
+            onPressed: () => setState(() => _filterId = null),
+            child: const Text('Show all albums'),
+          ),
+        ],
       );
     }
     return _list
@@ -335,10 +341,10 @@ class _ShelfPageState extends State<ShelfPage> {
         : CoversView(entries: entries, onOpen: _open);
   }
 
-  Future<void> _setList(bool list) async {
-    setState(() => _list = list);
-    await (await SharedPreferences.getInstance()).setBool(_listKey, list);
-  }
+  /// Covers or a list.
+  bool get _list => widget.settings.list.value;
+
+  void _rebuild() => setState(() {});
 
   Widget _bottomBar(BuildContext context) {
     final c = context.shelf;
@@ -361,7 +367,7 @@ class _ShelfPageState extends State<ShelfPage> {
                   semanticLabel: label,
                   selected: _list == list,
                   padding: EdgeInsets.zero,
-                  onPressed: () => _setList(list),
+                  onPressed: () => widget.settings.chooseList(list),
                   child: Icon(icon),
                 ),
                 const SizedBox(width: 8),
@@ -452,42 +458,10 @@ class _ShelfPageState extends State<ShelfPage> {
         );
         await _load();
       case 'theme':
-        await showThemeSheet(context, widget.theme);
+        await showThemeSheet(context, widget.settings);
       case 'sign out':
         await confirmSignOut(context, widget.auth);
     }
-  }
-}
-
-class _Message extends StatelessWidget {
-  const _Message({required this.title, this.text, this.action});
-
-  final String title;
-  final String? text;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.shelf;
-    final style = Theme.of(context).textTheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 96, 28, 24),
-      children: [
-        Text(title, style: style.titleLarge, textAlign: TextAlign.center),
-        if (text != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            text!,
-            style: style.bodyMedium!.copyWith(color: c.muted),
-            textAlign: TextAlign.center,
-          ),
-        ],
-        if (action != null) ...[
-          const SizedBox(height: 20),
-          Center(child: action),
-        ],
-      ],
-    );
   }
 }
 

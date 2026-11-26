@@ -22,8 +22,6 @@
     local Supabase (`supabase start`).
   - Row-level security decides who sees what: your own shelf, and your
     friends' shelves and activity.
-  - Edge functions (TypeScript) for work the app can't do itself:
-    resolving a shared link (Spotify, Bandcamp) to album data.
 
 ## Share-to-add
 - `app/lib/share/share_receiver.dart` is the only code that imports the
@@ -49,8 +47,9 @@
 
 ## Data model
 - `albums`: shared catalog; `musicbrainz_id` (release group) is unique and
-  nullable for links that don't resolve. Signed-in users read and add;
-  no client edits or deletes.
+  nullable for links that don't resolve; `created_by` marks albums added
+  by hand, visible only to that user. Signed-in users read; only the
+  `add-album` function adds, and there are no client edits or deletes.
 - `shelf_entries`: one per user and album. Optional `rating` 1–10 (half
   stars), `comment`, `updated_at` set by a trigger; for albums added from a
   friend's shelf (M2), `added_from_user_id` (cleared if that account is
@@ -66,6 +65,27 @@
 - `entry_tracks`: the user's own track list of a shelf entry, with a
   `favorite` flag per track; replaced as a whole by `set_entry_tracks` (one
   transaction). Owner-only. Details: `docs/features/tracks.md`.
+- `user_settings`: one row per user with their `theme` and `shelf_view`
+  (covers or list); null is the app's default. Owner-only. The app's
+  `Settings` (`app/lib/settings/`) keeps a copy on the device for the
+  sign-in screen and offline, and takes the saved row after sign-in.
+- `profiles`: the name friends see, one row per user, owner-only until
+  friends (TASK-36). The app asks for it after the first sign-in
+  (`NameGate`).
+- `friendships` (two rows per friendship, written only by `accept_invite`
+  and `remove_friend`) and `invites` (code, 7 days, used once; made by
+  `create_invite`, checked by `invite_preview`); friends read each other's
+  `profiles` through `is_friend()` ([features/friends.md](features/friends.md)).
+- Friends read each other's shelves (TASK-37): `shelf_entries`,
+  `entry_tags`, `entry_tracks`, `tags`, `tag_groups` and manual `albums`,
+  except entries with `hidden` set. The app filters its own data by
+  `user_id` (`SupabaseShelfRepository._load`); `loadFriend` reads a
+  friend's, with one filter per built-in tag.
+- The feed (TASK-38): a `feed` view (`security_invoker`) over friends'
+  `shelf_entries`, one "added" item per entry and a "rated" item when the
+  rating changed after adding (`rated_at`, set by a trigger). The database
+  alone sets `created_at`, `updated_at` and `rated_at` (column grants).
+  Paged by `(at, entry_id)`.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 
@@ -95,11 +115,27 @@
   committed in `app/android/app/staging.jks`, so updates install over each
   other; Play Store releases get their own private key. Firebase App
   Distribution was the plan, but the account hit its project limit.
+- **Testers on Android** (TASK-44, decided 2026-11-26): friends who test
+  are added to the repository as collaborators and install like the
+  author (step 2 below), so the releases stay private and nothing changes
+  in the build. A personal account's repository has no read-only role:
+  collaborators can push too, so trusted friends only (read-only needs
+  an organisation). Considered: a public releases-only repository (anyone with
+  the link could install), Google Play internal testing (the way for the
+  public launch: fee, identity check, app bundles) and a download link on
+  the web app (Cloudflare Pages caps files at 25 MiB). Testers can read
+  the code and issues.
 - **Test albums:** `supabase/dev/test_albums.sql` puts nine albums with
-  ratings and built-in tags on one account's shelf, until albums can be
-  added in the app (TASK-8). Locally `mise run dev:albums -- <email>`; on
+  ratings and built-in tags on one account's shelf, for trying the app and
+  screenshots without adding albums one by one. Locally `mise run dev:albums -- <email>`; on
   staging the `staging-test-albums` workflow (by hand, email as input). The
   account must have signed in once; running it again changes nothing.
+- **Test friend:** `supabase/dev/test_friend.sql` makes "Testa"
+  (`testa@shelf.invalid`, never signs in) one account's friend, with eight
+  albums added and rated over the past week (one hidden), for the Friends
+  tab, a friend's shelf and the feed. Locally `mise run dev:friend --
+  <email>`; on staging the `staging-test-friend` workflow. Both scripts run
+  through `supabase/dev/test-data.sh`.
 - **Production:** later, a second hosted project the same way.
 
 One-time Android setup (TASK-23):
@@ -109,6 +145,12 @@ One-time Android setup (TASK-23):
    private, so create a fine-grained GitHub token with read-only "Contents"
    access to `Schwub/shelf` and enter it in Obtainium's settings (GitHub
    source). Then add the app with the URL `https://github.com/Schwub/shelf`.
+3. A tester: invite their GitHub account (repository Settings →
+   Collaborators; they can push too); they accept, then do step 2 with their own
+   token. Fine-grained tokens only reach repositories of the token's own
+   account or organisations, so if `Schwub/shelf` isn't offered they need
+   a classic token with the `repo` scope (it can do what their account
+   can, so they keep it only in Obtainium).
 
 One-time staging setup (TASK-21):
 1. Supabase dashboard → New project `shelf-staging` (free plan; it pauses
@@ -179,6 +221,32 @@ GlitchTip (a server to run).
   workflow (see Environments).
 
 ## Decisions
+- **2026-11-26 – Friends (M2) through row-level security.** Friends' read
+  access is added to the existing policies (`is_friend()`, hidden entries
+  excluded), so the app reuses its queries; own-data queries filter by
+  `user_id` explicitly from then on. Considered: security-definer
+  functions returning JSON per screen (visibility outside RLS, a second
+  parser). Friendships are two rows written only by `accept_invite` and
+  `remove_friend` (considered: one row per pair, an `or` in every lookup).
+  Invites are a link plus a code, used once, valid 7 days; mutual, no user
+  search.
+- **2026-11-26 – The feed is a view.** A `security_invoker` view over
+  friends' `shelf_entries` (adds by `created_at`, ratings by a
+  trigger-set `rated_at`), paged by time; hiding an entry hides its items
+  with no extra work. Considered: an events table filled by triggers (a
+  second copy to keep in step).
+- **2026-11-26 – User settings in the database.** Settings follow the user
+  to every device; the device keeps only a cache (shown before sign-in and
+  offline, replaced by the saved row after sign-in; a change shows at once
+  and is then saved). One column per setting, so Postgres checks values
+  like the other tables do; theme names unchecked so new themes need no
+  migration. Its own `SettingsRepository`, apart from the shelf's. Each
+  save sends only the changed column, and a sync skips what the user
+  changed meanwhile. The cache outlives sign-out: someone else signing in
+  on the device sees the last user's settings until their own load.
+  Considered: a JSON column (no checks), part of `ShelfRepository` (grows
+  it, fails with the shelf), settings on the device only (the earlier
+  state).
 - **2026-11-24 – Sign in with an emailed code and link.** The email
   carries a 6-digit code and a link. The code works on any device from
   day one, including when the mail is read on another device; the link

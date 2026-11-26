@@ -2,7 +2,8 @@ import 'package:material_ui/material_ui.dart';
 
 import '../errors.dart';
 import '../shelf/entry_page.dart';
-import '../shelf/shelf_data.dart';
+import '../shelf/shelf.dart';
+import '../shelf/shelf_repository.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/help_line.dart';
@@ -476,7 +477,7 @@ class _TagGroupPageState extends State<TagGroupPage> {
           HelpLine(error, error: true),
         ],
         heading('Tags per album'),
-        if (group?.builtin ?? false)
+        if (group?.builtin != null)
           Text('One per album. Built-in groups stay that way.', style: hint)
         else
           Row(
@@ -535,7 +536,7 @@ class _TagGroupPageState extends State<TagGroupPage> {
                 key: ValueKey(tag.id),
                 title: tag.name,
                 subtitle: _creating ? null : _tagLine(_shelf!, tag),
-                mark: tag.builtin ? 'Built-in' : null,
+                mark: tag.builtin != null ? 'Built-in' : null,
                 leading: ReorderableDragStartListener(
                   index: i,
                   child: Semantics(
@@ -622,7 +623,7 @@ class _TagGroupPageState extends State<TagGroupPage> {
       ];
     }
     return [
-      if (group!.builtin) ...[
+      if (group!.builtin != null) ...[
         Align(
           alignment: Alignment.centerLeft,
           child: ShelfKey(

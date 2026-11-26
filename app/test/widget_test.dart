@@ -1,13 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shelf_app/friends/pending_invite.dart';
 import 'package:shelf_app/main.dart';
+import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
-import 'package:shelf_app/theme/theme_choice.dart';
 
 import 'auth/fake_auth.dart';
 import 'shelf/fake_shelf.dart';
 import 'search/fake_search.dart';
 import 'share/fake_links.dart';
+import 'settings/fake_settings.dart';
+import 'friends/fake_friends.dart';
+import 'feed/fake_feed.dart';
 
 void main() {
   testWidgets('starts on the shelf when signed in', (tester) async {
@@ -18,7 +22,10 @@ void main() {
         search: FakeSearch({}),
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
-        theme: ThemeChoice(),
+        pendingInvite: PendingInvite(),
+        settings: Settings(FakeSettings()),
+        friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();
@@ -35,7 +42,10 @@ void main() {
         search: FakeSearch({}),
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
-        theme: ThemeChoice(),
+        pendingInvite: PendingInvite(),
+        settings: Settings(FakeSettings()),
+        friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
 
@@ -55,7 +65,10 @@ void main() {
         search: FakeSearch({}),
         links: links,
         inbox: SharedLinkInbox(Stream.value(shared)),
-        theme: ThemeChoice(),
+        pendingInvite: PendingInvite(),
+        settings: Settings(FakeSettings()),
+        friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();

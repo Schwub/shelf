@@ -1,7 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../errors.dart';
-import '../shelf/shelf_data.dart';
+import '../shelf/shelf.dart';
+import '../shelf/shelf_repository.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/list_row.dart';
 import '../widgets/note.dart';

@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/filters/filter_editor_page.dart';
 import 'package:shelf_app/filters/filters_page.dart';
-import 'package:shelf_app/shelf/shelf_data.dart';
+import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 

@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/text_link.dart';
 import '../widgets/shelf_key.dart';
-import 'shelf_data.dart';
+import 'shelf.dart';
 import 'tag_sheet.dart';
 
 /// The chosen tags of an entry and the rules for changing them: one tag per
@@ -151,7 +151,7 @@ class TagSection extends StatelessWidget {
           ),
         )
       // Built-in two-tag groups fill the row with equal keys.
-      else if (!list && group.builtin && group.tags.length == 2)
+      else if (!list && group.builtin != null && group.tags.length == 2)
         Row(
           children: [
             key(group.tags[0], expand: true),

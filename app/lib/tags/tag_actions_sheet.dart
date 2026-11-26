@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../shelf/shelf_data.dart';
+import '../shelf/shelf.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/help_line.dart';
 import '../widgets/list_row.dart';
@@ -22,6 +22,8 @@ Future<TagAction?> showTagActions(
   final c = context.shelf;
   return showModalBottomSheet<TagAction>(
     context: context,
+    // Over the navigation bar, like a dialog.
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: c.bg,
     barrierColor: const Color(0x73000000),
@@ -142,7 +144,7 @@ class _TagActionsState extends State<_TagActions> {
                 onTap: () => _close(TagAction.subGroup),
               ),
             const SizedBox(height: 20),
-            if (widget.tag.builtin)
+            if (widget.tag.builtin != null)
               const HelpLine('Built-in tags can’t be deleted.')
             else
               Align(

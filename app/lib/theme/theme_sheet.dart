@@ -1,14 +1,16 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../settings/settings.dart';
 import '../widgets/shelf_key.dart';
 import 'shelf_colors.dart';
-import 'theme_choice.dart';
 
 /// Pick a theme; it changes at once and is remembered.
-Future<void> showThemeSheet(BuildContext context, ThemeChoice theme) {
+Future<void> showThemeSheet(BuildContext context, Settings settings) {
   final c = context.shelf;
   return showModalBottomSheet<void>(
     context: context,
+    // Over the navigation bar, like a dialog.
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: c.bg,
     barrierColor: const Color(0x73000000),
@@ -18,7 +20,7 @@ Future<void> showThemeSheet(BuildContext context, ThemeChoice theme) {
     ),
     // Rebuilt with the new theme's colours as soon as one is picked.
     builder: (_) => ValueListenableBuilder(
-      valueListenable: theme,
+      valueListenable: settings.theme,
       builder: (context, chosen, _) => ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * 0.85,
@@ -60,7 +62,7 @@ Future<void> showThemeSheet(BuildContext context, ThemeChoice theme) {
                             light: true,
                             selected: chosen == t,
                             padding: const EdgeInsets.symmetric(horizontal: 10),
-                            onPressed: () => theme.choose(t),
+                            onPressed: () => settings.chooseTheme(t),
                             child: Row(
                               children: [
                                 _Swatch(t.colors),

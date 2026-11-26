@@ -7,7 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shelf_app/search/manual_album_page.dart';
 import 'package:shelf_app/search/search_page.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
-import 'package:shelf_app/shelf/shelf_data.dart';
+import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
 

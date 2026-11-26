@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cover backgrounds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:28px;background:#cfc9c0;font-family:system-ui;color:#222}
+h1{font:600 20px system-ui;margin:0 0 4px}
+p.d{margin:0 0 18px;max-width:960px;font:14px/1.45 system-ui;color:#333}
+section{margin:0 0 36px}
+section>h2{font:600 16px system-ui;margin:0 0 10px}
+.row{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+figure{margin:0}
+figcaption{font:600 13px system-ui;margin:0 0 8px}
+.phone{width:390px;height:640px;border-radius:30px;overflow:hidden;position:relative;box-shadow:0 0 0 2px #333;
+  font-family:'IBM Plex Sans',sans-serif;color:var(--text);background:var(--bg)}
+.stage{position:relative;height:300px;overflow:hidden}
+.stage .bgfx{position:absolute;inset:0}
+/* A: the cover itself, zoomed in and blurred, fading into the page */
+.blur .bgfx{inset:-40px;background:var(--art);filter:blur(36px) saturate(1.2);opacity:var(--blurA);transform:scale(1.4)}
+/* B: the cover's prominent colours as a soft gradient */
+.grad .bgfx{background:radial-gradient(120% 90% at 20% 0%,var(--c1),transparent 70%),radial-gradient(110% 90% at 90% 10%,var(--c2),transparent 70%);opacity:var(--gradA)}
+.stage .fade{position:absolute;left:0;right:0;bottom:0;height:140px;background:linear-gradient(transparent,var(--bg))}
+.stage .cv{position:absolute;left:50%;top:44px;width:200px;height:200px;margin-left:-100px;border-radius:2px;background:var(--art);box-shadow:0 24px 40px -18px #000c}
+.stage .board{position:absolute;left:0;right:0;top:244px;height:4px;background:var(--teak);box-shadow:inset 0 1px 0 #ffffff33}
+.stage .board:after{content:"";position:absolute;left:0;right:0;top:4px;height:10px;background:linear-gradient(#0005,#0000)}
+.x{position:absolute;top:14px;right:18px;width:40px;height:40px;border-radius:4px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center;font-size:18px}
+.panel{padding:16px 20px}
+.panel h3{font:700 24px/1.15 Archivo,sans-serif;font-stretch:115%;margin:0}
+.by{font-size:14px;color:var(--muted);margin-top:4px}
+.from{font-size:12px;color:var(--muted);margin-top:4px}
+.lbl{font:600 12px 'IBM Plex Sans';color:var(--muted);margin:16px 0 8px}
+.keys{display:flex;gap:8px}
+.key{flex:1;height:44px;border-radius:4px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center;font:600 13px Archivo,sans-serif;font-stretch:112%}
+.key.on{box-shadow:inset 0 0 0 1.5px var(--signal)}
+.tobacco{--bg:#231812;--surface:#2E2019;--text:#F0E2D2;--muted:#B79E8A;--line:#F0E2D21f;--teak:#94603F;--signal:#C88A63;--blurA:.55;--gradA:.55}
+.evening{--bg:#1F1510;--surface:#2A1D16;--text:#F1E6D4;--muted:#B5A28B;--line:#F1E6D41f;--teak:#A87445;--signal:#F0A830;--blurA:.55;--gradA:.55}
+.daylight{--bg:#F4EDE2;--surface:#FBF7F0;--text:#2A1D16;--muted:#665444;--line:#2A1D1626;--teak:#A87445;--signal:#B06A00;--blurA:.45;--gradA:.40}
+.kid{--art:linear-gradient(160deg,#e9e4dc 0 40%,#d23a2c 40% 46%,#2b3a55 46%);--c1:#d23a2c;--c2:#2b3a55}
+.disc{--art:radial-gradient(circle at 30% 30%,#ffd84a,#f2732c 45%,#3a1660 80%);--c1:#f2732c;--c2:#3a1660}
+.titanic{--art:linear-gradient(180deg,#1b6f8f,#7fc3c9 55%,#e8d7b8);--c1:#1b6f8f;--c2:#7fc3c9}
+.none{--art:none}
+.none .stage .cv{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
+</style>
+</head>
+<body>
+<h1>Cover backgrounds on the album entry (TASK-42)</h1>
+<p class="d">Three columns per theme: today, A (the cover blurred and zoomed in behind it) and B (a gradient from the cover's two most prominent colours). Both sit only behind the cover area and fade into the page background before the title, so text stays on the plain background. The same applies to every screen that shows one album (album entry, a friend's album). Last row: an album without a cover keeps today's look.</p>
+<div id="out"></div>
+<script>
+const albums = [
+  {cls:'kid', title:'Kid A', by:'Radiohead, 2000'},
+  {cls:'disc', title:'Discovery', by:'Daft Punk, 2001'},
+  {cls:'titanic', title:'Titanic Rising', by:'Weyes Blood, 2019'},
+];
+const themes = [['tobacco','Tobacco & copper'],['evening','Evening'],['daylight','Daylight']];
+const variants = [['today','Today'],['blur','A · Blurred cover'],['grad','B · Colour gradient']];
+const phone = (theme, album, variant) => `
+<div class="phone ${theme} ${album.cls} ${variant}">
+  <div class="stage"><div class="bgfx"></div><div class="fade"></div><div class="cv"></div><div class="board"></div><div class="x">✕</div></div>
+  <div class="panel">
+    <h3>${album.title}</h3><div class="by">${album.by}</div><div class="from">Added from Anna's shelf</div>
+    <div class="lbl">Collection</div><div class="keys"><div class="key">Want</div><div class="key on">Own</div></div>
+    <div class="lbl">Listening</div><div class="keys"><div class="key">Want to listen</div><div class="key on">Listened</div></div>
+  </div>
+</div>`;
+let html = '';
+themes.forEach(([t, name], i) => {
+  const album = albums[i];
+  html += `<section><h2>${name} · ${album.title}</h2><div class="row">` +
+    variants.map(([v, label]) => `<figure><figcaption>${label}</figcaption>${phone(t, album, v === 'today' ? '' : v)}</figure>`).join('') +
+    `</div></section>`;
+});
+html += `<section><h2>No cover (Evening)</h2><div class="row">` +
+  variants.map(([v, label]) => `<figure><figcaption>${label}</figcaption>${phone('evening', {cls:'none', title:'Demo', by:'Anna, 2024'}, v === 'today' ? '' : v)}</figure>`).join('') +
+  `</div></section>`;
+document.getElementById('out').innerHTML = html;
+</script>
+</body>
+</html>
