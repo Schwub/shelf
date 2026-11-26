@@ -1,16 +1,24 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../share/shared_link_inbox.dart';
+
 /// The three tabs (Shelf, Feed, Friends) with a navigation bar. Each tab has
 /// its own Navigator, so it keeps its screens while another tab is shown;
-/// system back pops the current tab first.
+/// system back pops the current tab first. A shared link shows the Shelf
+/// tab, where My shelf opens it.
 class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
+    required this.inbox,
     required this.shelf,
     required this.feed,
     required this.friends,
   });
 
+  final SharedLinkInbox inbox;
+
+  /// Each tab's first screen, built once: later rebuilds of HomePage don't
+  /// replace them (the tab's Navigator keeps its routes).
   final Widget shelf, feed, friends;
 
   @override
@@ -20,6 +28,22 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _tab = 0;
   final _navigators = List.generate(3, (_) => GlobalKey<NavigatorState>());
+
+  @override
+  void initState() {
+    super.initState();
+    widget.inbox.addListener(_showShelf);
+  }
+
+  @override
+  void dispose() {
+    widget.inbox.removeListener(_showShelf);
+    super.dispose();
+  }
+
+  void _showShelf() {
+    if (widget.inbox.value != null && _tab != 0) setState(() => _tab = 0);
+  }
 
   void _select(int tab) {
     if (tab == _tab) {

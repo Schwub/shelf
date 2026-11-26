@@ -74,6 +74,33 @@ void main() {
     );
   });
 
+  testWidgets('the sheet covers the navigation bar', (tester) async {
+    tester.view.physicalSize = const Size(412, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ShelfApp(
+        auth: FakeAuth(signedIn: true),
+        shelf: FakeShelf([]),
+        search: FakeSearch({}),
+        links: FakeLinks(UnsupportedLink()),
+        inbox: SharedLinkInbox(const Stream.empty()),
+        settings: Settings(FakeSettings()),
+        friends: FakeFriends('Michael'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Theme'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Feed'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(find.text('See what friends add and rate'), findsNothing);
+  });
+
   testWidgets('the sheet groups the themes in their families', (tester) async {
     final settings = Settings(FakeSettings());
     tester.view.physicalSize = const Size(412, 1400);

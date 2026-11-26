@@ -12,18 +12,20 @@ class FriendsPage extends StatelessWidget {
   final FriendsRepository friends;
   final ValueNotifier<String> name;
 
-  Future<void> _changeName(BuildContext context) => Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (context) => NamePage(
-        friends: friends,
-        current: name.value,
-        onSaved: (saved) {
-          name.value = saved;
-          Navigator.of(context).pop();
-        },
-      ),
-    ),
-  );
+  // Full screen, over the navigation bar.
+  Future<void> _changeName(BuildContext context) =>
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute<void>(
+          builder: (context) => NamePage(
+            friends: friends,
+            current: name.value,
+            onSaved: (saved) {
+              name.value = saved;
+              Navigator.of(context).pop();
+            },
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {

@@ -125,6 +125,7 @@ class ShelfApp extends StatelessWidget {
         signedIn: NameGate(
           friends: friends,
           builder: (context, name) => HomePage(
+            inbox: inbox,
             shelf: ShelfPage(
               auth: auth,
               shelf: shelf,

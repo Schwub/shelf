@@ -67,6 +67,19 @@ void main() {
     expect(friends.name, isNull);
   });
 
+  testWidgets('the limit counts characters, as the database does', (
+    tester,
+  ) async {
+    final friends = FakeFriends();
+    await pumpApp(tester, friends);
+
+    await tester.enterText(field(), '🎵' * 40);
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(friends.name, '🎵' * 40);
+  });
+
   testWidgets('a failed save says so and can be tried again', (tester) async {
     final friends = FakeFriends();
     await pumpApp(tester, friends);
@@ -107,6 +120,7 @@ void main() {
     await tester.tap(find.text('Change'));
     await tester.pumpAndSettle();
     expect(find.text('Michael'), findsOneWidget, reason: 'in the field');
+    expect(find.byType(NavigationBar), findsNothing, reason: 'full screen');
     await tester.enterText(field(), 'Mike');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();

@@ -40,7 +40,7 @@ class _NamePageState extends State<NamePage> {
 
   Future<void> _save() async {
     final name = _controller.text.trim();
-    if (name.isEmpty || name.length > maxNameLength) {
+    if (name.isEmpty || name.characters.length > maxNameLength) {
       setState(
         () => _error = name.isEmpty
             ? 'Enter a name friends will recognise.'

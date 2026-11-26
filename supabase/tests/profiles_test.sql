@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -10,6 +10,8 @@ insert into public.profiles (user_id, name) values
 
 set local role anon;
 select is_empty('select * from public.profiles', 'anon cannot read profiles');
+select throws_ok($$insert into public.profiles (name) values ('X')$$, '42501', null,
+  'anon cannot add a profile');
 
 -- Alice is signed in.
 reset role;
@@ -19,6 +21,8 @@ set local role authenticated;
 
 select is_empty('select * from public.profiles',
   'users cannot read others'' profiles (friends can, from TASK-36)');
+select lives_ok($$update public.profiles set name = 'Mallory'$$,
+  'changing others'' names changes nothing (checked at the end)');
 select lives_ok(
   $$insert into public.profiles (name) values ('Alice')
     on conflict (user_id) do update set name = excluded.name$$,
@@ -40,6 +44,11 @@ select throws_ok($$update public.profiles set name = ' Ali'$$, '23514', null,
 select throws_ok(
   $$update public.profiles set user_id = '22222222-2222-2222-2222-222222222222'$$,
   '42501', null, 'users cannot move their profile');
+
+reset role;
+select is((select name from public.profiles
+  where user_id = '22222222-2222-2222-2222-222222222222'), 'Bob',
+  'others'' names are untouched');
 
 select * from finish();
 rollback;
