@@ -425,6 +425,23 @@ void main() {
       expect(e.tagIds, {tag['Own']!, tag['Vinyl']!});
     }
 
+    // Tags an album has already stay (no duplicate), and a parent taken
+    // off takes its sub-tag along in the same delete.
+    await s.repo.changeTags(ids, add: [tag['Own']!, tag['CD']!]);
+    shelf = await s.repo.load();
+    for (final e in shelf.entries) {
+      expect(e.tagIds, {tag['Own']!, tag['Vinyl']!, tag['CD']!});
+    }
+    await s.repo.changeTags(
+      ids,
+      remove: {tag['Own']!, tag['Vinyl']!, tag['CD']!},
+      add: [tag['Want']!],
+    );
+    shelf = await s.repo.load();
+    for (final e in shelf.entries) {
+      expect(e.tagIds, {tag['Want']!});
+    }
+
     await s.repo.hide(ids, true);
     shelf = await s.repo.load();
     expect(shelf.entries.every((e) => e.hidden), isTrue);

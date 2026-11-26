@@ -323,9 +323,17 @@ class FakeShelf implements ShelfRepository {
     List<String> add = const [],
   }) async {
     _bulk();
+    // Like the database: a tag taken off takes its sub-tags with it.
+    Set<String> withSubTags(String tagId) => {
+      tagId,
+      for (final g in groups)
+        if (g.parentTagId == tagId)
+          for (final t in g.tags) ...withSubTags(t.id),
+    };
+    final off = {for (final t in remove) ...withSubTags(t)};
     for (final (i, e) in entries.indexed.toList()) {
       if (entryIds.contains(e.id)) {
-        entries[i] = _with(e, tagIds: {...e.tagIds.difference(remove), ...add});
+        entries[i] = _with(e, tagIds: {...e.tagIds.difference(off), ...add});
       }
     }
     _changes.value++;

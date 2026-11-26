@@ -18,17 +18,17 @@ import '../share/shared_link_inbox.dart';
 import '../theme/shelf_colors.dart';
 import '../theme/theme_sheet.dart';
 import '../widgets/filter_bar.dart';
+import '../widgets/counts.dart';
 import '../widgets/message.dart';
 import '../widgets/shelf_board.dart';
 import '../widgets/shelf_key.dart';
-import '../widgets/text_link.dart';
 import 'albums_list_view.dart';
 import 'bulk_tags.dart';
 import 'bulk_tags_sheet.dart';
 import 'covers_view.dart';
 import 'entry_page.dart';
-import 'shelf.dart';
 import 'selection_bar.dart';
+import 'shelf.dart';
 import 'shelf_repository.dart';
 import 'sort_sheet.dart';
 
@@ -220,7 +220,7 @@ class _ShelfPageState extends State<ShelfPage> {
             content: Text(
               ids.length == 1
                   ? 'Removed from your shelf'
-                  : '${ids.length} albums removed',
+                  : '${albumCount(ids.length)} removed',
             ),
             action: SnackBarAction(label: 'Undo', onPressed: () {}),
             // Snackbars with an action stay open by default; the removal
@@ -273,8 +273,16 @@ class _ShelfPageState extends State<ShelfPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_selected != null && shelf != null)
-                _selectionHeader(shelf)
+              if (_selected case final selected? when shelf != null)
+                SelectionHeader(
+                  count: _chosen.length,
+                  all: _inFilter.every((e) => selected.contains(e.id)),
+                  onDone: () => setState(() => _selected = null),
+                  onAll: (all) => setState(() {
+                    final ids = [for (final e in _inFilter) e.id];
+                    all ? selected.addAll(ids) : selected.removeAll(ids);
+                  }),
+                )
               else
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
@@ -285,7 +293,7 @@ class _ShelfPageState extends State<ShelfPage> {
                       ),
                       if (count != null)
                         Text(
-                          count == 1 ? '1 album' : '$count albums',
+                          albumCount(count),
                           style: text.labelMedium!.copyWith(color: c.muted),
                         ),
                       const SizedBox(width: 8),
@@ -324,48 +332,14 @@ class _ShelfPageState extends State<ShelfPage> {
     );
   }
 
-  /// The selected albums still on the shelf.
+  /// The selected albums shown in the current filter: only those are
+  /// changed; others stay selected for when their filter is back.
   List<ShelfEntry> get _chosen => [
-    for (final e in _visible)
+    for (final e in _inFilter)
       if (_selected?.contains(e.id) ?? false) e,
   ];
 
-  /// "3 selected", ✕ to finish, and Select all (or none) in the filter.
-  Widget _selectionHeader(Shelf shelf) {
-    final text = Theme.of(context).textTheme;
-    final inFilter = [
-      for (final e in Shelf(entries: _visible).matching(_filter)) e.id,
-    ];
-    final all = inFilter.every(_selected!.contains);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      child: Row(
-        children: [
-          ShelfKey(
-            semanticLabel: 'Done selecting',
-            padding: EdgeInsets.zero,
-            onPressed: () => setState(() => _selected = null),
-            child: const Icon(Icons.close),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              '${_chosen.length} selected',
-              style: text.headlineSmall,
-            ),
-          ),
-          TextLink(
-            label: all ? 'Select none' : 'Select all',
-            onPressed: () => setState(
-              () => all
-                  ? _selected!.removeAll(inFilter)
-                  : _selected!.addAll(inFilter),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  List<ShelfEntry> get _inFilter => Shelf(entries: _visible).matching(_filter);
 
   /// The tags sheet for the selection, then the changes on all of it.
   Future<void> _changeTags() async {
@@ -384,7 +358,7 @@ class _ShelfPageState extends State<ShelfPage> {
         remove: remove,
         add: add,
       ),
-      done: 'Tags changed on ${_albums(chosen.length)}',
+      done: 'Tags changed on ${albumCount(chosen.length)}',
     );
   }
 
@@ -401,13 +375,11 @@ class _ShelfPageState extends State<ShelfPage> {
       changed,
       () => widget.shelf.hide(ids, hide),
       done:
-          '${_albums(changed.length)} ${hide ? 'hidden from' : 'shown to'} '
+          '${albumCount(changed.length)} ${hide ? 'hidden from' : 'shown to'} '
           'friends',
       undo: () => widget.shelf.hide(ids, !hide),
     );
   }
-
-  static String _albums(int n) => n == 1 ? '1 album' : '$n albums';
 
   /// Runs [change] on [entries], then says so ([undo] offers to turn it
   /// back), or that it failed, with Try again. The selection stays.
@@ -425,7 +397,7 @@ class _ShelfPageState extends State<ShelfPage> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            "Couldn't change ${_albums(entries.length)}. "
+            "Couldn't change ${albumCount(entries.length)}. "
             'Check your connection.',
           ),
           action: SnackBarAction(

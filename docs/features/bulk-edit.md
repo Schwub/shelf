@@ -27,10 +27,12 @@ actions needs that, so the app does it with a few queries.
   insert per tag, so the database sees parents first), `hide(ids, hidden)`
   (one update), `remove(ids)` (replaces the one-album remove).
 - `shelf_page.dart`: `_selected` (null when not selecting) swaps the header
-  for "n selected", ✕ and Select all/none (the albums in the current
-  filter), and the bottom row for `SelectionBar` (Tags, Hide or Show,
-  Remove). Tapping an album selects it; `CoversView` and `AlbumsListView`
-  take `selected` and `onHold`. Back ends selecting.
+  for `SelectionHeader` ("n selected", ✕, Select all/none of the albums in
+  the current filter) and the bottom row for `SelectionBar` (Tags, Hide or
+  Show, Remove), both in `selection_bar.dart`. Only the selected albums in
+  the current filter count and change; the others stay selected for when
+  their filter is back (review, 2026-11-26). Tapping an album selects it; `CoversView` and `AlbumsListView`
+  take `selected` and `onHold` and mark covers with `SelectMark`. Back ends selecting.
 - `bulk_tags_sheet.dart`: every visible group; groups picked from a list
   show only the tags some selected album has, plus Add (the usual tag
   sheet). Apply runs `changeTags`; the selection stays.

@@ -454,7 +454,9 @@ void main() {
       expect(album('1').hidden || album('3').hidden, isFalse);
     });
 
-    testWidgets('remove: gone with Undo, and selecting ends', (tester) async {
+    testWidgets('remove: gone after the snackbar, and selecting ends', (
+      tester,
+    ) async {
       await startSelecting(tester);
       await tap(tester, find.text('OK Computer'));
       await tap(tester, find.text('Blue'));
@@ -466,6 +468,34 @@ void main() {
       await tester.pump(const Duration(seconds: 6));
       await tester.pumpAndSettle();
       expect(shelf.removed, ['1', '3']);
+    });
+
+    testWidgets('only the selected albums in the filter change', (
+      tester,
+    ) async {
+      await startSelecting(tester);
+      await tap(tester, find.text('OK Computer'));
+      await tap(tester, find.text('Discovery'));
+
+      await tap(tester, filterKey(1)); // Own: OK Computer and Blue.
+      expect(find.text('1 selected'), findsOneWidget);
+      await tap(tester, find.text('Hide'));
+
+      expect(album('1').hidden, isTrue);
+      expect(album('2').hidden, isFalse, reason: 'not in the filter');
+      await tap(tester, filterKey(0));
+      expect(find.text('2 selected'), findsOneWidget, reason: 'still selected');
+    });
+
+    testWidgets('Undo brings removed albums back', (tester) async {
+      await startSelecting(tester);
+      await tap(tester, find.text('Blue'));
+      await tap(tester, find.text('Remove'));
+      expect(find.text('Removed from your shelf'), findsOneWidget);
+
+      await tap(tester, find.text('Undo'));
+      expect(find.text('Blue'), findsOneWidget);
+      expect(shelf.removed, isEmpty);
     });
 
     testWidgets('a failed change says so and can be tried again', (
@@ -499,6 +529,7 @@ void main() {
 
       await check();
       await tap(tester, find.text('Tags'));
+      expect(find.text('Tags for 1 album'), findsOneWidget);
       await check();
       semantics.dispose();
     });

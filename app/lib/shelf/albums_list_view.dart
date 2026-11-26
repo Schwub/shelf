@@ -5,7 +5,7 @@ import '../widgets/cover.dart';
 import '../widgets/dates.dart';
 import '../widgets/hidden_mark.dart';
 import '../widgets/rating_meter.dart';
-import 'covers_view.dart';
+import '../widgets/select_mark.dart';
 import 'shelf.dart';
 
 /// The shelf as a list: one row per album with a small cover, title, artist

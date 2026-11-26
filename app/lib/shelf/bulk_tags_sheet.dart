@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../theme/shelf_colors.dart';
+import '../widgets/counts.dart';
 import '../widgets/help_line.dart';
 import '../widgets/shelf_key.dart';
 import 'bulk_tags.dart';
@@ -93,7 +94,7 @@ class _BulkTagsSheetState extends State<_BulkTagsSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Tags for ${_tags.entries.length} albums',
+              'Tags for ${albumCount(_tags.entries.length)}',
               style: text.titleLarge,
             ),
             const SizedBox(height: 4),
