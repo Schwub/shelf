@@ -4,8 +4,10 @@ title: Own email sender for sign-in
 status: To Do
 assignee: []
 created_date: '2026-11-25T00:03:00Z'
+updated_date: '2026-11-26T15:21:00Z'
 labels: []
 dependencies: []
+priority: high
 ordinal: 25000
 ---
 
