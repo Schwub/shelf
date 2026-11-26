@@ -55,4 +55,63 @@ begin
   join public.shelf_entries e on e.album_id = b.id and e.user_id = account
   join public.tags t on t.user_id = account and t.builtin = s.builtin
   on conflict do nothing;
+
+  -- A group of the account's own, next to the suggested ones.
+  insert into public.tag_groups (user_id, name, exclusive, position)
+  select account, 'Mood', false, 10
+  where not exists (
+    select from public.tag_groups where user_id = account and name = 'Mood'
+  );
+
+  -- Genres, moods and formats: tags in the account's groups (Format is
+  -- the sub-group under Own).
+  insert into public.tags (user_id, group_id, name, position)
+  select account, g.id, s.tag, s.position
+  from (values
+    ('Genre', 'Art rock', 0), ('Genre', 'Electronic', 1),
+    ('Genre', 'Hip hop', 2), ('Genre', 'Folk', 3), ('Genre', 'Post-rock', 4),
+    ('Genre', 'Jazz', 5), ('Genre', 'Ambient', 6), ('Genre', 'New wave', 7),
+    ('Mood', 'Late night', 0), ('Mood', 'Rainy day', 1),
+    ('Mood', 'Road trip', 2)
+  ) as s (grp, tag, position)
+  join public.tag_groups g on g.user_id = account and g.name = s.grp
+  where not exists (
+    select from public.tags t where t.group_id = g.id and t.name = s.tag
+  );
+
+  -- Parent tags (Own) are on already, so the formats can follow.
+  insert into public.entry_tags (entry_id, tag_id, user_id)
+  select e.id, t.id, account
+  from (values
+    ('OK Computer', 'Genre', 'Art rock'), ('OK Computer', 'Format', 'Vinyl'),
+    ('OK Computer', 'Mood', 'Rainy day'),
+    ('Discovery', 'Genre', 'Electronic'), ('Discovery', 'Format', 'CD'),
+    ('Discovery', 'Mood', 'Road trip'),
+    ('To Pimp a Butterfly', 'Genre', 'Hip hop'),
+    ('To Pimp a Butterfly', 'Genre', 'Jazz'),
+    ('Blue', 'Genre', 'Folk'), ('Blue', 'Format', 'Vinyl'),
+    ('Blue', 'Mood', 'Rainy day'),
+    ('Lift Your Skinny Fists Like Antennas to Heaven', 'Genre', 'Post-rock'),
+    ('Lift Your Skinny Fists Like Antennas to Heaven', 'Mood', 'Late night'),
+    ('Promises', 'Genre', 'Jazz'), ('Promises', 'Genre', 'Ambient'),
+    ('Hounds of Love', 'Genre', 'Art rock'), ('Hounds of Love', 'Format', 'Vinyl'),
+    ('Ágætis byrjun', 'Genre', 'Post-rock'), ('Ágætis byrjun', 'Genre', 'Ambient'),
+    ('Ágætis byrjun', 'Mood', 'Late night'),
+    ('Remain in Light', 'Genre', 'New wave'), ('Remain in Light', 'Format', 'CD')
+  ) as s (title, grp, tag)
+  join public.albums b on b.title = s.title and b.created_by = account
+  join public.shelf_entries e on e.album_id = b.id and e.user_id = account
+  join public.tag_groups g on g.user_id = account and g.name = s.grp
+  join public.tags t on t.group_id = g.id and t.name = s.tag
+  on conflict do nothing;
+
+  update public.shelf_entries e set comment = s.comment
+  from (values
+    ('OK Computer', 'Paranoid Android still sounds like the future.'),
+    ('Blue', 'A Case of You, every winter.'),
+    ('Hounds of Love', 'Side two is a film without pictures.'),
+    ('Ágætis byrjun', 'For the train home in the dark.')
+  ) as s (title, comment)
+  join public.albums b on b.title = s.title and b.created_by = account
+  where e.album_id = b.id and e.user_id = account and e.comment is null;
 end $$;

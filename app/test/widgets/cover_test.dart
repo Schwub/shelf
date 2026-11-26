@@ -21,9 +21,14 @@ void main() {
       reason: 'by title and artist, not by ID',
     );
     final looks = {
-      for (var i = 0; i < 40; i++)
+      for (var i = 0; i < 100; i++)
         CoverArt.of(Album(id: '$i', title: 'Album $i', artist: 'Artist')),
     };
-    expect(looks.length, greaterThan(10));
+    expect(looks.length, greaterThan(60));
+    expect(
+      {for (final l in looks) l.pattern}.length,
+      CoverArt.patterns,
+      reason: 'every pattern turns up',
+    );
   });
 }

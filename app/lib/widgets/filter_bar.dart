@@ -8,7 +8,7 @@ import 'shelf_key.dart';
 typedef Filter = ({String label, int count});
 
 /// The shelf's filter bar: labels printed above equal keys that show a count,
-/// standing on a teak board. Up to five fill the width; with more, the keys
+/// above a teak board. Up to five fill the width; with more, the keys
 /// keep the width of five and the row scrolls, fading out at the end.
 class FilterBar extends StatelessWidget {
   const FilterBar({
@@ -62,11 +62,9 @@ class FilterBar extends StatelessWidget {
             );
           },
         ),
-        // The keys stand on the board, over their invisible touch margin.
-        Transform.translate(
-          offset: const Offset(0, -2),
-          child: const ShelfBoard(),
-        ),
+        // A little air between the keys and their board (asked for
+        // 2026-11-26; they used to stand on it).
+        const Padding(padding: EdgeInsets.only(top: 4), child: ShelfBoard()),
       ],
     );
   }

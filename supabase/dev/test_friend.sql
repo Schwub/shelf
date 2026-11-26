@@ -91,6 +91,63 @@ begin
   join public.tags t on t.user_id = friend and t.builtin = s.builtin
   on conflict do nothing;
 
+  -- Testa sorts differently from the suggested groups: genres in "Style",
+  -- and where an album came from (one per album), for trying the import of
+  -- tags whose structure isn't the user's.
+  insert into public.tag_groups (user_id, name, exclusive, pick_from_list, position)
+  select friend, s.name, s.exclusive, s.list, s.position
+  from (values
+    ('Style', false, true, 10), ('Heard it on', true, false, 11)
+  ) as s (name, exclusive, list, position)
+  where not exists (
+    select from public.tag_groups where user_id = friend and name = s.name
+  );
+
+  insert into public.tags (user_id, group_id, name, position)
+  select friend, g.id, s.tag, s.position
+  from (values
+    ('Style', 'Shoegaze', 0), ('Style', 'Trip hop', 1),
+    ('Style', 'Electronic', 2), ('Style', 'Jazz', 3), ('Style', 'Art pop', 4),
+    ('Style', 'Ambient', 5), ('Style', 'Post-punk', 6),
+    ('Heard it on', 'Radio', 0), ('Heard it on', 'A friend', 1),
+    ('Heard it on', 'Record store', 2)
+  ) as s (grp, tag, position)
+  join public.tag_groups g on g.user_id = friend and g.name = s.grp
+  where not exists (
+    select from public.tags t where t.group_id = g.id and t.name = s.tag
+  );
+
+  insert into public.entry_tags (entry_id, tag_id, user_id)
+  select e.id, t.id, friend
+  from (values
+    ('In Rainbows', 'Style', 'Art pop'), ('In Rainbows', 'Style', 'Electronic'),
+    ('In Rainbows', 'Format', 'Vinyl'), ('In Rainbows', 'Heard it on', 'A friend'),
+    ('Blonde', 'Style', 'Art pop'), ('Blonde', 'Heard it on', 'Radio'),
+    ('Homogenic', 'Style', 'Electronic'), ('Homogenic', 'Style', 'Trip hop'),
+    ('Homogenic', 'Format', 'CD'), ('Homogenic', 'Heard it on', 'Record store'),
+    ('Kind of Blue', 'Style', 'Jazz'),
+    ('Spirit of Eden', 'Style', 'Ambient'), ('Spirit of Eden', 'Style', 'Art pop'),
+    ('Spirit of Eden', 'Heard it on', 'A friend'),
+    ('Selected Ambient Works 85–92', 'Style', 'Electronic'),
+    ('Selected Ambient Works 85–92', 'Style', 'Ambient'),
+    ('Hounds of Love', 'Style', 'Art pop'), ('Hounds of Love', 'Format', 'Vinyl'),
+    ('Guilty Pleasures', 'Style', 'Post-punk')
+  ) as s (title, grp, tag)
+  join public.albums b on b.title = s.title and b.created_by = friend
+  join public.shelf_entries e on e.album_id = b.id and e.user_id = friend
+  join public.tag_groups g on g.user_id = friend and g.name = s.grp
+  join public.tags t on t.group_id = g.id and t.name = s.tag
+  on conflict do nothing;
+
+  update public.shelf_entries e set comment = s.comment
+  from (values
+    ('Blonde', 'Nights is two songs and both are perfect.'),
+    ('Homogenic', 'Strings and beats, cold and warm at once.'),
+    ('Selected Ambient Works 85–92', 'Want it on vinyl one day.')
+  ) as s (title, comment)
+  join public.albums b on b.title = s.title and b.created_by = friend
+  where e.album_id = b.id and e.user_id = friend and e.comment is null;
+
   insert into public.entry_tracks (entry_id, user_id, position, title, favorite)
   select e.id, friend, s.position, s.track, s.favorite
   from (values
