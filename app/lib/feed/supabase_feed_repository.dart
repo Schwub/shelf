@@ -14,12 +14,12 @@ class SupabaseFeedRepository implements FeedRepository {
     var query = _db
         .from('feed')
         .select(
-          'entry_id, user_id, kind, at, rating, album_id, musicbrainz_id, '
+          'entry_id, user_id, kind, at, cursor, rating, album_id, musicbrainz_id, '
           'title, artist, year, cover_url, name',
         );
     if (after != null) {
       // Keyset paging: items sharing a time are ordered by entry.
-      final at = '"${after.at.toUtc().toIso8601String()}"';
+      final at = '"${after.cursor}"';
       query = query.or('at.lt.$at,and(at.eq.$at,entry_id.gt.${after.entryId})');
     }
     final rows = await query
@@ -31,6 +31,7 @@ class SupabaseFeedRepository implements FeedRepository {
         FeedItem(
           kind: FeedKind.values.byName(r['kind']),
           at: DateTime.parse(r['at']),
+          cursor: r['cursor'],
           entryId: r['entry_id'],
           friendId: r['user_id'],
           friendName: r['name'],

@@ -305,6 +305,37 @@ void main() {
     expect(inviteCode(Uri.parse('https://example.com/invite/K7Q2')), isNull);
   });
 
+  group('inviteCodesFrom', () {
+    final link = Uri.parse('de.schwubware.shelf://invite/K7Q2-M9XD');
+
+    test('the link the app started with counts once', () async {
+      final links = StreamController<Uri>();
+      final codes = <String>[];
+      inviteCodesFrom(Future.value(link), links.stream).listen(codes.add);
+      await pumpEventQueue();
+      links.add(link); // the same launch link, from the stream as well
+      await pumpEventQueue();
+      expect(codes, ['K7Q2-M9XD']);
+
+      links.add(link); // tapped again later
+      links.add(Uri.parse('de.schwubware.shelf://login?code=1'));
+      await pumpEventQueue();
+      expect(codes, ['K7Q2-M9XD', 'K7Q2-M9XD']);
+      await links.close();
+    });
+
+    test('links arriving later come through', () async {
+      final links = StreamController<Uri>();
+      final codes = <String>[];
+      inviteCodesFrom(Future.value(null), links.stream).listen(codes.add);
+      await pumpEventQueue();
+      links.add(link);
+      await pumpEventQueue();
+      expect(codes, ['K7Q2-M9XD']);
+      await links.close();
+    });
+  });
+
   group('PendingInvite', () {
     test('takes codes from links and keeps them until taken', () async {
       final links = StreamController<String>();

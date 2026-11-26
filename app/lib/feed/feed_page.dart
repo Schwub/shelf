@@ -39,6 +39,9 @@ class _FeedPageState extends State<FeedPage> {
   bool _failed = false;
   bool _more = true, _loadingMore = false, _moreFailed = false;
 
+  /// Counts loads, so a page that arrives after a refresh is dropped.
+  int _generation = 0;
+
   @override
   void initState() {
     super.initState();
@@ -46,13 +49,17 @@ class _FeedPageState extends State<FeedPage> {
   }
 
   Future<void> _load() async {
-    setState(() => _failed = false);
+    final generation = ++_generation;
+    setState(() {
+      _failed = false;
+      _loadingMore = false;
+    });
     try {
       final items = await widget.feed.page();
       final names = items.isEmpty
           ? [for (final f in (await widget.friends.load()).friends) f.name]
           : null;
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return;
       setState(() {
         _items = items;
         _friendNames = names;
@@ -68,13 +75,14 @@ class _FeedPageState extends State<FeedPage> {
   Future<void> _loadMore() async {
     final items = _items;
     if (items == null || !_more || _loadingMore) return;
+    final generation = _generation;
     setState(() {
       _loadingMore = true;
       _moreFailed = false;
     });
     try {
       final next = await widget.feed.page(after: items.last);
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return;
       setState(() {
         _items = [...items, ...next];
         _more = next.length == FeedRepository.pageSize;
@@ -82,7 +90,7 @@ class _FeedPageState extends State<FeedPage> {
       });
     } catch (e, stack) {
       reportError(e, stack);
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return;
       setState(() {
         _loadingMore = false;
         _moreFailed = true;

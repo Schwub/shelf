@@ -11,6 +11,7 @@ class FeedItem {
   const FeedItem({
     required this.kind,
     required this.at,
+    required this.cursor,
     required this.entryId,
     required this.friendId,
     required this.friendName,
@@ -20,6 +21,10 @@ class FeedItem {
 
   final FeedKind kind;
   final DateTime at;
+
+  /// [at] exactly as the database has it, to page by: Dart on the web
+  /// keeps only milliseconds.
+  final String cursor;
   final String entryId, friendId, friendName;
   final Album album;
   final int? rating;

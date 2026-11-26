@@ -5,13 +5,27 @@ import 'package:app_links/app_links.dart';
 /// started with, then those arriving while it runs. The only code that
 /// imports app_links; the sign-in link goes to supabase_flutter, which
 /// uses the same plugin.
-Stream<String> inviteCodes() async* {
+Stream<String> inviteCodes() {
   final links = AppLinks();
-  final seen = <String>{};
-  // Also the link the app started with (app_links 7).
-  await for (final uri in links.uriLinkStream) {
-    final code = inviteCode(uri);
-    if (code != null && seen.add(code)) yield code;
+  return inviteCodesFrom(links.getInitialLink(), links.uriLinkStream);
+}
+
+/// The stream doesn't replay the link the app started with to a late
+/// listener (supabase_flutter listens first), so it is asked for; when
+/// the stream brings it too, that copy is skipped once.
+Stream<String> inviteCodesFrom(Future<Uri?> initial, Stream<Uri> links) async* {
+  final first = await initial;
+  var duplicate = first;
+  if (first != null) {
+    if (inviteCode(first) case final code?) yield code;
+  }
+  await for (final uri in links) {
+    if (uri == duplicate) {
+      duplicate = null;
+      continue;
+    }
+    duplicate = null;
+    if (inviteCode(uri) case final code?) yield code;
   }
 }
 

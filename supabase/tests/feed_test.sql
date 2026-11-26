@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(14);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -51,6 +51,9 @@ select results_eq($$select title, kind from public.feed order by at desc$$,
 select results_eq($$select rating, name from public.feed where title = 'Added rated'$$,
   $$values (8::smallint, 'Alice')$$,
   'an album added with a rating is one item, with the rating and the friend''s name');
+select results_eq($$select kind, rating from public.feed where title = 'Rated later' order by at desc$$,
+  $$values ('rated', 6::smallint), ('added', null)$$,
+  'a rating given later shows on the rated item only');
 
 -- Carol, a stranger.
 reset role;

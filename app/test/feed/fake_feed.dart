@@ -9,9 +9,13 @@ class FakeFeed implements FeedRepository {
   Object? error;
   int pages = 0;
 
+  /// Holds the next pages back until it completes.
+  Future<void>? wait;
+
   @override
   Future<List<FeedItem>> page({FeedItem? after}) async {
     pages++;
+    if (wait case final w?) await w;
     final e = error;
     error = null;
     if (e != null) throw e;

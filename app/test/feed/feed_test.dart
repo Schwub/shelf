@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,15 +20,19 @@ FeedItem item(
   String friend = 'Anna',
   int? rating,
   DateTime? at,
-}) => FeedItem(
-  kind: kind,
-  at: at ?? DateTime.now().subtract(Duration(hours: i)),
-  entryId: 'e$i',
-  friendId: friend.toLowerCase(),
-  friendName: friend,
-  album: Album(id: 'a$i', title: 'Album $i', artist: 'Artist $i'),
-  rating: rating,
-);
+}) {
+  final time = at ?? DateTime.now().subtract(Duration(hours: i));
+  return FeedItem(
+    kind: kind,
+    at: time,
+    cursor: time.toIso8601String(),
+    entryId: 'e$i',
+    friendId: friend.toLowerCase(),
+    friendName: friend,
+    album: Album(id: 'a$i', title: 'Album $i', artist: 'Artist $i'),
+    rating: rating,
+  );
+}
 
 void main() {
   late FakeFeed feed;
@@ -123,6 +129,44 @@ void main() {
       findsOneWidget,
     );
     expect(feed.pages, 3);
+  });
+
+  testWidgets('a refresh while more load keeps the fresh list', (tester) async {
+    feed.items.addAll([for (var i = 0; i < 35; i++) item(i)]);
+    await pumpFeed(tester);
+    final slow = Completer<void>();
+    feed.wait = slow.future;
+
+    await tester.fling(
+      find.byType(Scrollable).first,
+      const Offset(0, -6000),
+      3000,
+    );
+    await tester.pump(const Duration(seconds: 1));
+    feed
+      ..wait = null
+      ..items.insert(0, item(-1, friend: 'Ben'));
+    // The end row's progress bar runs while the slow page waits, so the
+    // test pumps for a while instead of waiting for everything to settle.
+    unawaited(
+      tester.state<RefreshIndicatorState>(find.byType(RefreshIndicator)).show(),
+    );
+    await tester.pump(const Duration(seconds: 2));
+    await tester.fling(
+      find.byType(Scrollable).first,
+      const Offset(0, 20000),
+      3000,
+    );
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Ben added Album -1', findRichText: true), findsOneWidget);
+
+    slow.complete();
+    await tester.pump(const Duration(seconds: 2));
+    expect(
+      find.text('Ben added Album -1', findRichText: true),
+      findsOneWidget,
+      reason: 'the late page is dropped',
+    );
   });
 
   testWidgets('an item opens the friend\'s album', (tester) async {

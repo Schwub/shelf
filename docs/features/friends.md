@@ -117,7 +117,10 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
   shows Friends, which opens the Invitation once signed in and named, then
   clears it. The code is kept in `shared_preferences` in case the app
   closes before that. iOS doesn't register the scheme yet (TASK-20):
-  iPhones use the code.
+  iPhones use the code, and so does the web app (a link shared from it
+  opens only the Android app). The launch link is read with
+  `getInitialLink`: supabase_flutter listens to the stream first, which
+  doesn't replay it.
 - Share sheet: the invite message goes through the platform share sheet
   (`share_plus`, BSD-3, Flutter Community; agreed 2026-11-26; supports
   Swift Package Manager). Copy link uses the clipboard.

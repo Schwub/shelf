@@ -30,17 +30,21 @@ create index on public.shelf_entries (user_id, created_at);
 create index on public.shelf_entries (user_id, rated_at);
 
 -- An album added with a rating is one item ("added", with the rating); a
--- rating set later is its own item, and a newer rating replaces it.
+-- rating set later is its own item, and a newer rating replaces it. at is
+-- also sent as text: the app pages by it, and Dart on the web keeps only
+-- milliseconds.
 create view public.feed with (security_invoker = true) as
   select e.id as entry_id, e.user_id, 'added' as kind, e.created_at as at,
-         e.rating, e.album_id, a.musicbrainz_id, a.title, a.artist, a.year,
+         e.created_at::text as cursor,
+         case when e.rated_at > e.created_at then null else e.rating end as rating,
+         e.album_id, a.musicbrainz_id, a.title, a.artist, a.year,
          a.cover_url, p.name
     from public.shelf_entries e
     join public.albums a on a.id = e.album_id
     join public.profiles p on p.user_id = e.user_id
     where e.user_id <> (select auth.uid())
   union all
-  select e.id, e.user_id, 'rated', e.rated_at,
+  select e.id, e.user_id, 'rated', e.rated_at, e.rated_at::text,
          e.rating, e.album_id, a.musicbrainz_id, a.title, a.artist, a.year,
          a.cover_url, p.name
     from public.shelf_entries e
