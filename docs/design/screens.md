@@ -129,7 +129,10 @@ flowchart LR
   out of the feed." Hidden albums carry a small eye-off mark on My shelf.
 - **A friend's shelf** looks like My shelf without anything to edit: no
   Add album, no ⋮ menu, only the built-in filters. Their tags show on
-  their album as plain labels.
+  their album as plain labels. Its Covers / List keys are for that screen
+  only. "Add to my shelf" opens Album entry in add mode (TASK-19 adds
+  copying their tags); an album they added by hand becomes the user's own
+  copy (a new manual album). Changes made there reload My shelf.
 - Confirmation after adding or removing an album is a snackbar; removing
   offers Undo instead of a confirmation dialog. Deletes that affect many
   albums (a tag or group in the editor) ask first with a dialog instead.

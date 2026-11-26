@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/shelf/shelf_repository.dart';
 
@@ -116,6 +118,20 @@ class FakeShelf implements ShelfRepository {
 
   int loads = 0;
 
+  final _changes = ValueNotifier(0);
+
+  @override
+  Listenable get changes => _changes;
+
+  /// Friends' shelves by user ID; a missing one fails to load.
+  final friendShelves = <String, Shelf>{};
+
+  @override
+  Future<Shelf> loadFriend(String userId) async {
+    if (friendShelves[userId] case final shelf?) return shelf;
+    throw Exception('offline');
+  }
+
   @override
   Future<Shelf> load() async {
     loads++;
@@ -138,6 +154,7 @@ class FakeShelf implements ShelfRepository {
     Set<String> removeTags = const {},
     List<String> addTags = const [],
     List<Track>? tracks,
+    bool? hidden,
   }) async {
     if (failSave) {
       failSave = false;
@@ -154,7 +171,9 @@ class FakeShelf implements ShelfRepository {
       comment: comment == null || comment.isEmpty ? null : comment,
       tagIds: {...e.tagIds.difference(removeTags), ...addTags},
       tracks: tracks ?? e.tracks,
+      hidden: hidden ?? e.hidden,
     );
+    _changes.value++;
   }
 
   @override
@@ -164,6 +183,7 @@ class FakeShelf implements ShelfRepository {
     String? comment,
     List<String> tags = const [],
     List<Track> tracks = const [],
+    bool hidden = false,
   }) async {
     if (failAdd) {
       failAdd = false;
@@ -184,8 +204,10 @@ class FakeShelf implements ShelfRepository {
         comment: comment == null || comment.isEmpty ? null : comment,
         tagIds: tags.toSet(),
         tracks: tracks,
+        hidden: hidden,
       ),
     );
+    _changes.value++;
   }
 
   final manual = <ManualAlbum>[];
@@ -197,6 +219,7 @@ class FakeShelf implements ShelfRepository {
     String? comment,
     List<String> tags = const [],
     List<Track> tracks = const [],
+    bool hidden = false,
   }) async {
     if (failAdd) {
       failAdd = false;
@@ -217,8 +240,10 @@ class FakeShelf implements ShelfRepository {
         rating: rating,
         tagIds: tags.toSet(),
         tracks: tracks,
+        hidden: hidden,
       ),
     );
+    _changes.value++;
   }
 
   @override
@@ -238,6 +263,7 @@ class FakeShelf implements ShelfRepository {
   Future<void> remove(String entryId) async {
     removed.add(entryId);
     entries.removeWhere((e) => e.id == entryId);
+    _changes.value++;
   }
 
   void _edit() {

@@ -76,9 +76,12 @@
   and `remove_friend`) and `invites` (code, 7 days, used once; made by
   `create_invite`, checked by `invite_preview`); friends read each other's
   `profiles` through `is_friend()` ([features/friends.md](features/friends.md)).
-- M2 (planned): `shelf_entries.hidden` and
-  `rated_at`, a `feed` view; friends read each other's visible data
-  through row-level security.
+- Friends read each other's shelves (TASK-37): `shelf_entries`,
+  `entry_tags`, `entry_tracks`, `tags`, `tag_groups` and manual `albums`,
+  except entries with `hidden` set. The app filters its own data by
+  `user_id` (`SupabaseShelfRepository._load`); `loadFriend` reads a
+  friend's, with one filter per built-in tag.
+- M2 (planned): `shelf_entries.rated_at` and a `feed` view (TASK-38).
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 

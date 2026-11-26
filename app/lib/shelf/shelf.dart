@@ -75,6 +75,7 @@ class ShelfEntry {
     this.comment,
     this.tagIds = const {},
     this.tracks = const [],
+    this.hidden = false,
   });
 
   final String id;
@@ -86,6 +87,9 @@ class ShelfEntry {
   /// The user's track list, disc by disc; empty until they approve or enter
   /// one.
   final List<Track> tracks;
+
+  /// Hidden from friends: not on the shelf they see, nor in their feed.
+  final bool hidden;
 }
 
 @immutable

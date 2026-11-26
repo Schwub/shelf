@@ -144,6 +144,7 @@ class ShelfApp extends StatelessWidget {
               friends: friends,
               name: name,
               pending: pendingInvite,
+              shelf: shelf,
             ),
           ),
         ),

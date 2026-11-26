@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../errors.dart';
+import '../shelf/shelf_repository.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/list_row.dart';
@@ -8,6 +9,7 @@ import '../widgets/message.dart';
 import '../widgets/shelf_key.dart';
 import '../widgets/text_link.dart';
 import 'enter_code_page.dart';
+import 'friend_shelf_page.dart';
 import 'friends_repository.dart';
 import 'invitation_page.dart';
 import 'invite_sheet.dart';
@@ -22,11 +24,13 @@ class FriendsPage extends StatefulWidget {
     required this.friends,
     required this.name,
     required this.pending,
+    required this.shelf,
   });
 
   final FriendsRepository friends;
   final ValueNotifier<String> name;
   final PendingInvite pending;
+  final ShelfRepository shelf;
 
   @override
   State<FriendsPage> createState() => _FriendsPageState();
@@ -80,13 +84,27 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   /// Shows the Invitation (or Enter code, which leads to it) and, once
-  /// accepted, the new friend.
+  /// accepted, the new friend's shelf.
   Future<void> _openInvitation(Route<String> route) async {
-    final friend = await _root.push(route);
-    if (friend == null || !mounted) return;
-    _say('You and $friend are friends');
+    final id = await _root.push(route);
+    if (id == null || !mounted) return;
     await _load();
+    if (!mounted) return;
+    final friend = _list?.friends.where((f) => f.id == id).firstOrNull;
+    if (friend == null) {
+      // Accepted, but the list didn't load: it says so with Try again.
+      _say("You're friends now");
+      return;
+    }
+    _say('You and ${friend.name} are friends');
+    await _openShelf(friend);
   }
+
+  Future<void> _openShelf(Friend friend) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => FriendShelfPage(friend: friend, shelf: widget.shelf),
+    ),
+  );
 
   Future<void> _enterCode() => _openInvitation(
     MaterialPageRoute<String>(
@@ -246,6 +264,10 @@ class _FriendsPageState extends State<FriendsPage> {
             for (final friend in list.friends)
               ListRow(
                 title: friend.name,
+                subtitle: friend.albums == 1
+                    ? '1 album'
+                    : '${friend.albums} albums',
+                onTap: () => _openShelf(friend),
                 trailing: PopupMenuButton<void>(
                   tooltip: 'More for ${friend.name}',
                   icon: const Icon(Icons.more_vert),

@@ -8,7 +8,7 @@ import '../widgets/shelf_key.dart';
 import 'friends_repository.dart';
 
 /// "Anna invited you": accept an invite or not now. Pops with the
-/// inviter's name once accepted, else null.
+/// inviter's ID once accepted, else null.
 class InvitationPage extends StatefulWidget {
   const InvitationPage({
     super.key,
@@ -50,20 +50,24 @@ class _InvitationPageState extends State<InvitationPage> {
     }
   }
 
-  Future<void> _accept(String name) async {
+  Future<void> _accept(InvitePreview preview) async {
     setState(() {
       _accepting = true;
       _acceptError = null;
     });
     try {
       await widget.friends.accept(widget.code);
-      if (mounted) Navigator.of(context).pop(name);
+      if (mounted) Navigator.of(context).pop(preview.inviterId);
     } on InviteFailed catch (e) {
       // Used or cancelled meanwhile: show why.
       if (mounted) {
         setState(() {
           _accepting = false;
-          _preview = (status: e.status, inviterName: name);
+          _preview = (
+            status: e.status,
+            inviterId: preview.inviterId,
+            inviterName: preview.inviterName,
+          );
         });
       }
     } catch (e, stack) {
@@ -118,7 +122,7 @@ class _InvitationPageState extends State<InvitationPage> {
             if (_acceptError case final error?) HelpLine(error, error: true),
             ShelfKey(
               primary: true,
-              onPressed: _accepting ? null : () => _accept(name),
+              onPressed: _accepting ? null : () => _accept(preview),
               child: Text(_accepting ? 'Accepting…' : 'Accept'),
             ),
             ShelfKey(
