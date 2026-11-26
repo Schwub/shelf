@@ -69,8 +69,10 @@
   (covers or list); null is the app's default. Owner-only. The app's
   `Settings` (`app/lib/settings/`) keeps a copy on the device for the
   sign-in screen and offline, and takes the saved row after sign-in.
-- M2 (planned, [features/friends.md](features/friends.md)): `profiles`
-  (the name friends see), `friendships` (two rows per friendship),
+- `profiles`: the name friends see, one row per user, owner-only until
+  friends (TASK-36). The app asks for it after the first sign-in
+  (`NameGate`).
+- M2 (planned, [features/friends.md](features/friends.md)): `friendships` (two rows per friendship),
   `invites` (code, 7 days, used once), `shelf_entries.hidden` and
   `rated_at`, a `feed` view; friends read each other's visible data
   through row-level security.

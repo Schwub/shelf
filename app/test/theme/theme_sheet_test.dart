@@ -12,6 +12,7 @@ import '../search/fake_search.dart';
 import '../share/fake_links.dart';
 import '../shelf/fake_shelf.dart';
 import '../settings/fake_settings.dart';
+import '../friends/fake_friends.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -29,6 +30,7 @@ void main() {
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
         settings: settings,
+        friends: FakeFriends('Michael'),
       ),
     );
     await tester.pumpAndSettle();
@@ -60,6 +62,7 @@ void main() {
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
         settings: Settings(FakeSettings((theme: 'evening', list: null))),
+        friends: FakeFriends('Michael'),
       ),
     );
     await tester.pumpAndSettle();
@@ -84,6 +87,7 @@ void main() {
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
         settings: settings,
+        friends: FakeFriends('Michael'),
       ),
     );
     await tester.pumpAndSettle();

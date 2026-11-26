@@ -9,6 +9,7 @@ import 'shelf/fake_shelf.dart';
 import 'search/fake_search.dart';
 import 'share/fake_links.dart';
 import 'settings/fake_settings.dart';
+import 'friends/fake_friends.dart';
 
 void main() {
   testWidgets('starts on the shelf when signed in', (tester) async {
@@ -20,6 +21,7 @@ void main() {
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
         settings: Settings(FakeSettings()),
+        friends: FakeFriends('Michael'),
       ),
     );
     await tester.pumpAndSettle();
@@ -37,6 +39,7 @@ void main() {
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
         settings: Settings(FakeSettings()),
+        friends: FakeFriends('Michael'),
       ),
     );
 
@@ -57,6 +60,7 @@ void main() {
         links: links,
         inbox: SharedLinkInbox(Stream.value(shared)),
         settings: Settings(FakeSettings()),
+        friends: FakeFriends('Michael'),
       ),
     );
     await tester.pumpAndSettle();

@@ -1,0 +1,92 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:shelf_app/home/home_page.dart';
+import 'package:shelf_app/theme/shelf_colors.dart';
+import 'package:shelf_app/theme/shelf_theme.dart';
+
+/// A tab's first screen with a button that opens a second one.
+class _Root extends StatelessWidget {
+  const _Root(this.name);
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: Center(
+      child: TextButton(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => Scaffold(body: Text('$name details')),
+          ),
+        ),
+        child: Text('$name root'),
+      ),
+    ),
+  );
+}
+
+void main() {
+  Future<void> pumpHome(WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: shelfTheme(AppTheme.tobacco.colors),
+        home: const HomePage(
+          shelf: _Root('Shelf'),
+          feed: _Root('Feed'),
+          friends: _Root('Friends'),
+        ),
+      ),
+    );
+  }
+
+  testWidgets('opens on Shelf and switches tabs', (tester) async {
+    await pumpHome(tester);
+    expect(find.text('Shelf root'), findsOneWidget);
+
+    await tester.tap(find.text('Feed'));
+    await tester.pumpAndSettle();
+    expect(find.text('Feed root'), findsOneWidget);
+    expect(find.text('Shelf root'), findsNothing);
+  });
+
+  testWidgets('each tab keeps its screens', (tester) async {
+    await pumpHome(tester);
+    await tester.tap(find.text('Friends'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Friends root'));
+    await tester.pumpAndSettle();
+    expect(find.text('Friends details'), findsOneWidget);
+
+    await tester.tap(find.text('Shelf'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Friends'));
+    await tester.pumpAndSettle();
+    expect(find.text('Friends details'), findsOneWidget);
+
+    await tester.tap(find.text('Friends'));
+    await tester.pumpAndSettle();
+    expect(find.text('Friends root'), findsOneWidget, reason: 'tapped again');
+  });
+
+  testWidgets('back closes the current tab\'s screen first', (tester) async {
+    await pumpHome(tester);
+    await tester.tap(find.text('Shelf root'));
+    await tester.pumpAndSettle();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Shelf root'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+  });
+
+  testWidgets('meets the accessibility guidelines', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpHome(tester);
+
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    semantics.dispose();
+  });
+}

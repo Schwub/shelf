@@ -1,4 +1,4 @@
-// SupabaseShelfRepository and SupabaseSettingsRepository against a local
+// The Supabase repositories (shelf, settings, friends) against a local
 // Supabase (`mise run test:integration` starts it and passes its URL and
 // keys). Checks what the in-memory fakes can't: PostgREST queries,
 // database errors mapped to app errors, triggers and row-level security as
@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:shelf_app/friends/supabase_friends_repository.dart';
 import 'package:shelf_app/search/musicbrainz.dart';
 import 'package:shelf_app/settings/supabase_settings_repository.dart';
 import 'package:shelf_app/shelf/shelf.dart';
@@ -67,6 +68,20 @@ Map<String, String> tagIds(Shelf shelf) => {
 };
 
 void main() {
+  test('names: none at first, then saved and changed', () async {
+    final s = await signIn();
+    final friends = SupabaseFriendsRepository(s.db);
+    expect(await friends.myName(), isNull);
+
+    await friends.saveName('Michael');
+    expect(await friends.myName(), 'Michael');
+    await friends.saveName('Mike');
+    expect(await friends.myName(), 'Mike');
+
+    final other = await signIn();
+    expect(await SupabaseFriendsRepository(other.db).myName(), isNull);
+  });
+
   test('settings: none at first, then saved one at a time', () async {
     final s = await signIn();
     final settings = SupabaseSettingsRepository(s.db);

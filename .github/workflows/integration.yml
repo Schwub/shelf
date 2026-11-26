@@ -8,8 +8,7 @@ on:
     branches: [main]
     paths:
       - app/lib/shelf/shelf.dart
-      - app/lib/shelf/supabase_shelf_repository.dart
-      - app/lib/settings/supabase_settings_repository.dart
+      - app/lib/**/supabase_*_repository.dart
       - app/test_integration/**
       - supabase/migrations/**
       - mise.toml
@@ -17,8 +16,7 @@ on:
   pull_request:
     paths:
       - app/lib/shelf/shelf.dart
-      - app/lib/shelf/supabase_shelf_repository.dart
-      - app/lib/settings/supabase_settings_repository.dart
+      - app/lib/**/supabase_*_repository.dart
       - app/test_integration/**
       - supabase/migrations/**
       - mise.toml

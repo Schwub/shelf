@@ -29,6 +29,9 @@ class TextLink extends StatelessWidget {
     return Semantics(
       button: true,
       label: semanticLabel ?? label,
+      // The gesture's own semantics are excluded with the text, so the tap
+      // is given here.
+      onTap: onPressed,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,

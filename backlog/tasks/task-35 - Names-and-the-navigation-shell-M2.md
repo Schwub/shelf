@@ -1,9 +1,10 @@
 ---
 id: TASK-35
 title: Names and the navigation shell (M2)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T10:05:00Z'
+updated_date: '2026-11-26T10:09:00Z'
 labels: []
 dependencies: []
 ordinal: 36000
