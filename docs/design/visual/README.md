@@ -28,3 +28,7 @@
   today's plain stage, A (the cover blurred and zoomed in behind it) and B
   (a gradient from the cover's prominent colours), in Tobacco, Evening and
   Daylight, plus an album without a cover.
+- `variations/launcher-icon.html` – launcher icon candidates: A three
+  covers on a board, B the key with its light, C a record on the shelf,
+  D the wordmark's s; each full size, in Android's masks, at 48 px and on
+  dark and light home screens.
