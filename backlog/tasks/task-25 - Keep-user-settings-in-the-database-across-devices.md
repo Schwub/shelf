@@ -1,10 +1,10 @@
 ---
 id: TASK-25
 title: Keep user settings in the database, across devices
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-25T08:02:00Z'
-updated_date: '2026-11-26T05:40:00Z'
+updated_date: '2026-11-26T07:56:00Z'
 labels: []
 dependencies: []
 ordinal: 26000
