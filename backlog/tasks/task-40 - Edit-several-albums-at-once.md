@@ -1,9 +1,10 @@
 ---
 id: TASK-40
 title: Edit several albums at once
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T14:34:00Z'
+updated_date: '2026-11-26T17:53:00Z'
 labels: []
 dependencies: []
 ordinal: 41000

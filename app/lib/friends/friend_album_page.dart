@@ -126,7 +126,7 @@ class FriendAlbumPage extends StatelessWidget {
             .closed;
         if (reason == SnackBarClosedReason.action) return;
         try {
-          await shelf.remove(removing);
+          await shelf.remove([removing]);
         } catch (e, stack) {
           reportError(e, stack);
           messenger.showSnackBar(

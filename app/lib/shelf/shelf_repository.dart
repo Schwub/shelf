@@ -30,7 +30,18 @@ abstract class ShelfRepository {
     bool? hidden,
   });
 
-  Future<void> remove(String entryId);
+  Future<void> remove(List<String> entryIds);
+
+  /// Several albums at once (TASK-40): [remove] comes off each, then [add]
+  /// goes on each (parents before their sub-tags; tags an album has stay).
+  Future<void> changeTags(
+    List<String> entryIds, {
+    Set<String> remove = const {},
+    List<String> add = const [],
+  });
+
+  /// Hides [entryIds] from friends, or shows them.
+  Future<void> hide(List<String> entryIds, bool hidden);
 
   /// Adds the album with this MusicBrainz ID to the shelf: the add-album
   /// function puts it in the shared catalog (with its cover) if needed.

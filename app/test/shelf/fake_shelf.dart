@@ -287,9 +287,56 @@ class FakeShelf implements ShelfRepository {
   }
 
   @override
-  Future<void> remove(String entryId) async {
-    removed.add(entryId);
-    entries.removeWhere((e) => e.id == entryId);
+  Future<void> remove(List<String> entryIds) async {
+    removed.addAll(entryIds);
+    entries.removeWhere((e) => entryIds.contains(e.id));
+    _changes.value++;
+  }
+
+  /// Makes the next change of several albums fail.
+  bool failBulk = false;
+
+  void _bulk() {
+    if (failBulk) {
+      failBulk = false;
+      throw Exception('offline');
+    }
+  }
+
+  ShelfEntry _with(ShelfEntry e, {Set<String>? tagIds, bool? hidden}) =>
+      ShelfEntry(
+        id: e.id,
+        addedAt: e.addedAt,
+        album: e.album,
+        rating: e.rating,
+        comment: e.comment,
+        tagIds: tagIds ?? e.tagIds,
+        tracks: e.tracks,
+        hidden: hidden ?? e.hidden,
+        addedFromName: e.addedFromName,
+      );
+
+  @override
+  Future<void> changeTags(
+    List<String> entryIds, {
+    Set<String> remove = const {},
+    List<String> add = const [],
+  }) async {
+    _bulk();
+    for (final (i, e) in entries.indexed.toList()) {
+      if (entryIds.contains(e.id)) {
+        entries[i] = _with(e, tagIds: {...e.tagIds.difference(remove), ...add});
+      }
+    }
+    _changes.value++;
+  }
+
+  @override
+  Future<void> hide(List<String> entryIds, bool hidden) async {
+    _bulk();
+    for (final (i, e) in entries.indexed.toList()) {
+      if (entryIds.contains(e.id)) entries[i] = _with(e, hidden: hidden);
+    }
     _changes.value++;
   }
 
