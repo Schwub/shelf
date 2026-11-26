@@ -1,5 +1,5 @@
 begin;
-select plan(25);
+select plan(27);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -23,7 +23,8 @@ select throws_ok(
   $$insert into public.shelf_entries (user_id, album_id)
     values ('22222222-2222-2222-2222-222222222222', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')$$,
   '42501', null, 'anon cannot add shelf entries');
-update public.shelf_entries set comment = 'changed';
+select throws_ok($$update public.shelf_entries set comment = 'changed'$$, '42501', null,
+  'anon cannot change shelf entries');
 delete from public.shelf_entries;
 
 -- Alice is signed in.
@@ -82,7 +83,9 @@ update public.shelf_entries set comment = 'hacked'
 delete from public.shelf_entries
   where user_id = '22222222-2222-2222-2222-222222222222';
 
-update public.shelf_entries set rating = 10, updated_at = now() - interval '1 day';
+select throws_ok($$update public.shelf_entries set updated_at = now() - interval '1 day'$$,
+  '42501', null, 'clients cannot set updated_at');
+update public.shelf_entries set rating = 10;
 select results_eq('select rating from public.shelf_entries', array[10::smallint],
   'users update their own shelf entries');
 select ok(

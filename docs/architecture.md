@@ -81,7 +81,11 @@
   except entries with `hidden` set. The app filters its own data by
   `user_id` (`SupabaseShelfRepository._load`); `loadFriend` reads a
   friend's, with one filter per built-in tag.
-- M2 (planned): `shelf_entries.rated_at` and a `feed` view (TASK-38).
+- The feed (TASK-38): a `feed` view (`security_invoker`) over friends'
+  `shelf_entries`, one "added" item per entry and a "rated" item when the
+  rating changed after adding (`rated_at`, set by a trigger). The database
+  alone sets `created_at`, `updated_at` and `rated_at` (column grants).
+  Paged by `(at, entry_id)`.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 

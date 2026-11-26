@@ -21,7 +21,8 @@ bullet, covers/list in TASK-25 and the shelf wireframe, `test:functions` in
 AGENTS.md); one `Message` widget (`app/lib/widgets/message.dart`) instead of
 two copies. After the review: `shelf_data.dart` split into
 `shelf.dart` (models), `shelf_repository.dart` and
-`supabase_shelf_repository.dart` (TASK-34).
+`supabase_shelf_repository.dart` (TASK-34). TASK-38 made `created_at`, `updated_at` and `rated_at`
+database-only.
 
 ## Items
 
@@ -32,4 +33,3 @@ Ranked by value for effort.
 | `_TagGroupPageState` is one ~670-line state class (editing, reordering, deleting, sub-groups, dialogs) | `app/lib/tags/tag_group_page.dart` | Hard to read and change; the next tag feature (TASK-19 import) lands here | M | Medium (UI behaviour) | Extract the delete/rename dialogs and the tag list into widgets when TASK-19 touches it |
 | The iOS share extension is never built in CI (fragile build-phase order, App Group) | `app/ios`, `.github/workflows/` | An iOS-only change can break share-to-shelf on iPhone unnoticed | M | Medium | An iOS build job on a macOS runner (about 10× the CI minutes of Linux, and minutes already ran out once); until then run the native build locally after `app/ios` changes |
 | The two edge functions each have their own MusicBrainz client with different rate-limit and retry rules (`resolve-link` imports only the `Fetch` type from `add-album`) | `supabase/functions/*/musicbrainz.ts` | A fix to MusicBrainz handling has to be made twice | S | Low | A `supabase/functions/_shared/musicbrainz.ts` with one request helper, when either function changes next |
-| Clients can set `created_at` / `updated_at` on insert (the trigger only runs on update) | `supabase/migrations/20261123120000_albums_and_shelf_entries.sql`, `shelf_entries` | The M2 feed orders by recent changes; a future-dated entry would stick to the top | S | None until M2 | TASK-38 (the feed) makes both database-only |

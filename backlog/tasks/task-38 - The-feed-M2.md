@@ -1,10 +1,10 @@
 ---
 id: TASK-38
 title: The feed (M2)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T10:05:00Z'
-updated_date: '2026-11-26T10:05:00Z'
+updated_date: '2026-11-26T11:38:00Z'
 labels: []
 dependencies:
   - TASK-37

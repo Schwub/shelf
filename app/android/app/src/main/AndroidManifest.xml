@@ -26,15 +26,18 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- The sign-in email's link (Auth.signInLink) opens the app. -->
+            <!-- The sign-in email's link (Auth.signInLink) and invite links
+                 (invite_links.dart) open the app. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="de.schwubware.shelf" android:host="login"/>
+                <data android:scheme="de.schwubware.shelf" android:host="invite"/>
             </intent-filter>
-            <!-- supabase_flutter handles the link; Flutter's own deep linking
-                 would also push it as a route. -->
+            <!-- supabase_flutter and invite_links.dart handle the links (both
+                 through app_links); Flutter's own deep linking would also push
+                 them as routes. -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>

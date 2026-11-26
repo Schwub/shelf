@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelf_app/friends/friend_shelf_page.dart';
 import 'package:shelf_app/friends/friends_repository.dart';
+import 'package:shelf_app/friends/invite_links.dart';
 import 'package:shelf_app/friends/invite_sheet.dart';
 import 'package:shelf_app/friends/pending_invite.dart';
 import 'package:shelf_app/main.dart';
@@ -17,6 +20,7 @@ import '../settings/fake_settings.dart';
 import '../share/fake_links.dart';
 import '../shelf/fake_shelf.dart';
 import 'fake_friends.dart';
+import '../feed/fake_feed.dart';
 
 void main() {
   late FakeFriends friends;
@@ -49,6 +53,7 @@ void main() {
         pendingInvite: pending ?? PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: friends,
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();
@@ -286,31 +291,36 @@ void main() {
     semantics.dispose();
   });
 
-  test('the shared message carries the link and the code', () {
+  test('the shared message carries the app link and the code', () {
     expect(
       inviteMessage('Michael', 'K7Q2M9XD'),
-      'Michael invites you to shelf: '
-      'https://shelf.pages.dev/invite/K7Q2-M9XD '
-      '(or enter the code K7Q2-M9XD in the app)',
+      'Michael invites you to shelf: de.schwubware.shelf://invite/K7Q2-M9XD '
+      '(or open shelf and enter the code K7Q2-M9XD under Friends)',
     );
   });
 
+  test('invite links carry the code; other links none', () {
+    expect(inviteCode(inviteLink('K7Q2M9XD')), 'K7Q2-M9XD');
+    expect(inviteCode(Uri.parse('de.schwubware.shelf://login?code=1')), isNull);
+    expect(inviteCode(Uri.parse('https://example.com/invite/K7Q2')), isNull);
+  });
+
   group('PendingInvite', () {
-    test('takes the code from an invite link and keeps it', () async {
-      await PendingInvite.load(Uri.parse('https://x.dev/invite/K7Q2-M9XD'));
-
-      final later = await PendingInvite.load(Uri.parse('https://x.dev/'));
-      expect(later.value, 'K7Q2-M9XD', reason: 'after the sign-in redirect');
-
-      expect(await later.take(), 'K7Q2-M9XD');
-      expect(later.value, isNull);
-      final after = await PendingInvite.load(Uri.parse('https://x.dev/'));
-      expect(after.value, isNull);
-    });
-
-    test('other pages carry no invite', () async {
-      final pending = await PendingInvite.load(Uri.parse('https://x.dev/a/b'));
+    test('takes codes from links and keeps them until taken', () async {
+      final links = StreamController<String>();
+      final pending = await PendingInvite.load(links.stream);
       expect(pending.value, isNull);
+
+      links.add('K7Q2-M9XD');
+      await pumpEventQueue();
+      expect(pending.value, 'K7Q2-M9XD');
+      final restarted = await PendingInvite.load(const Stream.empty());
+      expect(restarted.value, 'K7Q2-M9XD', reason: 'kept on the device');
+
+      expect(await restarted.take(), 'K7Q2-M9XD');
+      expect(restarted.value, isNull);
+      expect((await PendingInvite.load(const Stream.empty())).value, isNull);
+      await links.close();
     });
   });
 }

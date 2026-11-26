@@ -14,6 +14,7 @@ import '../share/fake_links.dart';
 import '../shelf/fake_shelf.dart';
 import '../settings/fake_settings.dart';
 import '../friends/fake_friends.dart';
+import '../feed/fake_feed.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -33,6 +34,7 @@ void main() {
         pendingInvite: PendingInvite(),
         settings: settings,
         friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();
@@ -66,6 +68,7 @@ void main() {
         pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings((theme: 'evening', list: null))),
         friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();
@@ -91,6 +94,7 @@ void main() {
         pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();
@@ -120,6 +124,7 @@ void main() {
         pendingInvite: PendingInvite(),
         settings: settings,
         friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();

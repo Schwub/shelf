@@ -19,6 +19,7 @@ import '../settings/fake_settings.dart';
 import '../share/fake_links.dart';
 import '../shelf/fake_shelf.dart';
 import 'fake_friends.dart';
+import '../feed/fake_feed.dart';
 
 void main() {
   late FakeShelf shelf;
@@ -72,6 +73,7 @@ void main() {
         pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: friends,
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();
