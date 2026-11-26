@@ -7,6 +7,7 @@ import '../search/search_page.dart';
 import '../shelf/entry_page.dart';
 import '../shelf/shelf_data.dart';
 import '../theme/shelf_colors.dart';
+import '../widgets/message.dart';
 import '../widgets/shelf_key.dart';
 import 'link_resolver.dart';
 
@@ -159,14 +160,14 @@ class _ResolvePageState extends State<ResolvePage> {
             color: c.signal,
           ),
           Expanded(
-            child: _Message(
+            child: Message(
               title: 'Finding album…',
               text: widget.link.toString(),
             ),
           ),
         ],
       ),
-      NotAnAlbum(:final what) => _Message(
+      NotAnAlbum(:final what) => Message(
         title: switch (what) {
           'track' || 'playlist' || 'artist' => 'That’s a $what, not an album',
           _ => 'That link isn’t an album',
@@ -174,17 +175,17 @@ class _ResolvePageState extends State<ResolvePage> {
         text: 'Share the album itself, or search for it.',
         actions: [searchKey],
       ),
-      UnsupportedLink() => _Message(
+      UnsupportedLink() => Message(
         title: 'shelf can’t read that link',
         text: 'Share an album from Spotify or Bandcamp, or search for it.',
         actions: [searchKey],
       ),
-      LinkNotFound() => _Message(
+      LinkNotFound() => Message(
         title: 'Couldn’t find that page',
         text: 'The link may be broken. Search for the album instead.',
         actions: [searchKey],
       ),
-      _ => _Message(
+      _ => Message(
         title: 'Couldn’t look up the link',
         text: 'Check your connection and try again.',
         actions: [
@@ -197,34 +198,5 @@ class _ResolvePageState extends State<ResolvePage> {
         ],
       ),
     };
-  }
-}
-
-class _Message extends StatelessWidget {
-  const _Message({required this.title, required this.text, this.actions});
-
-  final String title, text;
-  final List<Widget>? actions;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.shelf;
-    final style = Theme.of(context).textTheme;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 96, 28, 24),
-      children: [
-        Text(title, style: style.titleLarge, textAlign: TextAlign.center),
-        const SizedBox(height: 8),
-        Text(
-          text,
-          style: style.bodyMedium!.copyWith(color: c.muted),
-          textAlign: TextAlign.center,
-        ),
-        for (final action in actions ?? const <Widget>[]) ...[
-          const SizedBox(height: 12),
-          Center(child: action),
-        ],
-      ],
-    );
   }
 }
