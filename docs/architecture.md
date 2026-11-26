@@ -22,8 +22,6 @@
     local Supabase (`supabase start`).
   - Row-level security decides who sees what: your own shelf, and your
     friends' shelves and activity.
-  - Edge functions (TypeScript) for work the app can't do itself:
-    resolving a shared link (Spotify, Bandcamp) to album data.
 
 ## Share-to-add
 - `app/lib/share/share_receiver.dart` is the only code that imports the
@@ -49,8 +47,9 @@
 
 ## Data model
 - `albums`: shared catalog; `musicbrainz_id` (release group) is unique and
-  nullable for links that don't resolve. Signed-in users read and add;
-  no client edits or deletes.
+  nullable for links that don't resolve; `created_by` marks albums added
+  by hand, visible only to that user. Signed-in users read; only the
+  `add-album` function adds, and there are no client edits or deletes.
 - `shelf_entries`: one per user and album. Optional `rating` 1–10 (half
   stars), `comment`, `updated_at` set by a trigger; for albums added from a
   friend's shelf (M2), `added_from_user_id` (cleared if that account is
@@ -96,8 +95,8 @@
   other; Play Store releases get their own private key. Firebase App
   Distribution was the plan, but the account hit its project limit.
 - **Test albums:** `supabase/dev/test_albums.sql` puts nine albums with
-  ratings and built-in tags on one account's shelf, until albums can be
-  added in the app (TASK-8). Locally `mise run dev:albums -- <email>`; on
+  ratings and built-in tags on one account's shelf, for trying the app and
+  screenshots without adding albums one by one. Locally `mise run dev:albums -- <email>`; on
   staging the `staging-test-albums` workflow (by hand, email as input). The
   account must have signed in once; running it again changes nothing.
 - **Production:** later, a second hosted project the same way.
