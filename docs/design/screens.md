@@ -65,7 +65,8 @@ flowchart LR
   friends -- Your name · Change --> name
 ```
 
-- M2: a Material navigation bar with Shelf, Feed and Friends (in that
+- M2: a tab bar with Shelf, Feed and Friends as low keys (`ShelfTabBar`,
+  the chosen one pressed; changed 2026-11-26 from Material's bar; in that
   order; Shelf is where the app opens). My shelf keeps its own bottom row
   (Covers / List and Add album) directly above the navigation bar. Each tab
   keeps its own back stack: a friend's shelf opened from Friends stays

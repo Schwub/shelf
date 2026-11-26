@@ -45,6 +45,7 @@ class ShelfKey extends StatefulWidget {
     this.selected,
     this.light = false,
     this.primary = false,
+    this.low = false,
     this.depth,
     this.semanticLabel,
     this.padding = const EdgeInsets.symmetric(horizontal: 16),
@@ -63,6 +64,10 @@ class ShelfKey extends StatefulWidget {
 
   /// Amber face, for the main action of a screen.
   final bool primary;
+
+  /// Rests lower ([KeyGeometry.half]): quieter than the screen's own keys,
+  /// for the tab bar.
+  final bool low;
   final double? depth;
 
   /// For keys whose child isn't text, such as icon keys.
@@ -88,7 +93,11 @@ class _ShelfKeyState extends State<ShelfKey> {
     final selected = widget.selected ?? false;
     final depth =
         widget.depth ??
-        (selected || _down ? KeyGeometry.pressed : KeyGeometry.rest);
+        (selected || _down
+            ? KeyGeometry.pressed
+            : widget.low
+            ? KeyGeometry.half
+            : KeyGeometry.rest);
     final lit = selected || (widget.depth != null && depth < KeyGeometry.rest);
     Widget key = TweenAnimationBuilder<double>(
       tween: Tween(end: depth),

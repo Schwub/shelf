@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../friends/pending_invite.dart';
 import '../share/shared_link_inbox.dart';
+import 'tab_bar.dart';
 
 /// The three tabs (Shelf, Feed, Friends) with a navigation bar. Each tab has
 /// its own Navigator, so it keeps its screens while another tab is shown;
@@ -88,23 +89,23 @@ class _HomePageState extends State<HomePage> {
             ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: _select,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.library_music_outlined),
-            selectedIcon: Icon(Icons.library_music),
+      bottomNavigationBar: ShelfTabBar(
+        selected: _tab,
+        onSelected: _select,
+        tabs: const [
+          (
+            icon: Icons.library_music_outlined,
+            selectedIcon: Icons.library_music,
             label: 'Shelf',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.dynamic_feed_outlined),
-            selectedIcon: Icon(Icons.dynamic_feed),
+          (
+            icon: Icons.dynamic_feed_outlined,
+            selectedIcon: Icons.dynamic_feed,
             label: 'Feed',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
+          (
+            icon: Icons.people_outline,
+            selectedIcon: Icons.people,
             label: 'Friends',
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shelf_app/home/tab_bar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelf_app/friends/pending_invite.dart';
@@ -124,14 +125,14 @@ void main() {
     await tester.tap(find.text('Change'));
     await tester.pumpAndSettle();
     expect(find.text('Michael'), findsOneWidget, reason: 'in the field');
-    expect(find.byType(NavigationBar), findsNothing, reason: 'full screen');
+    expect(find.byType(ShelfTabBar), findsNothing, reason: 'full screen');
     await tester.enterText(field(), 'Mike');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     expect(friends.name, 'Mike');
     expect(find.text('Mike'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(ShelfTabBar), findsOneWidget);
   });
 
   testWidgets('Your name meets the accessibility guidelines', (tester) async {

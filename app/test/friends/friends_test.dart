@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shelf_app/home/tab_bar.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelf_app/friends/friend_shelf_page.dart';
@@ -133,7 +134,7 @@ void main() {
 
     await enterCode(tester, ' anna-2345 ');
     expect(find.text('Anna invited you'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing, reason: 'full screen');
+    expect(find.byType(ShelfTabBar), findsNothing, reason: 'full screen');
 
     await tester.tap(find.text('Accept'));
     await tester.pumpAndSettle();
