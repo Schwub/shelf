@@ -115,6 +115,14 @@
   committed in `app/android/app/staging.jks`, so updates install over each
   other; Play Store releases get their own private key. Firebase App
   Distribution was the plan, but the account hit its project limit.
+- **Testers on Android** (TASK-44, decided 2026-11-26): friends who test
+  are added to the repository with the Read role and install like the
+  author (step 2 below), so the releases stay private and nothing changes
+  in the build. Considered: a public releases-only repository (anyone with
+  the link could install), Google Play internal testing (the way for the
+  public launch: fee, identity check, app bundles) and a download link on
+  the web app (Cloudflare Pages caps files at 25 MiB). Testers can read
+  the code and issues.
 - **Test albums:** `supabase/dev/test_albums.sql` puts nine albums with
   ratings and built-in tags on one account's shelf, for trying the app and
   screenshots without adding albums one by one. Locally `mise run dev:albums -- <email>`; on
@@ -135,6 +143,12 @@ One-time Android setup (TASK-23):
    private, so create a fine-grained GitHub token with read-only "Contents"
    access to `Schwub/shelf` and enter it in Obtainium's settings (GitHub
    source). Then add the app with the URL `https://github.com/Schwub/shelf`.
+3. A tester: invite their GitHub account (repository Settings →
+   Collaborators, role Read); they accept, then do step 2 with their own
+   token. Fine-grained tokens only reach repositories of the token's own
+   account or organisations, so if `Schwub/shelf` isn't offered they need
+   a classic token with the `repo` scope (it can do what their account
+   can, so they keep it only in Obtainium).
 
 One-time staging setup (TASK-21):
 1. Supabase dashboard → New project `shelf-staging` (free plan; it pauses

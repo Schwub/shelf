@@ -4,7 +4,7 @@ title: Android test builds a friend can install
 status: In Progress
 assignee: []
 created_date: '2026-11-26T15:21:00Z'
-updated_date: '2026-11-26T15:29:00Z'
+updated_date: '2026-11-26T16:18:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -19,6 +19,12 @@ Staging APKs are GitHub releases of the private repository, so Obtainium needs a
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Options compared and the choice recorded in docs/architecture.md
+- [x] #1 Options compared and the choice recorded in docs/architecture.md
 - [ ] #2 A tester without access to the repository installs the staging app and gets updates
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decided 2026-11-26: testers join the repository (Read) and use Obtainium with their own token (docs/architecture.md, Environments). AC2 open until the first friend has installed it.
+<!-- SECTION:NOTES:END -->
