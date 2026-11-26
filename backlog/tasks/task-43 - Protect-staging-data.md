@@ -1,9 +1,10 @@
 ---
 id: TASK-43
 title: Protect staging data
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-26T14:34:00Z'
+updated_date: '2026-11-26T21:29:00Z'
 labels: []
 dependencies: []
 priority: high
@@ -18,7 +19,11 @@ Testers use staging from now on, and the free plan keeps no backups we can downl
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The staging workflow dumps staging's data (supabase db dump --data-only) before db push and keeps it as a private artifact for a set time
-- [ ] #2 The db workflow fails a pull request whose new migration drops a table or column, truncates or deletes rows, unless the migration says how the data is kept
-- [ ] #3 docs/architecture.md describes how to restore a dump to staging
+- [x] #1 The db workflow fails a pull request whose new migration drops a table or column, truncates or deletes rows, unless the migration says how the data is kept
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-26: supabase/check-migrations.sh (+ .test.sh) in the db workflow on pull requests; also fails edits to merged migrations; ignores function bodies. Backups moved to TASK-47 (R2, not GitHub artifacts: collaborators can download those).
+<!-- SECTION:NOTES:END -->

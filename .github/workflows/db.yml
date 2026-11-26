@@ -25,6 +25,16 @@ jobs:
       MISE_TASK_RUN_AUTO_INSTALL: false
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The base branch too, to see which migrations this one adds.
+          fetch-depth: 0
+      # Staging keeps testers' data (AGENTS.md): no migration that drops or
+      # deletes data without saying how it is kept, no edits to applied ones.
+      - name: Check migrations keep data
+        if: github.event_name == 'pull_request'
+        run: |
+          supabase/check-migrations.test.sh
+          supabase/check-migrations.sh "${{ github.event.pull_request.base.sha }}"
       - uses: jdx/mise-action@v3
         with:
           install_args: supabase deno

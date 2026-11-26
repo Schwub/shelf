@@ -47,7 +47,10 @@ aliased to fvm with a different version.
 - Staging holds testers' real data (from 2026-11-26): migrations keep
   existing rows (move data before dropping a column or table, never
   truncate or delete user data), and nothing may reset or wipe the staging
-  database (`supabase db reset --linked` or similar).
+  database (`supabase db reset --linked` or similar). Pull requests check
+  this (`supabase/check-migrations.sh` in the `db` workflow): a migration
+  that drops or deletes data needs a `-- keeps data: <how>` line, and
+  merged migrations are never edited.
 
 ## Where to look
 - Goal, scope, milestones and risks: `docs/project.md`.
