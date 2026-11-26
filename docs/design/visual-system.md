@@ -142,8 +142,8 @@ Weights: Archivo 600–800, IBM Plex Sans 400 and 600 (no 700).
   filters fill the width in equal keys; with more, keys keep the width of
   five and the row (labels with it) scrolls sideways, fading out over the
   last 32 px. Labels that don't fit their key end in an ellipsis. The selected filter is a pressed key
-  (state B) with its light on. The row stands on a teak board that casts
-  the usual 10 px shadow.
+  (state B) with its light on. A teak board that casts the usual 10 px
+  shadow runs 4 px below the keys (2026-11-26; they stood on it before).
 - **Shelf board:** a 4 px teak line (1 px lighter top edge) across the
   full width under each row of three covers, a 10 px soft shadow below,
   and a 2 px contact shadow under each cover; title, artist and meter

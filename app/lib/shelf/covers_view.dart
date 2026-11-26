@@ -32,8 +32,7 @@ class CoversView extends StatelessWidget {
         entries.sublist(i, (i + 3).clamp(0, entries.length)),
     ];
     return ListView.builder(
-      // Room between the filter bar's board and the first row.
-      padding: const EdgeInsets.only(top: 8, bottom: 24),
+      padding: const EdgeInsets.only(bottom: 24),
       itemCount: rows.length,
       itemBuilder: (context, i) => _row(context, rows[i]),
     );
