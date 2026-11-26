@@ -6,12 +6,13 @@ import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
-import 'package:shelf_app/theme/theme_choice.dart';
+import 'package:shelf_app/settings/settings.dart';
 
 import '../shelf/fake_shelf.dart';
 import 'fake_auth.dart';
 import '../search/fake_search.dart';
 import '../share/fake_links.dart';
+import '../settings/fake_settings.dart';
 
 void main() {
   late FakeAuth auth;
@@ -29,7 +30,7 @@ void main() {
             search: FakeSearch({}),
             links: FakeLinks(UnsupportedLink()),
             inbox: SharedLinkInbox(const Stream.empty()),
-            theme: ThemeChoice(),
+            settings: Settings(FakeSettings()),
           ),
         ),
       ),

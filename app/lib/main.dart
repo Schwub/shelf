@@ -9,6 +9,8 @@ import 'auth/auth_gate.dart';
 import 'errors.dart';
 import 'search/album_search.dart';
 import 'search/musicbrainz.dart';
+import 'settings/settings.dart';
+import 'settings/supabase_settings_repository.dart';
 import 'share/link_resolver.dart';
 import 'share/share_receiver.dart';
 import 'share/shared_link_inbox.dart';
@@ -16,7 +18,6 @@ import 'shelf/shelf_repository.dart';
 import 'shelf/supabase_shelf_repository.dart';
 import 'shelf/shelf_page.dart';
 import 'theme/shelf_theme.dart';
-import 'theme/theme_choice.dart';
 import 'tracks/track_source.dart';
 
 // Defaults: the local Supabase (`supabase start`). Builds for the hosted
@@ -74,7 +75,9 @@ Future<void> main() async {
           search: MusicBrainzSearch(musicBrainz),
           links: SupabaseLinkResolver(supabase.client, client),
           inbox: inbox,
-          theme: await ThemeChoice.load(),
+          settings: await Settings.load(
+            SupabaseSettingsRepository(supabase.client),
+          ),
         ),
       );
     },
@@ -89,7 +92,7 @@ class ShelfApp extends StatelessWidget {
     required this.search,
     required this.links,
     required this.inbox,
-    required this.theme,
+    required this.settings,
   });
 
   final Auth auth;
@@ -97,12 +100,12 @@ class ShelfApp extends StatelessWidget {
   final AlbumSearch search;
   final LinkResolver links;
   final SharedLinkInbox inbox;
-  final ThemeChoice theme;
+  final Settings settings;
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: theme,
+      valueListenable: settings.theme,
       builder: (context, chosen, home) => MaterialApp(
         title: 'shelf',
         theme: shelfTheme(chosen.colors),
@@ -116,7 +119,7 @@ class ShelfApp extends StatelessWidget {
           search: search,
           links: links,
           inbox: inbox,
-          theme: theme,
+          settings: settings,
         ),
       ),
     );

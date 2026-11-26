@@ -4,19 +4,18 @@ import '../errors.dart';
 import '../filters/filters_page.dart';
 
 import 'package:material_ui/material_ui.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../auth/auth.dart';
 import '../auth/sign_out.dart';
 import '../preview/preview_page.dart';
 import '../search/album_search.dart';
 import '../search/search_page.dart';
+import '../settings/settings.dart';
 import '../share/link_resolver.dart';
 import '../tags/tags_page.dart';
 import '../share/resolve_page.dart';
 import '../share/shared_link_inbox.dart';
 import '../theme/shelf_colors.dart';
-import '../theme/theme_choice.dart';
 import '../theme/theme_sheet.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/message.dart';
@@ -38,7 +37,7 @@ class ShelfPage extends StatefulWidget {
     required this.search,
     required this.links,
     required this.inbox,
-    required this.theme,
+    required this.settings,
   });
 
   final Auth auth;
@@ -46,7 +45,7 @@ class ShelfPage extends StatefulWidget {
   final AlbumSearch search;
   final LinkResolver links;
   final SharedLinkInbox inbox;
-  final ThemeChoice theme;
+  final Settings settings;
 
   @override
   State<ShelfPage> createState() => _ShelfPageState();
@@ -59,10 +58,6 @@ class _ShelfPageState extends State<ShelfPage> {
   /// The selected filter; null for All.
   String? _filterId;
 
-  /// Covers or a list, remembered on the device.
-  bool _list = false;
-  static const _listKey = 'shelf.list';
-
   /// Removed but still undoable: hidden until the snackbar closes.
   final _removing = <String>{};
 
@@ -74,10 +69,8 @@ class _ShelfPageState extends State<ShelfPage> {
     super.initState();
     widget.inbox.addListener(_openSharedLink);
     _load();
-    SharedPreferences.getInstance().then((prefs) {
-      final list = prefs.getBool(_listKey);
-      if (mounted && list != null) setState(() => _list = list);
-    });
+    widget.settings.list.addListener(_rebuild);
+    widget.settings.sync();
   }
 
   Future<void> _load() async {
@@ -97,6 +90,7 @@ class _ShelfPageState extends State<ShelfPage> {
   @override
   void dispose() {
     widget.inbox.removeListener(_openSharedLink);
+    widget.settings.list.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -343,10 +337,10 @@ class _ShelfPageState extends State<ShelfPage> {
         : CoversView(entries: entries, onOpen: _open);
   }
 
-  Future<void> _setList(bool list) async {
-    setState(() => _list = list);
-    await (await SharedPreferences.getInstance()).setBool(_listKey, list);
-  }
+  /// Covers or a list.
+  bool get _list => widget.settings.list.value;
+
+  void _rebuild() => setState(() {});
 
   Widget _bottomBar(BuildContext context) {
     final c = context.shelf;
@@ -369,7 +363,7 @@ class _ShelfPageState extends State<ShelfPage> {
                   semanticLabel: label,
                   selected: _list == list,
                   padding: EdgeInsets.zero,
-                  onPressed: () => _setList(list),
+                  onPressed: () => widget.settings.chooseList(list),
                   child: Icon(icon),
                 ),
                 const SizedBox(width: 8),
@@ -460,7 +454,7 @@ class _ShelfPageState extends State<ShelfPage> {
         );
         await _load();
       case 'theme':
-        await showThemeSheet(context, widget.theme);
+        await showThemeSheet(context, widget.settings);
       case 'sign out':
         await confirmSignOut(context, widget.auth);
     }

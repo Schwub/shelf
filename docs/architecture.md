@@ -65,6 +65,10 @@
 - `entry_tracks`: the user's own track list of a shelf entry, with a
   `favorite` flag per track; replaced as a whole by `set_entry_tracks` (one
   transaction). Owner-only. Details: `docs/features/tracks.md`.
+- `user_settings`: one row per user with their `theme` and `shelf_view`
+  (covers or list); null is the app's default. Owner-only. The app's
+  `Settings` (`app/lib/settings/`) keeps a copy on the device for the
+  sign-in screen and offline, and takes the saved row after sign-in.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 
@@ -170,6 +174,15 @@ GlitchTip (a server to run).
   workflow (see Environments).
 
 ## Decisions
+- **2026-11-26 – User settings in the database.** Settings follow the user
+  to every device; the device keeps only a cache (shown before sign-in and
+  offline, replaced by the saved row after sign-in; a change shows at once
+  and is then saved). One column per setting, so Postgres checks values
+  like the other tables do; theme names unchecked so new themes need no
+  migration. Its own `SettingsRepository`, apart from the shelf's.
+  Considered: a JSON column (no checks), part of `ShelfRepository` (grows
+  it, fails with the shelf), settings on the device only (the earlier
+  state).
 - **2026-11-24 – Sign in with an emailed code and link.** The email
   carries a 6-digit code and a link. The code works on any device from
   day one, including when the mail is read on another device; the link

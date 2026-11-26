@@ -11,8 +11,8 @@ aliased to fvm with a different version.
 - Edge function tests (run after changing `supabase/functions/`; not part of
   `mise run check`): `mise run test:functions`
 - Integration tests (Docker; run after changing `app/lib/shelf/shelf.dart`,
-  `supabase_shelf_repository.dart` or migrations): `mise run test:integration` (the Supabase repository against
-  a local Supabase, `app/test_integration/`)
+  a `supabase_*_repository.dart` or migrations): `mise run test:integration`
+  (the Supabase repositories against a local Supabase, `app/test_integration/`)
 - Cloud sessions: use the "shelf" environment (its setup script installs the
   tools). Docker isn't started for you: if `docker info` fails, run
   `dockerd >/tmp/dockerd.log 2>&1 &` and wait a few seconds.

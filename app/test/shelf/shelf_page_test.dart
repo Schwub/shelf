@@ -13,7 +13,7 @@ import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/albums_list_view.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
 import 'package:shelf_app/theme/shelf_theme.dart';
-import 'package:shelf_app/theme/theme_choice.dart';
+import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/widgets/filter_bar.dart';
 import 'package:shelf_app/widgets/rating_keys.dart';
 import 'package:shelf_app/widgets/rating_meter.dart';
@@ -23,6 +23,7 @@ import '../auth/fake_auth.dart';
 import 'fake_shelf.dart';
 import '../search/fake_search.dart';
 import '../share/fake_links.dart';
+import '../settings/fake_settings.dart';
 
 void main() {
   late FakeShelf shelf;
@@ -37,6 +38,7 @@ void main() {
     AppTheme theme = AppTheme.tobacco,
     Uri? shared,
     Resolved? resolved,
+    FakeSettings? settings,
   }) async {
     shelf = fake;
     inbox = SharedLinkInbox(const Stream.empty())..value = shared;
@@ -53,7 +55,7 @@ void main() {
           search: FakeSearch({}),
           links: links,
           inbox: inbox,
-          theme: ThemeChoice(),
+          settings: Settings(settings ?? FakeSettings()),
         ),
       ),
     );
@@ -275,18 +277,20 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('remembers covers or list on the device', (tester) async {
-    await pumpShelf(tester, FakeShelf(three));
+  testWidgets('covers or list is saved and follows the user', (tester) async {
+    final server = FakeSettings();
+    await pumpShelf(tester, FakeShelf(three), settings: server);
     expect(find.byType(AlbumsListView), findsNothing);
 
     await tester.tap(find.byIcon(Icons.view_list_outlined));
     await tester.pumpAndSettle();
-    final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getBool('shelf.list'), isTrue);
+    expect(find.byType(AlbumsListView), findsOneWidget);
+    expect(server.saved?.list, isTrue);
 
-    // A new start of the app.
+    // Signed in on another device.
+    SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(const SizedBox());
-    await pumpShelf(tester, FakeShelf(three));
+    await pumpShelf(tester, FakeShelf(three), settings: server);
     expect(find.byType(AlbumsListView), findsOneWidget);
   });
 
