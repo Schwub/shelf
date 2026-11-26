@@ -173,22 +173,30 @@ Considered: our own `app_errors` table in Supabase (no grouping, alerts or
 readable release stack traces without building them) and self-hosted
 GlitchTip (a server to run).
 - `app/lib/errors.dart` is the only code that imports `sentry_flutter`.
-  `main.dart` runs the app inside it; crashes and unhandled errors are
+  `main.dart` runs the app inside it, bindings included (one zone, or
+  Flutter on web reports a zone mismatch); crashes and unhandled errors are
   reported, and screens report the errors they handle and show as
   "Couldn't …" (`reportError`), except a user's own mistakes (a link from
   another site, a broken link).
 - Breadcrumbs: every HTTP request (MusicBrainz, covers) through
   `reportingClient`; failed answers aren't reported on their own.
-- Privacy: `sendDefaultPii` off (no IP addresses, emails or bodies); the
-  user is only their Supabase account ID.
+- Privacy: `sendDefaultPii` off (no emails or bodies); the user is only
+  their Supabase account ID. Sentry still adds the sender's IP on its side,
+  so the project `shelf` (org `schwubware-03`) has "Prevent Storing of IP
+  Addresses" on.
 - Settings: the `SENTRY_DSN` repository variable (a DSN only allows sending
   events, so it isn't a secret) passed with `--dart-define`; without it
   nothing is sent (local builds, tests). `SENTRY_ENVIRONMENT`: `staging`
   (Android staging builds), `production` and `preview` (web), `development`
   otherwise.
-- Not yet: readable web stack traces need source maps uploaded with a
-  Sentry auth token from the `web` workflow; GitHub issues from new errors
-  (TASK-13).
+- Readable web stack traces: the `web` workflow builds with
+  `--source-maps` and uploads them with `sentry_dart_plugin` (settings in
+  `app/pubspec.yaml`, `sentry:`; matched by debug ID, so the release name
+  needn't change per deploy), then leaves them out of the deploy. Needs the
+  `SENTRY_AUTH_TOKEN` repository secret (an organization auth token);
+  without it the upload is skipped.
+- Not yet: readable Android and iOS stack traces (debug symbols); GitHub
+  issues from new errors (TASK-13).
 
 ## Web deploys
 - The `web` workflow builds `flutter build web` in GitHub Actions and

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shelf_app/errors.dart';
@@ -8,6 +10,7 @@ void main() {
     await runReporting(
       dsn: '',
       environment: 'test',
+      start: () {},
       app: () async => ran = true,
     );
 
@@ -15,6 +18,22 @@ void main() {
     expect(Sentry.isEnabled, isFalse);
     // A no-op, not an error.
     await reportError(Exception('offline'), StackTrace.current);
+  });
+
+  test('with a DSN, start and the app run in Sentry\'s zone', () async {
+    final caller = Zone.current;
+    Zone? started;
+    Zone? ran;
+    await runReporting(
+      dsn: 'https://key@o0.ingest.de.sentry.io/0',
+      environment: 'test',
+      start: () => started = Zone.current,
+      app: () async => ran = Zone.current,
+    );
+    addTearDown(Sentry.close);
+
+    expect(started, isNot(same(caller)));
+    expect(ran, same(started));
   });
 
   test('a report names the account by its ID only', () async {

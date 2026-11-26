@@ -52,19 +52,22 @@ const _environment = String.fromEnvironment(
 );
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  LicenseRegistry.addLicense(() async* {
-    for (final font in ['Archivo', 'IBMPlexSans']) {
-      yield LicenseEntryWithLineBreaks([
-        font,
-      ], await rootBundle.loadString('assets/fonts/$font-OFL.txt'));
-    }
-  });
-  // Before anything slow, so the link that launches the app isn't missed.
-  final inbox = SharedLinkInbox(sharedLinks());
+  late final SharedLinkInbox inbox;
   await runReporting(
     dsn: _sentryDsn,
     environment: _environment,
+    start: () {
+      WidgetsFlutterBinding.ensureInitialized();
+      LicenseRegistry.addLicense(() async* {
+        for (final font in ['Archivo', 'IBMPlexSans']) {
+          yield LicenseEntryWithLineBreaks([
+            font,
+          ], await rootBundle.loadString('assets/fonts/$font-OFL.txt'));
+        }
+      });
+      // Before anything slow, so the link that launches the app isn't missed.
+      inbox = SharedLinkInbox(sharedLinks());
+    },
     app: () async {
       final supabase = await Supabase.initialize(
         url: _supabaseUrl,

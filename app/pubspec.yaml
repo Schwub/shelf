@@ -51,9 +51,20 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  sentry_dart_plugin: ^3.6.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+# The web workflow uploads source maps with sentry_dart_plugin so web stack
+# traces in Sentry are readable (docs/architecture.md, "Error reporting").
+sentry:
+  org: schwubware-03
+  project: shelf
+  upload_source_maps: true
+  upload_debug_symbols: false
+  # Sentry has no repository integration, and CI checks out one commit.
+  commits: false
 
 # The following section is specific to Flutter packages.
 flutter:

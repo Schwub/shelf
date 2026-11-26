@@ -32,6 +32,8 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Uploads source maps to Sentry; missing on PRs from forks.
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       # Only Flutter is needed; don't install the other mise tools.
       MISE_EXEC_AUTO_INSTALL: false
     steps:
@@ -47,13 +49,19 @@ jobs:
           # Pull request previews report apart from main.
           SENTRY_ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
         run: >-
-          mise exec -- flutter build web --release
+          mise exec -- flutter build web --release --source-maps
           --dart-define=SUPABASE_URL=${{ vars.SUPABASE_URL }}
           --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           --dart-define=MUSICBRAINZ_CONTACT="$MUSICBRAINZ_CONTACT"
           --dart-define=SENTRY_DSN="$SENTRY_DSN"
           --dart-define=SENTRY_ENVIRONMENT="$SENTRY_ENVIRONMENT"
         working-directory: app
+      # Settings in pubspec.yaml (`sentry:`). The maps stay out of the
+      # deploy: Sentry has them, browsers don't need them.
+      - if: env.SENTRY_AUTH_TOKEN != ''
+        run: mise exec -- dart run sentry_dart_plugin
+        working-directory: app
+      - run: find app/build/web -name '*.map' -delete
       - id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
