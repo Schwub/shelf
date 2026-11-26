@@ -357,3 +357,33 @@ flowchart TD
   ok -- no --> err[Couldn't save. Try again.] --> entry
   add([Album entry: add]) -- Hide from friends: on --> added([Added, hidden from the start])
 ```
+
+## Edit several albums (TASK-40)
+
+Done: the chosen tags, hidden state or removal applies to every selected
+album at once; anything else on them stays as it was.
+
+```mermaid
+flowchart TD
+  shelf([My shelf]) -- ⋮ Select albums, or press and hold an album --> sel[Selecting: n selected]
+  sel -- tap album --> sel
+  sel -- Select all --> sel
+  sel -- filter key --> sel
+  sel -- ✕ or back --> shelf
+  sel -- n = 0 --> off[Tags, Hide, Remove off]
+  sel -- Tags --> sheet[Tags for n albums: ✓ on all, – on some]
+  sheet -- tap tag --> sheet
+  sheet -- Cancel --> sel
+  sheet -- Apply --> save{Saved?}
+  save -- yes --> done1[Tags changed on n albums; still selected] --> sel
+  save -- no --> err[Couldn't change n albums. Try again] --> sel
+  sel -- Hide / Show --> hide[n albums hidden from friends · Undo] --> sel
+  sel -- Remove --> rm[n albums removed · Undo] --> shelf
+```
+
+- Tags follow the rules of one album: in a one-per-album group the new tag
+  replaces the other; a sub-tag puts its parent tag on too; taking a tag off
+  takes its sub-tags off.
+- Hide shows as Show when every selected album is already hidden.
+- Not now: rating several albums, export, selecting on a friend's shelf.
+
