@@ -26,13 +26,12 @@ class SupabaseShelfRepository implements ShelfRepository {
   Future<Shelf> load() => _load(_me);
 
   @override
-  Future<Shelf> loadFriend(String userId) => _load(userId, friend: true);
+  Future<Shelf> loadFriend(String userId) => _load(userId);
 
   /// [userId]'s shelf. Every query filters by owner: friends can read each
-  /// other's entries, tags and groups (row-level security leaves out hidden
-  /// entries). A friend's filters stay private, so their shelf gets one per
-  /// built-in tag.
-  Future<Shelf> _load(String userId, {bool friend = false}) async {
+  /// other's entries, tags, groups and filters (row-level security leaves
+  /// out hidden entries).
+  Future<Shelf> _load(String userId) async {
     final (entries, filters, tags, groups) = await (
       _db
           .from('shelf_entries')
@@ -44,16 +43,14 @@ class SupabaseShelfRepository implements ShelfRepository {
           )
           .eq('user_id', userId)
           .order('created_at', ascending: false),
-      friend
-          ? Future.value(const <Map<String, dynamic>>[])
-          : _db
-                .from('shelf_filters')
-                .select(
-                  'id, name, tags_match, min_rating, unrated, favorite_tracks, '
-                  'shelf_filter_tags(tag_id)',
-                )
-                .eq('user_id', userId)
-                .order('position', ascending: true),
+      _db
+          .from('shelf_filters')
+          .select(
+            'id, name, tags_match, min_rating, unrated, favorite_tracks, '
+            'shelf_filter_tags(tag_id)',
+          )
+          .eq('user_id', userId)
+          .order('position', ascending: true),
       // New rows and reordered ones can share a position for a moment.
       _db
           .from('tags')
@@ -99,19 +96,12 @@ class SupabaseShelfRepository implements ShelfRepository {
                 ),
           ),
       ],
-      allFilters: friend
-          ? [
-              // The order new users' filters start in.
-              for (final key in ['own', 'want', 'want_to_listen', 'listened'])
-                for (final t in tags)
-                  if (t['builtin'] == key) ShelfFilter.tag(t['id'], t['name']),
-            ]
-          : [
-              for (final f in filters)
-                _filter(f, [
-                  for (final t in f['shelf_filter_tags']) t['tag_id'] as String,
-                ], tagNames),
-            ],
+      allFilters: [
+        for (final f in filters)
+          _filter(f, [
+            for (final t in f['shelf_filter_tags']) t['tag_id'] as String,
+          ], tagNames),
+      ],
       allGroups: [
         for (final g in groups)
           TagGroup(

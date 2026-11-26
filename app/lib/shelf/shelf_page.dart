@@ -26,6 +26,7 @@ import 'covers_view.dart';
 import 'entry_page.dart';
 import 'shelf.dart';
 import 'shelf_repository.dart';
+import 'sort_sheet.dart';
 
 /// The signed-in user's albums as covers or a list, with the filter bar.
 /// Opens links shared into the app once the shelf has loaded.
@@ -70,6 +71,7 @@ class _ShelfPageState extends State<ShelfPage> {
     widget.inbox.addListener(_openSharedLink);
     _load();
     widget.settings.list.addListener(_rebuild);
+    widget.settings.sort.addListener(_rebuild);
     // Also after this page's own edits, which reload anyway: an extra
     // request, but no wiring from the other tabs.
     widget.shelf.changes.addListener(_load);
@@ -94,6 +96,7 @@ class _ShelfPageState extends State<ShelfPage> {
   void dispose() {
     widget.inbox.removeListener(_openSharedLink);
     widget.settings.list.removeListener(_rebuild);
+    widget.settings.sort.removeListener(_rebuild);
     widget.shelf.changes.removeListener(_load);
     super.dispose();
   }
@@ -302,7 +305,7 @@ class _ShelfPageState extends State<ShelfPage> {
     if (shelf == null) return const _Loading();
     final visible = Shelf(entries: _visible, allFilters: shelf.filters);
     final filter = _filter;
-    final entries = visible.matching(filter);
+    final entries = widget.settings.sort.value.apply(visible.matching(filter));
     if (visible.entries.isEmpty) {
       return Message(
         title: 'Your shelf is empty',
@@ -372,6 +375,11 @@ class _ShelfPageState extends State<ShelfPage> {
                 ),
                 const SizedBox(width: 8),
               ],
+              SortKey(
+                sort: widget.settings.sort.value,
+                onChanged: widget.settings.chooseSort,
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: ShelfKey(
                   primary: true,

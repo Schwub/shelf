@@ -227,13 +227,21 @@ void main() {
     expect(await settings.load(), isNull);
 
     await settings.save(theme: 'evening', list: true);
-    expect(await settings.load(), (theme: 'evening', list: true));
+    expect(await settings.load(), (theme: 'evening', list: true, sort: null));
 
-    await settings.save(list: false);
-    expect(await settings.load(), (theme: 'evening', list: false));
+    await settings.save(list: false, sort: 'year_reversed');
+    expect(await settings.load(), (
+      theme: 'evening',
+      list: false,
+      sort: 'year_reversed',
+    ));
 
     await settings.save(theme: 'tobacco');
-    expect(await settings.load(), (theme: 'tobacco', list: false));
+    expect(await settings.load(), (
+      theme: 'tobacco',
+      list: false,
+      sort: 'year_reversed',
+    ));
 
     final other = await signIn();
     expect(await SupabaseSettingsRepository(other.db).load(), isNull);

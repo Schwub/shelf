@@ -303,7 +303,7 @@ flowchart TD
   load -- error --> err[Couldn't load your friends. Try again.]
   load -- no friends --> empty[No friends yet. Invite a friend to see their shelf.]
   load -- yes --> list[Friends: name, albums, waiting invites]
-  list -- friend --> fshelf[Anna's shelf: covers or list, filter bar with built-in filters]
+  list -- friend --> fshelf[Anna's shelf: covers or list, their filter bar]
   fshelf -- empty --> fempty[Anna hasn't added any albums yet.]
   fshelf -- album --> falbum[Anna's album: her rating, comment, tags, favorite tracks]
   falbum -- Add to my shelf --> addflow([Add from a friend])
@@ -314,9 +314,8 @@ flowchart TD
 ```
 
 Notes:
-- A friend's shelf is read-only and shows only the built-in filters (All,
-  Own, Want, Want to listen, Listened): their own tags may mean nothing to
-  the viewer.
+- A friend's shelf is read-only and shows their own filter bar (changed
+  2026-11-26 from built-in filters only) and the viewer's sort order.
 - Removing a friend is mutual and immediate; albums already added from
   them stay, with "Added from Anna's shelf".
 

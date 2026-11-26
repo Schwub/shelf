@@ -293,6 +293,65 @@ void main() {
     expect(find.byType(AlbumsListView), findsOneWidget);
   });
 
+  testWidgets('the sort sheet orders the shelf, and turns it round', (
+    tester,
+  ) async {
+    final server = FakeSettings();
+    await pumpShelf(tester, FakeShelf(three), settings: server);
+    await tester.tap(find.byIcon(Icons.view_list_outlined));
+    await tester.pumpAndSettle();
+    List<String> titles() {
+      final shown = ['OK Computer', 'Discovery', 'Blue'];
+      return shown..sort(
+        (a, b) => tester
+            .getTopLeft(find.text(a))
+            .dy
+            .compareTo(tester.getTopLeft(find.text(b)).dy),
+      );
+    }
+
+    expect(titles(), ['OK Computer', 'Discovery', 'Blue'], reason: 'newest');
+
+    await tester.tap(find.byIcon(Icons.sort));
+    await tester.pumpAndSettle();
+    expect(find.text('Sort by'), findsOneWidget);
+    await tester.tap(find.text('Title'));
+    await tester.pumpAndSettle();
+    expect(titles(), ['Blue', 'Discovery', 'OK Computer']);
+
+    await tester.tap(find.byIcon(Icons.sort));
+    await tester.pumpAndSettle();
+    expect(find.text('Z–A'), findsNothing);
+    await tester.tap(find.text('Title'));
+    await tester.pumpAndSettle();
+    expect(titles(), ['OK Computer', 'Discovery', 'Blue']);
+    expect(server.saved?.sort, 'title_reversed');
+
+    await tester.tap(find.byIcon(Icons.sort));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rating'));
+    await tester.pumpAndSettle();
+    expect(titles(), [
+      'OK Computer',
+      'Blue',
+      'Discovery',
+    ], reason: 'unrated last');
+  });
+
+  testWidgets('the sort sheet meets the accessibility guidelines', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await pumpShelf(tester, FakeShelf(three));
+    await tester.tap(find.bySemanticsLabel('Sort: Date added, Newest first'));
+    await tester.pumpAndSettle();
+
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    semantics.dispose();
+  });
+
   testWidgets('the menu opens the tags, and the shelf reloads after', (
     tester,
   ) async {

@@ -26,6 +26,7 @@ import '../feed/fake_feed.dart';
 void main() {
   late FakeShelf shelf;
   late FakeFriends friends;
+  late FakeSettings settings;
 
   final kidA = ShelfEntry(
     id: 'k',
@@ -48,6 +49,7 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    settings = FakeSettings();
     shelf = FakeShelf([entry('2', 'Blue', rating: 8)]);
     shelf.friendShelves['anna'] = Shelf(
       entries: [kidA, blue],
@@ -73,7 +75,7 @@ void main() {
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
         pendingInvite: PendingInvite(),
-        settings: Settings(FakeSettings()),
+        settings: Settings(settings),
         friends: friends,
         feed: FakeFeed(),
       ),
@@ -106,7 +108,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets("a friend's shelf shows their albums and built-in filters", (
+  testWidgets("a friend's shelf shows their albums and filters", (
     tester,
   ) async {
     await openAnna(tester);
@@ -131,6 +133,61 @@ void main() {
       ),
       findsNothing,
     );
+  });
+
+  testWidgets("a friend's shelf follows your sort", (tester) async {
+    settings = FakeSettings((theme: null, list: null, sort: 'title'));
+    await openAnna(tester);
+
+    expect(
+      tester.getTopLeft(find.text('Blue')).dx,
+      lessThan(tester.getTopLeft(find.text('Kid A')).dx),
+      reason: 'Blue before Kid A, though Kid A is newer',
+    );
+  });
+
+  testWidgets("a friend's own filters work on their shelf", (tester) async {
+    final anna = shelf.friendShelves['anna']!;
+    shelf.friendShelves['anna'] = Shelf(
+      entries: anna.entries,
+      allGroups: anna.allGroups,
+      allFilters: [
+        ...anna.allFilters,
+        const ShelfFilter(id: 'top', name: 'Top', label: 'Top', minRating: 10),
+      ],
+    );
+    await openAnna(tester);
+
+    // All, Own, Listened, Top.
+    await tester.tap(
+      find
+          .descendant(
+            of: find.byType(FilterBar),
+            matching: find.byType(ShelfKey),
+          )
+          .at(3),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kid A'), findsOneWidget);
+    expect(find.text('Blue'), findsNothing);
+  });
+
+  testWidgets("a friend's shelf can be sorted, and so is yours", (
+    tester,
+  ) async {
+    await openAnna(tester);
+
+    await tester.tap(find.byIcon(Icons.sort));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Title'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Blue')).dx,
+      lessThan(tester.getTopLeft(find.text('Kid A')).dx),
+    );
+    expect(settings.saved?.sort, 'title');
   });
 
   testWidgets("an empty friend's shelf says so", (tester) async {

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../errors.dart';
+import '../settings/settings.dart';
 import '../shelf/shelf_repository.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/confirm_dialog.dart';
@@ -25,12 +26,16 @@ class FriendsPage extends StatefulWidget {
     required this.name,
     required this.pending,
     required this.shelf,
+    required this.settings,
   });
 
   final FriendsRepository friends;
   final ValueNotifier<String> name;
   final PendingInvite pending;
   final ShelfRepository shelf;
+
+  /// The user's shelf order, for friends' shelves too.
+  final Settings settings;
 
   @override
   State<FriendsPage> createState() => _FriendsPageState();
@@ -102,7 +107,11 @@ class _FriendsPageState extends State<FriendsPage> {
 
   Future<void> _openShelf(Friend friend) => Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => FriendShelfPage(friend: friend, shelf: widget.shelf),
+      builder: (_) => FriendShelfPage(
+        friend: friend,
+        shelf: widget.shelf,
+        settings: widget.settings,
+      ),
     ),
   );
 

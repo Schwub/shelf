@@ -12,8 +12,8 @@ abstract class ShelfRepository {
   /// tab (a friend's album, and tags copied from it).
   Listenable get changes;
 
-  /// A friend's shelf, without the entries they hide from friends; its
-  /// filters are their built-in tags.
+  /// A friend's shelf with their filters, without the entries they hide
+  /// from friends.
   Future<Shelf> loadFriend(String userId);
 
   /// Rating in half stars or null; an empty comment is stored as none.
