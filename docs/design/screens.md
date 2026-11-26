@@ -115,7 +115,11 @@ flowchart LR
   steps.
 - **Comment** is an optional multi-line field labelled "Comment (optional)".
 - **Covers / list** toggle in the bottom bar next to "Add album"; the
-  choice is remembered on the device. A filter bar (labels above keys, each key showing its count) sits above
+  choice follows the user to every device. Next to it a **Sort** key opens
+  a sheet: Date added (newest first), Title and Artist (A–Z), Year (newest
+  first), Rating (highest first); the chosen order tapped again turns
+  round. Albums without a year or rating go last; a friend's shelf shows
+  in the user's order (TASK-39). A filter bar (labels above keys, each key showing its count) sits above
   the albums; it starts with All, Own, Want, Want to listen, Listened. Look and components: [visual-system.md](visual-system.md).
 - **Friends (M2):** mutual, from an invite only (no user search). An
   invite is a link plus an 8-character code (`K7Q2-M9XD`), used once,

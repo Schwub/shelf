@@ -66,7 +66,9 @@ void main() {
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
         pendingInvite: PendingInvite(),
-        settings: Settings(FakeSettings((theme: 'evening', list: null))),
+        settings: Settings(
+          FakeSettings((theme: 'evening', list: null, sort: null)),
+        ),
         friends: FakeFriends('Michael'),
         feed: FakeFeed(),
       ),

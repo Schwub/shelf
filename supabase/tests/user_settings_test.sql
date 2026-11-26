@@ -1,5 +1,5 @@
 begin;
-select plan(10);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -44,6 +44,11 @@ select throws_ok(
 select throws_ok(
   $$update public.user_settings set shelf_view = 'spines'$$,
   '23514', null, 'the shelf view is covers or list');
+select lives_ok($$update public.user_settings set shelf_sort = 'artist_reversed'$$,
+  'users save how the shelf is sorted');
+select throws_ok(
+  $$update public.user_settings set shelf_sort = 'colour'$$,
+  '23514', null, 'the sort is one of the known orders');
 
 reset role;
 select is(

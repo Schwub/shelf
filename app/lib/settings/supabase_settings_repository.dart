@@ -13,7 +13,7 @@ class SupabaseSettingsRepository implements SettingsRepository {
   Future<SavedSettings?> load() async {
     final row = await _db
         .from('user_settings')
-        .select('theme, shelf_view')
+        .select('theme, shelf_view, shelf_sort')
         .eq('user_id', _db.auth.currentUser!.id)
         .maybeSingle();
     if (row == null) return null;
@@ -24,14 +24,16 @@ class SupabaseSettingsRepository implements SettingsRepository {
         'covers' => false,
         _ => null,
       },
+      sort: row['shelf_sort'] as String?,
     );
   }
 
   // An upsert updates only the columns it sends.
   @override
-  Future<void> save({String? theme, bool? list}) =>
+  Future<void> save({String? theme, bool? list, String? sort}) =>
       _db.from('user_settings').upsert({
         'theme': ?theme,
         if (list != null) 'shelf_view': list ? 'list' : 'covers',
+        'shelf_sort': ?sort,
       });
 }

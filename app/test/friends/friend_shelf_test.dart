@@ -26,6 +26,7 @@ import '../feed/fake_feed.dart';
 void main() {
   late FakeShelf shelf;
   late FakeFriends friends;
+  late FakeSettings settings;
 
   final kidA = ShelfEntry(
     id: 'k',
@@ -48,6 +49,7 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    settings = FakeSettings();
     shelf = FakeShelf([entry('2', 'Blue', rating: 8)]);
     shelf.friendShelves['anna'] = Shelf(
       entries: [kidA, blue],
@@ -73,7 +75,7 @@ void main() {
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
         pendingInvite: PendingInvite(),
-        settings: Settings(FakeSettings()),
+        settings: Settings(settings),
         friends: friends,
         feed: FakeFeed(),
       ),
@@ -130,6 +132,17 @@ void main() {
         matching: find.text('Blue'),
       ),
       findsNothing,
+    );
+  });
+
+  testWidgets("a friend's shelf follows your sort", (tester) async {
+    settings = FakeSettings((theme: null, list: null, sort: 'title'));
+    await openAnna(tester);
+
+    expect(
+      tester.getTopLeft(find.text('Blue')).dx,
+      lessThan(tester.getTopLeft(find.text('Kid A')).dx),
+      reason: 'Blue before Kid A, though Kid A is newer',
     );
   });
 

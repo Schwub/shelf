@@ -65,8 +65,9 @@
 - `entry_tracks`: the user's own track list of a shelf entry, with a
   `favorite` flag per track; replaced as a whole by `set_entry_tracks` (one
   transaction). Owner-only. Details: `docs/features/tracks.md`.
-- `user_settings`: one row per user with their `theme` and `shelf_view`
-  (covers or list); null is the app's default. Owner-only. The app's
+- `user_settings`: one row per user with their `theme`, `shelf_view`
+  (covers or list) and `shelf_sort` (TASK-39: `added`, `title`, `artist`,
+  `year` or `rating`, each also `_reversed`); null is the app's default. Owner-only. The app's
   `Settings` (`app/lib/settings/`) keeps a copy on the device for the
   sign-in screen and offline, and takes the saved row after sign-in.
 - `profiles`: the name friends see, one row per user, owner-only until

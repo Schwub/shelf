@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../errors.dart';
@@ -12,14 +13,20 @@ import '../widgets/shelf_key.dart';
 import 'friend_album_page.dart';
 import 'friends_repository.dart';
 
-/// A friend's albums, read-only: covers or a list, filtered by their
-/// built-in tags. Loads the user's own shelf too, to tell which albums are
+/// A friend's albums, read-only: covers or a list in the user's own order,
+/// filtered by their built-in tags. Loads the user's own shelf too, to tell which albums are
 /// on it.
 class FriendShelfPage extends StatefulWidget {
-  const FriendShelfPage({super.key, required this.friend, required this.shelf});
+  const FriendShelfPage({
+    super.key,
+    required this.friend,
+    required this.shelf,
+    required this.sort,
+  });
 
   final Friend friend;
   final ShelfRepository shelf;
+  final ValueListenable<ShelfSort> sort;
 
   @override
   State<FriendShelfPage> createState() => _FriendShelfPageState();
@@ -36,11 +43,15 @@ class _FriendShelfPageState extends State<FriendShelfPage> {
     super.initState();
     _load();
     widget.shelf.changes.addListener(_load);
+    widget.sort.addListener(_rebuild);
   }
+
+  void _rebuild() => setState(() {});
 
   @override
   void dispose() {
     widget.shelf.changes.removeListener(_load);
+    widget.sort.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -108,7 +119,7 @@ class _FriendShelfPageState extends State<FriendShelfPage> {
       );
     } else {
       final filter = theirs.filters.where((f) => f.id == _filterId).firstOrNull;
-      final entries = theirs.matching(filter);
+      final entries = widget.sort.value.apply(theirs.matching(filter));
       body = Column(
         children: [
           const SizedBox(height: 8),

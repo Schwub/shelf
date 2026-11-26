@@ -328,3 +328,70 @@ class Shelf {
   List<ShelfEntry> matching(ShelfFilter? filter) =>
       filter == null ? entries : entries.where(filter.matches).toList();
 }
+
+/// What a shelf can be sorted by (TASK-39).
+enum SortBy { added, title, artist, year, rating }
+
+/// How a shelf is sorted: each order starts the way it is usually read
+/// (newest, A–Z, highest first), and [reversed] turns it round. Albums
+/// without a year or rating go last either way.
+@immutable
+class ShelfSort {
+  const ShelfSort(this.by, {this.reversed = false});
+
+  static const newest = ShelfSort(SortBy.added);
+
+  final SortBy by;
+  final bool reversed;
+
+  /// How it is saved: `title`, `title_reversed`; anything else is [newest].
+  String get key => reversed ? '${by.name}_reversed' : by.name;
+
+  static ShelfSort parse(String? key) {
+    for (final by in SortBy.values) {
+      if (key == by.name) return ShelfSort(by);
+      if (key == '${by.name}_reversed') return ShelfSort(by, reversed: true);
+    }
+    return newest;
+  }
+
+  /// [entries] (newest first, as loaded) in this order; equal ones stay
+  /// newest first.
+  List<ShelfEntry> apply(List<ShelfEntry> entries) {
+    final added = {for (final (i, e) in entries.indexed) e: i};
+    int compare<T extends Comparable<Object>>(T? a, T? b, {bool high = false}) {
+      if (a == null || b == null) return a == null ? (b == null ? 0 : 1) : -1;
+      final c = a.compareTo(b);
+      return high != reversed ? -c : c;
+    }
+
+    String lower(String s) => s.toLowerCase();
+    int order(ShelfEntry a, ShelfEntry b) => switch (by) {
+      SortBy.added => compare(added[b], added[a], high: true),
+      SortBy.title => compare(lower(a.album.title), lower(b.album.title)),
+      SortBy.artist => switch (compare(
+        lower(a.album.artist),
+        lower(b.album.artist),
+      )) {
+        // An artist's albums from the first on.
+        0 => (a.album.year ?? 9999).compareTo(b.album.year ?? 9999),
+        final c => c,
+      },
+      SortBy.year => compare(a.album.year, b.album.year, high: true),
+      SortBy.rating => compare(a.rating, b.rating, high: true),
+    };
+    return [...entries]..sort(
+      (a, b) => switch (order(a, b)) {
+        0 => added[a]!.compareTo(added[b]!),
+        final c => c,
+      },
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is ShelfSort && other.by == by && other.reversed == reversed;
+
+  @override
+  int get hashCode => Object.hash(by, reversed);
+}
