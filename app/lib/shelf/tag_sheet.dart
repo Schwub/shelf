@@ -153,7 +153,7 @@ class _TagSheetState extends State<_TagSheet> {
                   shrinkWrap: true,
                   children: [
                     for (final t in matches)
-                      _Row(
+                      TagRow(
                         title: t.name,
                         chosen: _chosen.contains(t.id),
                         onTap: () => setState(
@@ -163,7 +163,7 @@ class _TagSheetState extends State<_TagSheet> {
                         ),
                       ),
                     if (query.isNotEmpty && !exact)
-                      _Row(
+                      TagRow(
                         title: 'Create “$_newName”',
                         subtitle: 'New tag in ${_group.name}',
                         create: true,
@@ -196,8 +196,9 @@ class _TagSheetState extends State<_TagSheet> {
 }
 
 /// A 56 px list row with a light window (lit = chosen), or a + for Create.
-class _Row extends StatelessWidget {
-  const _Row({
+class TagRow extends StatelessWidget {
+  const TagRow({
+    super.key,
     required this.title,
     required this.onTap,
     this.subtitle,

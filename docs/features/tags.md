@@ -1,6 +1,6 @@
 # Tags
 
-Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor built (TASK-17); groups picked from a list (TASK-28); filters and import not built (TASK-18, TASK-19).
+Status: data model and schema done; wireframes and visual mockups done; album entry tags built (TASK-16); tag editor built (TASK-17); groups picked from a list (TASK-28); filters built (TASK-18, TASK-32); import built (TASK-19).
 
 Tag editor (TASK-17): `app/lib/tags/` (Tags list, Tag group, tag actions
 sheet), reached only from My shelf's ⋮ menu (the album entry's "Edit tags"
@@ -72,6 +72,45 @@ menu.
 - Tags attach to the shelf entry, so the model works for any media type.
   Different suggested sets per media type (books: Read / To read) come with
   the second media type.
+
+## Import from a friend (TASK-19)
+Agreed 2026-11-26. All in the app; considered: one database function for
+the copying (atomic, but the sheet needs the matching in Dart anyway, and
+copies stay on cancel, so atomicity buys little).
+
+- Rules: built-in groups and tags match by key, others by name ignoring
+  case; a sub-group matches under the user's matching parent tag, and a
+  missing parent tag is offered too (its sub-tags wait for it). Groups
+  hidden by either side are skipped (neither set nor offered). In a group
+  of the user's that allows one tag, only the friend's first tag is used.
+  A copied new group takes the friend's type and how it shows
+  (`exclusive`, `pick_from_list`).
+- `app/lib/shelf/tag_import.dart`: `TagImport` plans from the friend's
+  shelf, their entry's tags and the user's shelf: `preset` (the user's tag
+  IDs to set) and `missing` (each friend's tag with the user's group it
+  goes into, or none for a new group). `copy` creates the picked ones with
+  `createTag` and `createGroup` in rounds (parents first), reloading the
+  user's shelf after each, so a retry after a failure only copies what is
+  still missing.
+- `app/lib/shelf/import_tags_sheet.dart`: the sheet (all ticked; Skip,
+  Add N tags; the copy error with Try again).
+- `EntryPage.add`/`.manual` take `fromFriend` (a `TagImport`): tags
+  pre-set, the "set like Anna's" note, "Added from Anna's shelf", and the
+  sheet once after the first frame when tags are missing.
+  `ShelfRepository.add`/`addManual` take `addedFrom` and write
+  `added_from_user_id` and `added_from_name`; `ShelfEntry.addedFromName`
+  shows the note on the entry later.
+- `Tag.builtin` and `TagGroup.builtin` hold the key (`own`, `collection`).
+- Creating tags and groups notifies `ShelfRepository.changes`, so My shelf
+  shows copies kept after a cancelled add (accepted: several reloads per
+  copy, docs/tech-debt.md). Add plans against a freshly loaded shelf, so a
+  second Add after a cancel finds the copies. The sheet can't be closed
+  while copying, and a sub-tag is ticked and unticked with its parent.
+- The friend's track list is copied without their favorites; without one,
+  MusicBrainz's is suggested as for any new album.
+- Tests: unit tests for `TagImport` (key, name, sub-groups, type rule,
+  hidden groups, copying in rounds and after a failure); widget tests for
+  each mockup state with the fake; integration test for `added_from`.
 
 ## Data model (option A: group, tag and join tables)
 Considered: tag IDs as an array on the entry (rules only via triggers, stale

@@ -44,6 +44,10 @@ aliased to fvm with a different version.
 - Ask first: changing the app ID `de.schwubware.shelf`; running
   `supabase link`, `db push` or `functions deploy` (they touch the hosted
   project).
+- Staging holds testers' real data (from 2026-11-26): migrations keep
+  existing rows (move data before dropping a column or table, never
+  truncate or delete user data), and nothing may reset or wipe the staging
+  database (`supabase db reset --linked` or similar).
 
 ## Where to look
 - Goal, scope, milestones and risks: `docs/project.md`.

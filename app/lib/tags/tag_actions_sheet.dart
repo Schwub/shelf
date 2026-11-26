@@ -144,7 +144,7 @@ class _TagActionsState extends State<_TagActions> {
                 onTap: () => _close(TagAction.subGroup),
               ),
             const SizedBox(height: 20),
-            if (widget.tag.builtin)
+            if (widget.tag.builtin != null)
               const HelpLine('Built-in tags can’t be deleted.')
             else
               Align(

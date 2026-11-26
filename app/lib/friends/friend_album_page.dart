@@ -5,6 +5,7 @@ import '../search/album_search.dart';
 import '../shelf/entry_page.dart';
 import '../shelf/shelf.dart';
 import '../shelf/shelf_repository.dart';
+import '../shelf/tag_import.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/cover.dart';
 import '../widgets/rating_keys.dart';
@@ -46,35 +47,60 @@ class FriendAlbumPage extends StatelessWidget {
 
   Future<void> _addOrOpen(BuildContext context) async {
     final album = entry.album;
-    final page = switch ((_myEntry, album.musicbrainzId)) {
-      (final own?, _) => EntryPage(
-        entry: own,
-        shelf: shelf,
-        groups: mine.groups,
-      ),
-      (null, final id?) => EntryPage.add(
-        result: SearchResult(
-          musicbrainzId: id,
-          title: album.title,
-          artist: album.artist,
-          year: album.year,
-        ),
-        shelf: shelf,
-        groups: mine.groups,
-      ),
-      // Added by hand: the user gets their own copy.
-      (null, null) => EntryPage.manual(
-        manual: ManualAlbum(
-          title: album.title,
-          artist: album.artist,
-          year: album.year,
-        ),
-        shelf: shelf,
-        groups: mine.groups,
-      ),
-    };
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final Widget page;
+    if (_myEntry case final own?) {
+      page = EntryPage(entry: own, shelf: shelf, groups: mine.groups);
+    } else {
+      // The user's shelf as it is now: a cancelled add may have copied tags.
+      final Shelf current;
+      try {
+        current = await shelf.load();
+      } catch (e, stack) {
+        reportError(e, stack);
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Couldn't load your shelf. Try again.")),
+        );
+        return;
+      }
+      final fromFriend = TagImport(
+        from: (userId: friend.id, name: friend.name),
+        theirs: theirs,
+        tagIds: entry.tagIds,
+        mine: current,
+      );
+      // Their track list, without their favorites.
+      final tracks = [
+        for (final t in entry.tracks) t.copyWith(favorite: false),
+      ];
+      page = switch (album.musicbrainzId) {
+        final id? => EntryPage.add(
+          result: SearchResult(
+            musicbrainzId: id,
+            title: album.title,
+            artist: album.artist,
+            year: album.year,
+          ),
+          shelf: shelf,
+          groups: current.groups,
+          fromFriend: fromFriend,
+          tracks: tracks,
+        ),
+        // Added by hand: the user gets their own copy.
+        null => EntryPage.manual(
+          manual: ManualAlbum(
+            title: album.title,
+            artist: album.artist,
+            year: album.year,
+          ),
+          shelf: shelf,
+          groups: current.groups,
+          fromFriend: fromFriend,
+          tracks: tracks,
+        ),
+      };
+    }
     final result = await navigator.push(
       MaterialPageRoute<EntryResult>(builder: (_) => page),
     );

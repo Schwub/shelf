@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -271,6 +273,277 @@ void main() {
 
     expect(shelf.entries.single.hidden, isTrue);
     expect(find.byType(HiddenMark), findsOneWidget);
+  });
+
+  group('adding from a friend', () {
+    /// Anna's OK Computer: Own, Listened, Shoegaze (a genre the user lacks)
+    /// and Parlophone (a group the user lacks), without a track list.
+    setUp(() {
+      final ok = ShelfEntry(
+        id: 'ok',
+        album: const Album(
+          id: 'a-ok',
+          musicbrainzId: 'mb-ok',
+          title: 'OK Computer',
+          artist: 'Radiohead',
+          year: 1997,
+        ),
+        tagIds: const {'own', 'listened', 'a-shoegaze', 'a-parlophone'},
+      );
+      shelf.friendShelves['anna'] = Shelf(
+        entries: [kidA, ok],
+        allGroups: [
+          for (final g in suggestedGroups)
+            g.id == 'genre'
+                ? g.withTag(
+                    const Tag(
+                      id: 'a-shoegaze',
+                      groupId: 'genre',
+                      name: 'Shoegaze',
+                    ),
+                  )
+                : g,
+          const TagGroup(
+            id: 'a-label',
+            name: 'Label',
+            exclusive: false,
+            pickFromList: true,
+            tags: [
+              Tag(id: 'a-parlophone', groupId: 'a-label', name: 'Parlophone'),
+            ],
+          ),
+        ],
+      );
+    });
+
+    Future<void> addFromAnna(WidgetTester tester, String title) async {
+      await openAnna(tester);
+      await tester.tap(find.text(title));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add to my shelf'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('sets the tags you have and copies their track list', (
+      tester,
+    ) async {
+      await addFromAnna(tester, 'Kid A');
+
+      expect(
+        find.text("Own and Listened are set like Anna's."),
+        findsOneWidget,
+      );
+      expect(find.text("Added from Anna's shelf"), findsOneWidget);
+      expect(
+        find.text('Copy them to your tags? You can edit them later.'),
+        findsNothing,
+        reason: 'no tags missing',
+      );
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+
+      expect(shelf.addedTags, unorderedEquals(['own', 'vinyl', 'listened']));
+      expect(shelf.addedFrom, (userId: 'anna', name: 'Anna'));
+      expect(
+        [for (final t in shelf.entries.first.tracks) t.title],
+        ['Kid A', 'The National Anthem'],
+      );
+      expect(shelf.entries.first.tracks.any((t) => t.favorite), isFalse);
+      expect(shelf.trackLookups, isEmpty);
+    });
+
+    testWidgets('offers their missing tags and copies them', (tester) async {
+      await addFromAnna(tester, 'OK Computer');
+
+      expect(find.text("Anna has 2 tags you don't"), findsOneWidget);
+      expect(find.text('New tag in your Genre'), findsOneWidget);
+      expect(find.text('Label · new group, several per album'), findsOneWidget);
+      expect(shelf.trackLookups, ['mb-ok'], reason: 'no list of theirs');
+      await tester.tap(find.text('Add 2 tags'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Anna has 2 tags you don't"), findsNothing);
+      expect(find.text('Shoegaze'), findsOneWidget);
+      expect(find.text('Parlophone'), findsOneWidget);
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+      expect(
+        shelf.addedTags,
+        unorderedEquals(['own', 'listened', 'shoegaze', 'parlophone']),
+      );
+    });
+
+    testWidgets('copies only the ticked tags', (tester) async {
+      await addFromAnna(tester, 'OK Computer');
+
+      await tester.tap(find.text('Parlophone'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add 1 tag'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Shoegaze'), findsOneWidget);
+      expect(shelf.groups.any((g) => g.name == 'Label'), isFalse);
+    });
+
+    testWidgets('Skip copies nothing', (tester) async {
+      await addFromAnna(tester, 'OK Computer');
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Shoegaze'), findsNothing);
+      expect(shelf.groups.any((g) => g.name == 'Label'), isFalse);
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+      expect(shelf.addedTags, unorderedEquals(['own', 'listened']));
+    });
+
+    testWidgets("a failed copy says so and can be tried again", (tester) async {
+      shelf.failEdit = true;
+      await addFromAnna(tester, 'OK Computer');
+
+      await tester.tap(find.text('Add 2 tags'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          "Couldn't copy the tags. Check your connection and try again.",
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Shoegaze'), findsOneWidget);
+      expect(find.text('Parlophone'), findsOneWidget);
+    });
+
+    testWidgets('copies stay when the add is cancelled', (tester) async {
+      await addFromAnna(tester, 'OK Computer');
+      await tester.tap(find.text('Add 2 tags'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+
+      expect(shelf.entries.any((e) => e.album.musicbrainzId == 'mb-ok'), false);
+      expect(shelf.groups.any((g) => g.name == 'Label'), isTrue);
+    });
+
+    testWidgets('adding again after a cancel starts from the copies', (
+      tester,
+    ) async {
+      await addFromAnna(tester, 'OK Computer');
+      await tester.tap(find.text('Add 2 tags'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add to my shelf'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Anna has 2 tags you don't"), findsNothing);
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+      expect(
+        shelf.addedTags,
+        unorderedEquals(['own', 'listened', 'shoegaze', 'parlophone']),
+      );
+    });
+
+    testWidgets("adding says so when your shelf doesn't load", (tester) async {
+      await openAnna(tester);
+      await tester.tap(find.text('OK Computer'));
+      await tester.pumpAndSettle();
+      shelf.failLoad = true;
+
+      await tester.tap(find.text('Add to my shelf'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't load your shelf. Try again."), findsOneWidget);
+      expect(find.text('Add to shelf'), findsNothing);
+    });
+
+    testWidgets("the sheet stays open while it copies", (tester) async {
+      await addFromAnna(tester, 'OK Computer');
+      shelf.holdLoad = Completer();
+
+      await tester.tap(find.text('Add 2 tags'));
+      await tester.pump();
+      expect(find.text('Copying…'), findsOneWidget);
+      await tester.tapAt(const Offset(200, 40)); // The barrier.
+      await tester.pumpAndSettle();
+      expect(find.text('Copying…'), findsOneWidget);
+
+      shelf.holdLoad!.complete();
+      shelf.holdLoad = null;
+      await tester.pumpAndSettle();
+      expect(find.text('Shoegaze'), findsOneWidget);
+    });
+
+    testWidgets('a sub-tag is ticked and unticked with its parent', (
+      tester,
+    ) async {
+      final anna = shelf.friendShelves['anna']!;
+      shelf.friendShelves['anna'] = Shelf(
+        entries: [
+          for (final e in anna.entries)
+            e.id == 'ok'
+                ? ShelfEntry(
+                    id: e.id,
+                    album: e.album,
+                    tagIds: {...e.tagIds, 'a-first'},
+                  )
+                : e,
+        ],
+        allGroups: [
+          ...anna.allGroups,
+          const TagGroup(
+            id: 'a-pressing',
+            name: 'Pressing',
+            exclusive: true,
+            parentTagId: 'a-parlophone',
+            tags: [Tag(id: 'a-first', groupId: 'a-pressing', name: 'First')],
+          ),
+        ],
+      );
+      await addFromAnna(tester, 'OK Computer');
+      expect(find.text('Add 3 tags'), findsOneWidget);
+
+      await tester.tap(find.text('Parlophone'));
+      await tester.pumpAndSettle();
+      expect(find.text('Add 1 tag'), findsOneWidget, reason: 'First went too');
+
+      await tester.tap(find.text('First'));
+      await tester.pumpAndSettle();
+      expect(find.text('Add 3 tags'), findsOneWidget, reason: 'and came back');
+    });
+
+    testWidgets('the sheet meets the accessibility guidelines', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await addFromAnna(tester, 'OK Computer');
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+      semantics.dispose();
+    });
+  });
+
+  testWidgets("an album added from a friend says so later", (tester) async {
+    shelf.entries[0] = const ShelfEntry(
+      id: '2',
+      album: Album(id: 'a2', title: 'Blue', artist: 'Joni Mitchell'),
+      addedFromName: 'Anna',
+    );
+    await pumpApp(tester);
+    await tester.tap(find.text('Blue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Added from Anna's shelf"), findsOneWidget);
   });
 
   testWidgets("a friend's shelf and album meet the accessibility guidelines", (

@@ -148,6 +148,25 @@ void main() {
     expect((await bob.repo.load()).allGroups.last.name, 'Mood');
   });
 
+  test('an album added from a friend keeps their name', () async {
+    final alice = await signIn();
+    final bob = await signIn();
+    final album = await bob.admin
+        .from('albums')
+        .insert({'title': 'OK Computer', 'artist': 'Radiohead'})
+        .select('id')
+        .single();
+    // The columns add() writes, as the user (the add-album function that
+    // add() calls first doesn't run here).
+    await bob.db.from('shelf_entries').insert({
+      'album_id': album['id'],
+      'added_from_user_id': alice.db.auth.currentUser!.id,
+      'added_from_name': 'Alice',
+    });
+
+    expect((await bob.repo.load()).entries.single.addedFromName, 'Alice');
+  });
+
   test('friends: invite, accept, both see each other, remove', () async {
     final aliceDb = (await signIn()).db;
     final alice = SupabaseFriendsRepository(aliceDb);

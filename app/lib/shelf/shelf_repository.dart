@@ -7,8 +7,9 @@ import 'shelf.dart';
 abstract class ShelfRepository {
   Future<Shelf> load();
 
-  /// Notified after an entry is added, saved or removed, so My shelf
-  /// reloads after edits made from another tab (a friend's album).
+  /// Notified after an entry is added, saved or removed and after a tag or
+  /// group is created, so My shelf reloads after edits made from another
+  /// tab (a friend's album, and tags copied from it).
   Listenable get changes;
 
   /// A friend's shelf, without the entries they hide from friends; its
@@ -33,6 +34,7 @@ abstract class ShelfRepository {
 
   /// Adds the album with this MusicBrainz ID to the shelf: the add-album
   /// function puts it in the shared catalog (with its cover) if needed.
+  /// [addedFrom] is the friend whose shelf it came from.
   Future<void> add(
     String musicbrainzId, {
     int? rating,
@@ -40,6 +42,7 @@ abstract class ShelfRepository {
     List<String> tags = const [],
     List<Track> tracks = const [],
     bool hidden = false,
+    AddedFrom? addedFrom,
   });
 
   /// Adds an album by hand: the add-album function adds it as the user's
@@ -51,6 +54,7 @@ abstract class ShelfRepository {
     List<String> tags = const [],
     List<Track> tracks = const [],
     bool hidden = false,
+    AddedFrom? addedFrom,
   });
 
   /// The track list MusicBrainz has for the album [musicbrainzId], to
