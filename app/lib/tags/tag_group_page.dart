@@ -2,7 +2,8 @@ import 'package:material_ui/material_ui.dart';
 
 import '../errors.dart';
 import '../shelf/entry_page.dart';
-import '../shelf/shelf_data.dart';
+import '../shelf/shelf.dart';
+import '../shelf/shelf_repository.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/help_line.dart';

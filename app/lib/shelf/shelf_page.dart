@@ -25,7 +25,8 @@ import '../widgets/shelf_key.dart';
 import 'albums_list_view.dart';
 import 'covers_view.dart';
 import 'entry_page.dart';
-import 'shelf_data.dart';
+import 'shelf.dart';
+import 'shelf_repository.dart';
 
 /// The signed-in user's albums as covers or a list, with the filter bar.
 /// Opens links shared into the app once the shelf has loaded.

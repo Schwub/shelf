@@ -1,9 +1,10 @@
 ---
 id: TASK-34
 title: Split shelf_data.dart
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T05:41:00Z'
+updated_date: '2026-11-26T07:38:00Z'
 labels: []
 dependencies: []
 ordinal: 35000

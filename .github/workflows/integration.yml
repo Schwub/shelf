@@ -7,14 +7,16 @@ on:
   push:
     branches: [main]
     paths:
-      - app/lib/shelf/shelf_data.dart
+      - app/lib/shelf/shelf.dart
+      - app/lib/shelf/supabase_shelf_repository.dart
       - app/test_integration/**
       - supabase/migrations/**
       - mise.toml
       - .github/workflows/integration.yml
   pull_request:
     paths:
-      - app/lib/shelf/shelf_data.dart
+      - app/lib/shelf/shelf.dart
+      - app/lib/shelf/supabase_shelf_repository.dart
       - app/test_integration/**
       - supabase/migrations/**
       - mise.toml

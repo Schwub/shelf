@@ -4,7 +4,7 @@ import '../theme/shelf_colors.dart';
 import '../widgets/cover.dart';
 import '../widgets/rating_meter.dart';
 import '../widgets/shelf_board.dart';
-import 'shelf_data.dart';
+import 'shelf.dart';
 
 /// Covers in rows of three, each row standing on a teak board, with title,
 /// artist and rating under the board.

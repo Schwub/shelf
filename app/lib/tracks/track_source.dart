@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../search/musicbrainz.dart';
-import '../shelf/shelf_data.dart';
+import '../shelf/shelf.dart';
 
 /// Track lists to suggest for an album. An interface so the screens can be
 /// tested offline.

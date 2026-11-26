@@ -7,7 +7,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:shelf_app/search/musicbrainz.dart';
-import 'package:shelf_app/shelf/shelf_data.dart';
+import 'package:shelf_app/shelf/shelf.dart';
+import 'package:shelf_app/shelf/shelf_repository.dart';
+import 'package:shelf_app/shelf/supabase_shelf_repository.dart';
 import 'package:shelf_app/tracks/track_source.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

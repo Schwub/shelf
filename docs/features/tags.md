@@ -6,7 +6,7 @@ Tag editor (TASK-17): `app/lib/tags/` (Tags list, Tag group, tag actions
 sheet), reached only from My shelf's ⋮ menu (the album entry's "Edit tags"
 link was removed, TASK-29). The database enforces every rule; the app
 turns its refusals into the designed messages (`DuplicateName`,
-`SeveralTags` in `shelf_data.dart`) and works out counts and what a delete
+`SeveralTags` in `shelf_repository.dart`) and works out counts and what a delete
 takes along from the loaded shelf (`Shelf.allGroups`, `allFilters`).
 
 ## Goal

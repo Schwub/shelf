@@ -19,7 +19,9 @@ Resolved since the last review: users can no longer add albums themselves
 Done at this review: stale docs fixed (albums, test albums, the edge-function
 bullet, covers/list in TASK-25 and the shelf wireframe, `test:functions` in
 AGENTS.md); one `Message` widget (`app/lib/widgets/message.dart`) instead of
-two copies.
+two copies. After the review: `shelf_data.dart` split into
+`shelf.dart` (models), `shelf_repository.dart` and
+`supabase_shelf_repository.dart` (TASK-34).
 
 ## Items
 
@@ -27,7 +29,6 @@ Ranked by value for effort.
 
 | What | Where | Why it hurts | Effort | Risk | Suggested action |
 |---|---|---|---|---|---|
-| One file holds every model, the repository interface for shelf, tags, filters and tracks, and its Supabase implementation | `app/lib/shelf/shelf_data.dart` (827 lines) | Every feature changes this file; the fake in `test/shelf/fake_shelf.dart` (463 lines) grows with it | M | Low (covered by unit and integration tests) | TASK-34: split models from the Supabase implementation; later per-feature repositories if it keeps growing |
 | `_TagGroupPageState` is one ~670-line state class (editing, reordering, deleting, sub-groups, dialogs) | `app/lib/tags/tag_group_page.dart` | Hard to read and change; the next tag feature (TASK-19 import) lands here | M | Medium (UI behaviour) | Extract the delete/rename dialogs and the tag list into widgets when TASK-19 touches it |
 | The iOS share extension is never built in CI (fragile build-phase order, App Group) | `app/ios`, `.github/workflows/` | An iOS-only change can break share-to-shelf on iPhone unnoticed | M | Medium | An iOS build job on a macOS runner (about 10× the CI minutes of Linux, and minutes already ran out once); until then run the native build locally after `app/ios` changes |
 | The two edge functions each have their own MusicBrainz client with different rate-limit and retry rules (`resolve-link` imports only the `Fetch` type from `add-album`) | `supabase/functions/*/musicbrainz.ts` | A fix to MusicBrainz handling has to be made twice | S | Low | A `supabase/functions/_shared/musicbrainz.ts` with one request helper, when either function changes next |

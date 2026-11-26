@@ -10,8 +10,8 @@ aliased to fvm with a different version.
 - Database tests (Docker; run after changing `supabase/`): `mise run test:db`
 - Edge function tests (run after changing `supabase/functions/`; not part of
   `mise run check`): `mise run test:functions`
-- Integration tests (Docker; run after changing `app/lib/shelf/shelf_data.dart`
-  or migrations): `mise run test:integration` (the Supabase repository against
+- Integration tests (Docker; run after changing `app/lib/shelf/shelf.dart`,
+  `supabase_shelf_repository.dart` or migrations): `mise run test:integration` (the Supabase repository against
   a local Supabase, `app/test_integration/`)
 - Cloud sessions: use the "shelf" environment (its setup script installs the
   tools). Docker isn't started for you: if `docker info` fails, run

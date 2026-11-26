@@ -8,7 +8,7 @@ import 'package:shelf_app/share/resolve_page.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/tags/tags_page.dart';
-import 'package:shelf_app/shelf/shelf_data.dart';
+import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/shelf/shelf_page.dart';
 import 'package:shelf_app/shelf/albums_list_view.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
