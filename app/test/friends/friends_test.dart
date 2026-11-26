@@ -206,6 +206,28 @@ void main() {
     expect(find.text('Anna'), findsOneWidget, reason: 'on the Friends tab');
   });
 
+  testWidgets('Not now leaves the invite unanswered', (tester) async {
+    await pumpFriends(tester, pending: PendingInvite('ANNA2345'));
+
+    await tester.tap(find.text('Not now'));
+    await tester.pumpAndSettle();
+
+    expect(friends.friends, isEmpty);
+    expect(find.text('No friends yet'), findsOneWidget);
+  });
+
+  testWidgets('an invite link arriving later opens on Friends', (tester) async {
+    final pending = PendingInvite();
+    await pumpFriends(tester, pending: pending);
+    expect(find.text('My shelf'), findsOneWidget);
+
+    pending.value = 'ANNA2345';
+    await tester.pumpAndSettle();
+
+    expect(find.text('Anna invited you'), findsOneWidget);
+    expect(pending.value, isNull, reason: 'taken once');
+  });
+
   testWidgets('removing a friend asks first', (tester) async {
     friends.friends.add((id: 'anna', name: 'Anna'));
     await pumpFriends(tester);

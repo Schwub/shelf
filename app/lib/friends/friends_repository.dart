@@ -11,12 +11,14 @@ typedef FriendsList = ({List<Friend> friends, List<Invite> invites});
 enum InviteStatus {
   valid,
 
-  /// Expired, used or cancelled.
+  /// Expired or used.
   gone,
   own,
 
   /// Already friends with the inviter.
   friends,
+
+  /// No such code, or cancelled.
   unknown,
 }
 

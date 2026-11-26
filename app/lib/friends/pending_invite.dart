@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// An invite code from a web link (`/invite/K7Q2-M9XD`), waiting until the
@@ -18,11 +19,18 @@ class PendingInvite extends ValueNotifier<String?> {
     return PendingInvite(code ?? prefs.getString(_key));
   }
 
-  /// The code, once: it is forgotten here and on the device.
+  /// The code, once: it is forgotten here, on the device and in the
+  /// browser's address, so a reload doesn't open it again.
   Future<String?> take() async {
     final code = value;
     value = null;
     await (await SharedPreferences.getInstance()).remove(_key);
+    if (kIsWeb && _path.hasMatch(Uri.base.path)) {
+      await SystemNavigator.routeInformationUpdated(
+        uri: Uri.parse('/'),
+        replace: true,
+      );
+    }
     return code;
   }
 }

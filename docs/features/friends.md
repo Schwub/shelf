@@ -57,8 +57,9 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
   - `is_friend(other uuid) returns boolean`, stable; used by policies.
   - `create_invite() returns text`: a new code; retries on collision.
   - `invite_preview(code) returns (status, inviter_name)`: status is
-    `valid`, `gone` (expired, used, cancelled), `own`, `friends` or
-    `unknown`; the Invitation screen shows it before Accept.
+    `valid`, `gone` (expired or used), `own`, `friends` or
+    `unknown` (also a cancelled one, which is deleted); the Invitation
+    screen shows it before Accept.
   - `accept_invite(code) returns uuid` (the inviter): checks as above,
     then writes both friendship rows and marks the invite used, in one
     transaction; raises a named error otherwise. Needs the accepter's

@@ -1,5 +1,5 @@
 begin;
-select plan(30);
+select plan(34);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -49,6 +49,12 @@ reset role;
 select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
 set local role authenticated;
 select is_empty('select * from public.invites', 'Bob cannot read Alice''s invites');
+delete from public.invites;
+reset role;
+select results_eq('select count(*)::int from public.invites', array[2],
+  'Bob cannot cancel Alice''s invites');
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+set local role authenticated;
 select is_empty('select * from public.profiles where user_id <> auth.uid()',
   'strangers cannot read each other''s names');
 select results_eq(
@@ -98,6 +104,8 @@ grant select on waiting to authenticated;
 delete from public.invites where code = (select code from waiting);
 select is_empty($$select * from public.invites where code = (select code from waiting)$$,
   'a waiting invite can be cancelled');
+select results_eq($$select status from public.invite_preview((select code from waiting))$$,
+  array['unknown'], 'a cancelled invite is unknown');
 
 -- Bob removes Alice: both rows go.
 reset role;
@@ -110,6 +118,15 @@ select results_eq('select name from public.profiles', array['Bob'],
   'removed friends cannot read each other''s names');
 reset role;
 select is_empty('select * from public.friendships', 'Alice''s row is gone too');
+
+-- Bob deletes his account: the invite he used stays used.
+delete from auth.users where id = '22222222-2222-2222-2222-222222222222';
+select pg_temp.as_user('33333333-3333-3333-3333-333333333333');
+set local role authenticated;
+select results_eq($$select status from public.invite_preview((select code from codes))$$,
+  array['gone'], 'an invite stays used after its accepter''s account is deleted');
+select throws_ok($$select public.accept_invite((select code from codes))$$, 'P0001', 'gone',
+  'and cannot be accepted again');
 
 select * from finish();
 rollback;

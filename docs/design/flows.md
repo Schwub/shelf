@@ -274,7 +274,7 @@ flowchart TD
   named -- no --> name[Your name] --> check
   named -- yes --> check{Invite still valid?}
   check -- yes --> accept[Anna invited you: Accept / Not now]
-  check -- expired, used or cancelled --> gone[This invite has expired or was already used. Ask Anna for a new one.]
+  check -- expired or used --> gone[This invite has expired or was already used. Ask Anna for a new one.]
   check -- unknown code --> wrong[That code isn't right. Check it and try again.] --> enter
   check -- your own --> own[That's your own invite. Send it to a friend.]
   check -- already friends --> already[You and Anna are already friends.] --> fshelf
@@ -286,7 +286,8 @@ flowchart TD
 
 Built (TASK-36): the sign-in screen doesn't name the inviter (looking up an
 invite needs a signed-in user); Close on an expired, own or already-friends
-invite returns to Enter code, to try another.
+invite returns to Enter code, to try another; a cancelled invite reads as
+unknown ("That invite doesn't exist"), since cancelling deletes it.
 
 ## Friends and their shelves
 

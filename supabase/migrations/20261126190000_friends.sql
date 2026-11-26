@@ -1,6 +1,8 @@
 -- Friends and invites (TASK-36, docs/features/friends.md). Friendships are
 -- mutual and start from an invite: a code, used once, valid 7 days.
 
+create extension if not exists pgcrypto schema extensions;
+
 -- Two rows per friendship, (me, Anna) and (Anna, me), so every lookup is
 -- by user_id. Written only by accept_invite and remove_friend, which keep
 -- both rows together.
@@ -31,10 +33,11 @@ revoke insert, update on public.invites from anon, authenticated;
 alter table public.invites enable row level security;
 create policy "Users read their own invites" on public.invites
   for select to authenticated using ((select auth.uid()) = inviter);
--- Cancelling an invite that waits; used ones stay as a record.
+-- Cancelling an invite that waits; used ones stay as a record. Used means
+-- accepted_at: accepted_by is cleared when that account is deleted.
 create policy "Users cancel their own waiting invites" on public.invites
   for delete to authenticated
-  using ((select auth.uid()) = inviter and accepted_by is null);
+  using ((select auth.uid()) = inviter and accepted_at is null);
 
 create function public.is_friend(other uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
@@ -55,10 +58,16 @@ language plpgsql volatile security definer set search_path = '' as $$
 declare
   alphabet constant text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   new_code text;
+  b int;
 begin
   loop
-    select string_agg(substr(alphabet, 1 + floor(random() * length(alphabet))::int, 1), '')
-      into new_code from generate_series(1, 8);
+    -- Cryptographic bytes, so codes can't be predicted from others; bytes
+    -- from 248 (8 × 31) up are skipped to keep every letter equally likely.
+    new_code := '';
+    while length(new_code) < 8 loop
+      b := get_byte(extensions.gen_random_bytes(1), 0);
+      if b < 248 then new_code := new_code || substr(alphabet, 1 + b % 31, 1); end if;
+    end loop;
     begin
       insert into public.invites (code, inviter) values (new_code, auth.uid());
       return new_code;
@@ -69,8 +78,9 @@ begin
 end;
 $$;
 
--- What the Invitation screen shows before Accept: valid, gone (expired,
--- used or cancelled), own, friends (already) or unknown, and who invited.
+-- What the Invitation screen shows before Accept: valid, gone (expired or
+-- used), own, friends (already) or unknown (also cancelled: it is deleted),
+-- and who invited.
 create function public.invite_preview(input text)
 returns table (status text, inviter_id uuid, inviter_name text)
 language sql stable security definer set search_path = '' as $$
@@ -81,7 +91,7 @@ language sql stable security definer set search_path = '' as $$
       when exists (select 1 from public.friendships f
                    where f.user_id = (select auth.uid()) and f.friend_id = i.inviter)
         then 'friends'
-      when i.accepted_by is not null or i.expires_at <= now() then 'gone'
+      when i.accepted_at is not null or i.expires_at <= now() then 'gone'
       else 'valid'
     end,
     case when i.inviter <> (select auth.uid()) then i.inviter end,
@@ -107,12 +117,14 @@ begin
   if exists (select 1 from public.friendships where user_id = me and friend_id = invite.inviter) then
     raise exception 'friends';
   end if;
-  if invite.accepted_by is not null or invite.expires_at <= now() then
+  if invite.accepted_at is not null or invite.expires_at <= now() then
     raise exception 'gone';
   end if;
   update public.invites set accepted_by = me, accepted_at = now() where code = invite.code;
+  -- Another invite between the two may have been accepted meanwhile.
   insert into public.friendships (user_id, friend_id)
-    values (me, invite.inviter), (invite.inviter, me);
+    values (me, invite.inviter), (invite.inviter, me)
+    on conflict do nothing;
   return invite.inviter;
 end;
 $$;

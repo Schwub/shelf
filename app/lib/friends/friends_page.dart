@@ -101,7 +101,7 @@ class _FriendsPageState extends State<FriendsPage> {
       if (!mounted) return;
       setState(() => _inviting = false);
       await showInviteSheet(context, invite: invite, myName: widget.name.value);
-      await _load();
+      if (mounted) await _load();
     } catch (e, stack) {
       reportError(e, stack);
       if (!mounted) return;
@@ -113,12 +113,12 @@ class _FriendsPageState extends State<FriendsPage> {
   Future<void> _cancel(Invite invite) async {
     try {
       await widget.friends.cancelInvite(invite.code);
-      _say('Invite cancelled');
+      if (mounted) _say('Invite cancelled');
     } catch (e, stack) {
       reportError(e, stack);
-      _say("Couldn't cancel the invite. Try again.");
+      if (mounted) _say("Couldn't cancel the invite. Try again.");
     }
-    await _load();
+    if (mounted) await _load();
   }
 
   Future<void> _remove(Friend friend) async {
@@ -135,12 +135,12 @@ class _FriendsPageState extends State<FriendsPage> {
     if (!sure || !mounted) return;
     try {
       await widget.friends.remove(friend.id);
-      _say('${friend.name} removed');
+      if (mounted) _say('${friend.name} removed');
     } catch (e, stack) {
       reportError(e, stack);
-      _say("Couldn't remove ${friend.name}. Try again.");
+      if (mounted) _say("Couldn't remove ${friend.name}. Try again.");
     }
-    await _load();
+    if (mounted) await _load();
   }
 
   Future<void> _changeName() => _root.push(
