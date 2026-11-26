@@ -171,6 +171,7 @@ void main() {
     expect(find.byType(AlbumsListView), findsOneWidget);
     expect(find.text('Discovery'), findsOneWidget);
     expect(find.text('Artist 2'), findsOneWidget);
+    expect(find.text('Added 1 Nov 2026'), findsNWidgets(3));
     // The rated albums show their meter.
     expect(
       find.descendant(

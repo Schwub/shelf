@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf_app/shelf/shelf.dart';
 
+import 'fake_shelf.dart';
+
 ShelfEntry album(
   String id,
   String title,
@@ -9,6 +11,7 @@ ShelfEntry album(
   int? rating,
 }) => ShelfEntry(
   id: id,
+  addedAt: added,
   album: Album(id: id, title: title, artist: artist, year: year),
   rating: rating,
 );

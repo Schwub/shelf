@@ -175,6 +175,7 @@ void main() {
       entries: [
         ShelfEntry(
           id: 'e1',
+          addedAt: added,
           album: const Album(id: 'a1', title: 'Album 1', artist: 'Artist 1'),
           rating: 6,
         ),

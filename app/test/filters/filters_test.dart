@@ -14,8 +14,10 @@ ShelfEntry rated(
   int? rating,
   Set<String> tags = const {},
   bool favorite = false,
+  DateTime? at,
 }) => ShelfEntry(
   id: id,
+  addedAt: at ?? added,
   album: Album(id: 'a$id', title: title, artist: 'Artist $id'),
   rating: rating,
   tagIds: tags,
@@ -30,6 +32,7 @@ void main() {
       rating: 9,
       tags: {'own', 'vinyl'},
       favorite: true,
+      at: DateTime.now(),
     ),
     rated('2', 'Blue', rating: 6, tags: {'own', 'cd'}),
     rated('3', 'Promises', tags: {'want'}),
@@ -63,6 +66,49 @@ void main() {
         'OK Computer',
         'Blue',
       ]);
+    });
+
+    test('added in the last days, or between two days', () {
+      final now = DateTime.now();
+      DateTime day(DateTime d) => DateTime(d.year, d.month, d.day);
+      final shelf = [
+        rated('1', 'Today', at: now),
+        rated('2', 'Last week', at: now.subtract(const Duration(days: 6))),
+        rated('3', 'Long ago', at: DateTime(2020, 5, 17, 23, 30)),
+      ];
+      List<String> titles(ShelfFilter f) => [
+        for (final e in shelf)
+          if (f.matches(e)) e.album.title,
+      ];
+
+      expect(titles(const ShelfFilter(addedWithinDays: 7)), [
+        'Today',
+        'Last week',
+      ]);
+      expect(titles(const ShelfFilter(addedWithinDays: 1)), ['Today']);
+      expect(
+        titles(
+          ShelfFilter(
+            addedFrom: DateTime(2020, 5, 17),
+            addedTo: DateTime(2020, 5, 17),
+          ),
+        ),
+        ['Long ago'],
+        reason: 'both days included, late in the day too',
+      );
+      expect(
+        titles(
+          ShelfFilter(addedFrom: day(now.subtract(const Duration(days: 6)))),
+        ),
+        ['Today', 'Last week'],
+        reason: 'an open end',
+      );
+      expect(titles(ShelfFilter(addedTo: DateTime(2021))), ['Long ago']);
+      expect(const ShelfFilter(addedWithinDays: 7).hasConditions, isTrue);
+      expect(
+        const ShelfFilter(tagIds: ['own'], addedWithinDays: 7).isTag,
+        isFalse,
+      );
     });
 
     test('a hidden group hides the filters on its tags', () {
@@ -212,6 +258,58 @@ void main() {
 
       expect(shelf.filters.last.unrated, isTrue);
       expect(find.text('unrated'), findsOneWidget);
+    });
+
+    testWidgets('added lately, and the list says so', (tester) async {
+      await openNew(tester);
+      await tester.enterText(find.byType(TextField), 'New');
+
+      await tapText(tester, 'Last 7 days');
+      expect(find.text('Matches 1 album'), findsOneWidget);
+      await tapText(tester, 'Save');
+
+      expect(shelf.filters.last.addedWithinDays, 7);
+      expect(find.text('added last 7 days'), findsOneWidget);
+    });
+
+    testWidgets('added between two days: shown, and tapped again gone', (
+      tester,
+    ) async {
+      await pumpFilters(
+        tester,
+        fake: FakeShelf(
+          albums,
+          filters: [
+            ShelfFilter(
+              id: 'autumn',
+              name: 'Autumn',
+              label: 'Autumn',
+              minRating: 2,
+              addedFrom: DateTime(2026, 9, 1),
+              addedTo: DateTime(2026, 11, 30),
+            ),
+          ],
+        ),
+      );
+      expect(
+        find.text('1 star and up · added 1 Sep 2026 – 30 Nov 2026'),
+        findsOneWidget,
+      );
+
+      await tapText(tester, 'Autumn');
+      expect(find.text('1 Sep 2026 – 30 Nov 2026'), findsOneWidget);
+      await tapText(tester, 'Between…');
+      expect(find.text('Any time'), findsOneWidget);
+      await tapText(tester, 'Save');
+      expect(shelf.filters.single.addedFrom, isNull);
+    });
+
+    testWidgets('Between… opens the date range picker', (tester) async {
+      await openNew(tester);
+
+      await tapText(tester, 'Between…');
+
+      expect(find.byType(DateRangePickerDialog), findsOneWidget);
     });
 
     testWidgets('can be edited and deleted', (tester) async {

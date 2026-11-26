@@ -80,7 +80,7 @@ class _FiltersPageState extends State<FiltersPage> {
       extra: Builder(
         builder: (context) => ListRow(
           title: 'Custom filter…',
-          subtitle: 'Combine tags, rating and favorite tracks',
+          subtitle: 'Combine tags, rating, favorite tracks and date added',
           leading: const Icon(Icons.tune),
           onTap: () {
             custom = true;
@@ -245,7 +245,8 @@ class _FiltersPageState extends State<FiltersPage> {
 }
 
 /// What a filter matches, in a line: "Collection" for a tag's filter,
-/// "Own and Vinyl · 4 stars and up · favorite tracks" for a custom one.
+/// "Own and Vinyl · 4 stars and up · favorite tracks · added last 30 days"
+/// for a custom one.
 String describeFilter(ShelfFilter f, Shelf shelf) {
   final groupOf = {
     for (final g in shelf.allGroups)
@@ -266,6 +267,8 @@ String describeFilter(ShelfFilter f, Shelf shelf) {
     if (f.minRating case final r?) '${_stars(r)} and up',
     if (f.unrated) 'unrated',
     if (f.favoriteTracks) 'favorite tracks',
+    if (describeAdded(f) case final added?)
+      'added ${added[0].toLowerCase()}${added.substring(1)}',
   ].join(' · ');
 }
 

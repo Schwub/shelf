@@ -36,7 +36,7 @@ class SupabaseShelfRepository implements ShelfRepository {
       _db
           .from('shelf_entries')
           .select(
-            'id, rating, comment, hidden, added_from_name, '
+            'id, created_at, rating, comment, hidden, added_from_name, '
             'album:albums(id, musicbrainz_id, title, artist, year, cover_url), '
             'entry_tags(tag_id), '
             'entry_tracks(disc, position, title, length_ms, favorite)',
@@ -47,7 +47,7 @@ class SupabaseShelfRepository implements ShelfRepository {
           .from('shelf_filters')
           .select(
             'id, name, tags_match, min_rating, unrated, favorite_tracks, '
-            'shelf_filter_tags(tag_id)',
+            'added_within_days, added_from, added_to, shelf_filter_tags(tag_id)',
           )
           .eq('user_id', userId)
           .order('position', ascending: true),
@@ -74,6 +74,7 @@ class SupabaseShelfRepository implements ShelfRepository {
           ShelfEntry(
             id: e['id'],
             album: _album(e['album']),
+            addedAt: DateTime.parse(e['created_at']),
             rating: e['rating'],
             comment: e['comment'],
             hidden: e['hidden'],
@@ -140,11 +141,20 @@ class SupabaseShelfRepository implements ShelfRepository {
       minRating: f['min_rating'],
       unrated: f['unrated'],
       favoriteTracks: f['favorite_tracks'],
+      addedWithinDays: f['added_within_days'],
+      // A date without a time is local midnight.
+      addedFrom: _date(f['added_from']),
+      addedTo: _date(f['added_to']),
     );
     return filter.copyWith(
       label: f['name'] ?? (filter.isTag ? tagNames[tagIds.single] : 'Filter'),
     );
   }
+
+  static DateTime? _date(String? d) => d == null ? null : DateTime.parse(d);
+
+  /// 2026-11-26.
+  static String? _day(DateTime? d) => d?.toIso8601String().substring(0, 10);
 
   static Album _album(Map<String, dynamic> a) => Album(
     id: a['id'],
@@ -407,6 +417,9 @@ class SupabaseShelfRepository implements ShelfRepository {
       'min_rating': filter.minRating,
       'unrated': filter.unrated,
       'favorite_tracks': filter.favoriteTracks,
+      'added_within_days': filter.addedWithinDays,
+      'added_from': _day(filter.addedFrom),
+      'added_to': _day(filter.addedTo),
     };
     final String id;
     if (filter.id.isEmpty) {

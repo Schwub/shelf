@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/shelf_colors.dart';
 import '../widgets/cover.dart';
+import '../widgets/dates.dart';
 import '../widgets/hidden_mark.dart';
 import '../widgets/rating_meter.dart';
 import 'shelf.dart';
@@ -54,6 +55,10 @@ class AlbumsListView extends StatelessWidget {
                         style: text.bodySmall!.copyWith(color: c.muted),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Added ${formatDay(e.addedAt)}',
+                        style: text.bodySmall!.copyWith(color: c.muted),
                       ),
                       if (e.hidden) const HiddenMark(),
                       if (e.rating case final rating?) ...[

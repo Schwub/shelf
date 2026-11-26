@@ -1,5 +1,5 @@
 begin;
-select plan(12);
+select plan(16);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -39,6 +39,21 @@ select throws_ok(
 select lives_ok(
   $$update public.shelf_filters set name = 'Mine, rated', min_rating = 6 where name = 'Best of mine'$$,
   'users change their filters');
+select lives_ok(
+  $$insert into public.shelf_filters (name, added_within_days) values ('This month', 30)$$,
+  'a filter on albums added in the last days');
+select lives_ok(
+  $$insert into public.shelf_filters (name, added_from, added_to)
+    values ('Summer', '2026-06-01', '2026-08-31')$$,
+  'or between two dates');
+select throws_ok(
+  $$insert into public.shelf_filters (name, added_within_days, added_from)
+    values ('Both', 30, '2026-06-01')$$,
+  '23514', null, 'not both kinds');
+select throws_ok(
+  $$insert into public.shelf_filters (name, added_from, added_to)
+    values ('Backwards', '2026-08-31', '2026-06-01')$$,
+  '23514', null, 'the range runs forwards');
 
 -- Deleting a tag takes it out of filters; a filter left with nothing goes.
 select lives_ok(
@@ -53,10 +68,13 @@ select lives_ok(
   $$with f as (select pg_temp.filter('Mine, rated') as id)
     insert into public.shelf_filter_tags (filter_id, tag_id) select id, pg_temp.tag('Krautrock') from f$$,
   'and the tag in a custom filter');
+with f as (select pg_temp.filter('This month') as id)
+  insert into public.shelf_filter_tags (filter_id, tag_id) select id, pg_temp.tag('Krautrock') from f;
 delete from public.tags where name = 'Krautrock';
 select results_eq(
-  $$select name from public.shelf_filters where name in ('Kraut', 'Mine, rated') order by name$$,
-  array['Mine, rated'],
+  $$select name from public.shelf_filters where name in ('Kraut', 'Mine, rated', 'This month')
+    order by name$$,
+  array['Mine, rated', 'This month'],
   'a filter left without conditions goes; one with others stays');
 
 -- Bob's filters are out of reach.

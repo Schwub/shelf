@@ -30,6 +30,7 @@ void main() {
 
   final kidA = ShelfEntry(
     id: 'k',
+    addedAt: added,
     album: const Album(
       id: 'a-kid',
       musicbrainzId: 'mb-kid',
@@ -296,8 +297,9 @@ void main() {
   ) async {
     shelf.friendShelves['anna'] = Shelf(
       entries: [
-        const ShelfEntry(
+        ShelfEntry(
           id: 'd',
+          addedAt: added,
           album: Album(id: 'anna-demo', title: 'Demo', artist: 'Anna'),
         ),
       ],
@@ -350,6 +352,7 @@ void main() {
     setUp(() {
       final ok = ShelfEntry(
         id: 'ok',
+        addedAt: added,
         album: const Album(
           id: 'a-ok',
           musicbrainzId: 'mb-ok',
@@ -563,6 +566,7 @@ void main() {
             e.id == 'ok'
                 ? ShelfEntry(
                     id: e.id,
+                    addedAt: e.addedAt,
                     album: e.album,
                     tagIds: {...e.tagIds, 'a-first'},
                   )
@@ -603,8 +607,9 @@ void main() {
   });
 
   testWidgets("an album added from a friend says so later", (tester) async {
-    shelf.entries[0] = const ShelfEntry(
+    shelf.entries[0] = ShelfEntry(
       id: '2',
+      addedAt: added,
       album: Album(id: 'a2', title: 'Blue', artist: 'Joni Mitchell'),
       addedFromName: 'Anna',
     );

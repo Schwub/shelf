@@ -17,6 +17,7 @@ const kidA = [
 
 ShelfEntry withTracks(ShelfEntry e, List<Track> tracks) => ShelfEntry(
   id: e.id,
+  addedAt: e.addedAt,
   album: e.album,
   rating: e.rating,
   tagIds: e.tagIds,
