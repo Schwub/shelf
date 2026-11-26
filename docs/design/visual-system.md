@@ -58,10 +58,15 @@ lighter or darker gradient ends. The accessibility tests check every theme.
 | off | #8C7C6A | #857563 | Unlit light outlines, empty meter segments (≥ 3:1) |
 
 One accent: the warm amber-to-coral gradient, like a level meter warming
-up; backgrounds stay flat. Cover colours are the only other colour on screen; the
-album entry tints the wall behind the cover with the cover's colour
-(`ColorScheme.fromImageProvider`, `DynamicSchemeVariant.fidelity`), at
-33 % (evening) or 25 % (daylight).
+up; backgrounds stay flat. Cover colours are the only other colour on screen;
+every screen showing one album (album entry, a friend's album) puts the
+cover itself, zoomed in 1.4× and blurred (sigma 36), on the wall behind
+it at 55 % (dark themes) or 45 % (light), fading into the background
+from the middle of the stage to 56 px below the board, under the title
+(`AlbumStage`, TASK-42; mockup
+[visual/variations/cover-background.html](visual/variations/cover-background.html),
+option A). Without a cover the wall stays plain. A tint from the cover's
+colours, planned before, was not built.
 
 Contrast (WCAG): text ≥ 4.5:1, signal and off ≥ 3:1 on bg and surface
 in both themes (daylight signal #B06A00: 3.7:1 on bg, 4.0:1 on surface);

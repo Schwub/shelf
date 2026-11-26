@@ -7,7 +7,7 @@ import '../shelf/shelf.dart';
 import '../shelf/shelf_repository.dart';
 import '../shelf/tag_import.dart';
 import '../theme/shelf_colors.dart';
-import '../widgets/cover.dart';
+import '../widgets/album_stage.dart';
 import '../widgets/rating_keys.dart';
 import '../widgets/rating_meter.dart';
 import '../widgets/shelf_key.dart';
@@ -169,80 +169,89 @@ class FriendAlbumPage extends StatelessWidget {
       ),
     );
     return Scaffold(
-      appBar: AppBar(),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(width: 96, child: Cover(album)),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(album.title, style: text.titleLarge),
-                    Text(album.artist, style: text.bodyMedium),
-                    if (album.year case final year?)
-                      Text(
-                        '$year',
-                        style: text.bodySmall!.copyWith(color: c.muted),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (entry.rating case final rating?)
-            section(
-              "$name's rating",
-              Semantics(
-                label: RatingKeys.describe(rating),
-                excludeSemantics: true,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: RatingMeter(rating),
-                ),
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            // Back on the stage, like Close on the album entry.
+            AlbumStage(
+              album,
+              leading: ShelfKey(
+                semanticLabel: 'Back',
+                padding: EdgeInsets.zero,
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Icon(Icons.chevron_left),
               ),
             ),
-          if (entry.comment case final comment?)
-            section("$name's comment", Text(comment)),
-          if (tags.isNotEmpty)
-            section(
-              "$name's tags",
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final tag in tags)
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: c.line),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                  Text(album.title, style: text.headlineSmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    [
+                      album.artist,
+                      if (album.year != null) '${album.year}',
+                    ].join(', '),
+                    style: text.bodyMedium!.copyWith(color: c.muted),
+                  ),
+                  if (entry.rating case final rating?)
+                    section(
+                      "$name's rating",
+                      Semantics(
+                        label: RatingKeys.describe(rating),
+                        excludeSemantics: true,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: RatingMeter(rating),
                         ),
-                        child: Text(tag, style: text.bodySmall),
+                      ),
+                    ),
+                  if (entry.comment case final comment?)
+                    section("$name's comment", Text(comment)),
+                  if (tags.isNotEmpty)
+                    section(
+                      "$name's tags",
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final tag in tags)
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: c.line),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                child: Text(tag, style: text.bodySmall),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  if (favorites.isNotEmpty)
+                    section(
+                      "$name's favorite tracks",
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final t in favorites)
+                            Text('${t.position}. ${t.title}'),
+                        ],
                       ),
                     ),
                 ],
               ),
             ),
-          if (favorites.isNotEmpty)
-            section(
-              "$name's favorite tracks",
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final t in favorites) Text('${t.position}. ${t.title}'),
-                ],
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
