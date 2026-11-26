@@ -8,6 +8,8 @@ aliased to fvm with a different version.
 - Full check before finishing: `mise run check` (format, analyze, tests,
   web build; ~30 s warm, a few minutes cold)
 - Database tests (Docker; run after changing `supabase/`): `mise run test:db`
+- Edge function tests (run after changing `supabase/functions/`; not part of
+  `mise run check`): `mise run test:functions`
 - Integration tests (Docker; run after changing `app/lib/shelf/shelf_data.dart`
   or migrations): `mise run test:integration` (the Supabase repository against
   a local Supabase, `app/test_integration/`)
