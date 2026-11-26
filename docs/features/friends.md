@@ -107,7 +107,7 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
 - A friend's shelf: `ShelfRepository.loadFriend(String userId)` returns a
   `Shelf` through the same parsing as `load()`; `FriendShelfPage` and
   `FriendAlbumPage` reuse `CoversView`, `AlbumsListView` and the filter bar.
-- Home shell (`home/home_page.dart`): `NavigationBar` with Shelf, Feed,
+- Home shell (`home/home_page.dart`): `ShelfTabBar` (low keys) with Shelf, Feed,
   Friends; an `IndexedStack` of one `Navigator` per tab so each keeps its
   back stack; system back pops the current tab first. No routing package.
 - The auth gate adds a step: signed in without a profile → Your name.

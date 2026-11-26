@@ -167,6 +167,22 @@ Weights: Archivo 600–800, IBM Plex Sans 400 and 600 (no 700).
   artist 12 muted and the small rating meter if rated, a 1 px line below;
   tapping a row opens the album.
 
+- **Tab bar** (2026-11-26): Shelf, Feed and Friends as keys that rest
+  lower than the screen's own (`ShelfKey(low: true)`, half height), icon
+  and label; the chosen tab is pressed with its label in the signal
+  colour.
+- **Made-up covers** (2026-11-26): an album without a cover (or whose
+  cover fails to load) gets `CoverArt`, like the mockups' test covers: one
+  of nine colour sets and four patterns (split, sun, sky, sweep), chosen
+  from its title and artist so it always looks the same.
+
+- **Launcher icon** (2026-11-26, candidate A of
+  [visual/variations/launcher-icon.html](visual/variations/launcher-icon.html)):
+  three covers on a teak board against the wall. Source
+  `app/tool/icon/icon.svg`; `node tool/icon/render.js && python3
+  tool/icon/render.py` (in `app/`) writes the Android (adaptive: wall
+  colour behind, covers and board in front), iOS and web icons.
+
 ## Supporting elements
 All M1 screens and states in this system: [visual/screens/](visual/screens/)
 (sign-in, shelf, search, entry). Elements those screens add, built from the
