@@ -405,6 +405,51 @@ void main() {
     ], reason: 'created_at arrives as addedAt');
   });
 
+  test('several albums at once: tags, hidden, removed', () async {
+    final s = await signIn();
+    final first = await shelve(s);
+    final second = await shelve(s);
+    final ids = [first, second];
+    var shelf = await s.repo.load();
+    final tag = tagIds(shelf);
+    await s.repo.save(first, addTags: [tag['Want']!]);
+
+    // Own replaces Want; Vinyl needs Own on first.
+    await s.repo.changeTags(
+      ids,
+      remove: {tag['Want']!},
+      add: [tag['Own']!, tag['Vinyl']!],
+    );
+    shelf = await s.repo.load();
+    for (final e in shelf.entries) {
+      expect(e.tagIds, {tag['Own']!, tag['Vinyl']!});
+    }
+
+    // Tags an album has already stay (no duplicate), and a parent taken
+    // off takes its sub-tag along in the same delete.
+    await s.repo.changeTags(ids, add: [tag['Own']!, tag['CD']!]);
+    shelf = await s.repo.load();
+    for (final e in shelf.entries) {
+      expect(e.tagIds, {tag['Own']!, tag['Vinyl']!, tag['CD']!});
+    }
+    await s.repo.changeTags(
+      ids,
+      remove: {tag['Own']!, tag['Vinyl']!, tag['CD']!},
+      add: [tag['Want']!],
+    );
+    shelf = await s.repo.load();
+    for (final e in shelf.entries) {
+      expect(e.tagIds, {tag['Want']!});
+    }
+
+    await s.repo.hide(ids, true);
+    shelf = await s.repo.load();
+    expect(shelf.entries.every((e) => e.hidden), isTrue);
+
+    await s.repo.remove(ids);
+    expect((await s.repo.load()).entries, isEmpty);
+  });
+
   test('a tag filter goes when its tag is deleted', () async {
     final s = await signIn();
     final repo = s.repo;

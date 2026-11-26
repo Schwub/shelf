@@ -353,6 +353,188 @@ void main() {
     semantics.dispose();
   });
 
+  group('selecting several albums', () {
+    Future<void> tap(WidgetTester tester, Finder f) async {
+      await tester.tap(f);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> startSelecting(WidgetTester tester) async {
+      await pumpShelf(tester, FakeShelf(three));
+      await tap(tester, find.byIcon(Icons.more_vert));
+      await tap(tester, find.text('Select albums'));
+    }
+
+    ShelfEntry album(String id) => shelf.entries.firstWhere((e) => e.id == id);
+
+    testWidgets('from the menu: tap albums in and out, ✕ ends it', (
+      tester,
+    ) async {
+      await startSelecting(tester);
+      expect(find.text('0 selected'), findsOneWidget);
+      expect(
+        tester
+            .widget<ShelfKey>(find.widgetWithText(ShelfKey, 'Tags'))
+            .onPressed,
+        isNull,
+        reason: 'nothing selected yet',
+      );
+
+      await tap(tester, find.text('OK Computer'));
+      await tap(tester, find.text('Blue'));
+      expect(find.text('2 selected'), findsOneWidget);
+      expect(find.byType(EntryPage), findsNothing, reason: 'tapping selects');
+      await tap(tester, find.text('Blue'));
+      expect(find.text('1 selected'), findsOneWidget);
+
+      await tap(tester, find.byIcon(Icons.close));
+      expect(find.text('My shelf'), findsOneWidget);
+      expect(find.text('Add album'), findsOneWidget);
+    });
+
+    testWidgets('press and hold starts it; back ends it', (tester) async {
+      await pumpShelf(tester, FakeShelf(three));
+
+      await tester.longPress(find.text('Discovery'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 selected'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('My shelf'), findsOneWidget);
+    });
+
+    testWidgets('Select all takes the albums in the filter', (tester) async {
+      await startSelecting(tester);
+      await tap(tester, filterKey(1)); // Own: OK Computer and Blue.
+
+      await tap(tester, find.text('Select all'));
+      expect(find.text('2 selected'), findsOneWidget);
+      await tap(tester, find.text('Select none'));
+      expect(find.text('0 selected'), findsOneWidget);
+    });
+
+    testWidgets('tags go on all of them, and they stay selected', (
+      tester,
+    ) async {
+      await startSelecting(tester);
+      await tap(tester, find.text('OK Computer'));
+      await tap(tester, find.text('Discovery'));
+
+      await tap(tester, find.text('Tags'));
+      expect(find.text('Tags for 2 albums'), findsOneWidget);
+      expect(find.text('1 of 2'), findsWidgets, reason: 'Own and Want');
+      await tap(tester, find.text('Listened'));
+      await tap(tester, find.text('Vinyl'));
+      await tap(tester, find.text('Apply'));
+
+      expect(album('1').tagIds, containsAll(['listened', 'own', 'vinyl']));
+      expect(album('2').tagIds, containsAll(['listened', 'own', 'vinyl']));
+      expect(
+        album('2').tagIds,
+        isNot(contains('want')),
+        reason: 'one per album',
+      );
+      expect(album('3').tagIds, {'own'}, reason: 'not selected');
+      expect(find.text('Tags changed on 2 albums'), findsOneWidget);
+      expect(find.text('2 selected'), findsOneWidget);
+    });
+
+    testWidgets('hide from friends, Show when all are, Undo', (tester) async {
+      await startSelecting(tester);
+      await tap(tester, find.text('OK Computer'));
+      await tap(tester, find.text('Blue'));
+
+      await tap(tester, find.text('Hide'));
+      expect(album('1').hidden && album('3').hidden, isTrue);
+      expect(find.text('2 albums hidden from friends'), findsOneWidget);
+      expect(find.text('Show'), findsOneWidget);
+
+      await tap(tester, find.text('Undo'));
+      expect(album('1').hidden || album('3').hidden, isFalse);
+    });
+
+    testWidgets('remove: gone after the snackbar, and selecting ends', (
+      tester,
+    ) async {
+      await startSelecting(tester);
+      await tap(tester, find.text('OK Computer'));
+      await tap(tester, find.text('Blue'));
+
+      await tap(tester, find.text('Remove'));
+      expect(find.text('2 albums removed'), findsOneWidget);
+      expect(find.text('Add album'), findsOneWidget);
+      expect(find.text('Blue'), findsNothing);
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
+      expect(shelf.removed, ['1', '3']);
+    });
+
+    testWidgets('only the selected albums in the filter change', (
+      tester,
+    ) async {
+      await startSelecting(tester);
+      await tap(tester, find.text('OK Computer'));
+      await tap(tester, find.text('Discovery'));
+
+      await tap(tester, filterKey(1)); // Own: OK Computer and Blue.
+      expect(find.text('1 selected'), findsOneWidget);
+      await tap(tester, find.text('Hide'));
+
+      expect(album('1').hidden, isTrue);
+      expect(album('2').hidden, isFalse, reason: 'not in the filter');
+      await tap(tester, filterKey(0));
+      expect(find.text('2 selected'), findsOneWidget, reason: 'still selected');
+    });
+
+    testWidgets('Undo brings removed albums back', (tester) async {
+      await startSelecting(tester);
+      await tap(tester, find.text('Blue'));
+      await tap(tester, find.text('Remove'));
+      expect(find.text('Removed from your shelf'), findsOneWidget);
+
+      await tap(tester, find.text('Undo'));
+      expect(find.text('Blue'), findsOneWidget);
+      expect(shelf.removed, isEmpty);
+    });
+
+    testWidgets('a failed change says so and can be tried again', (
+      tester,
+    ) async {
+      await startSelecting(tester);
+      await tap(tester, find.text('Discovery'));
+      shelf.failBulk = true;
+
+      await tap(tester, find.text('Hide'));
+      expect(
+        find.text("Couldn't change 1 album. Check your connection."),
+        findsOneWidget,
+      );
+      expect(album('2').hidden, isFalse);
+      await tap(tester, find.text('Try again'));
+      expect(album('2').hidden, isTrue);
+    });
+
+    testWidgets('selecting and the tags sheet meet the guidelines', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await startSelecting(tester);
+      await tap(tester, find.text('OK Computer'));
+      Future<void> check() async {
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(textContrastGuideline));
+      }
+
+      await check();
+      await tap(tester, find.text('Tags'));
+      expect(find.text('Tags for 1 album'), findsOneWidget);
+      await check();
+      semantics.dispose();
+    });
+  });
+
   testWidgets('the menu opens the tags, and the shelf reloads after', (
     tester,
   ) async {

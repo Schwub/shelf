@@ -24,6 +24,8 @@ Flows are in [flows.md](flows.md), wireframes in [wireframes/](wireframes/).
 | Invitation (M2) | "Anna invited you": accept or not now | Accept an invite | valid, expired or used, own invite, already friends, accepting, error |
 | Friend's shelf (M2) | A friend's albums, read-only, with their filters | Friends and their shelves | loading, empty, filled grid, filled list, filter with no matches, error |
 | Friend's album (M2) | One album as the friend has it: rating, comment, tags, favorite tracks; add it | Friends and their shelves, Feed | not on your shelf (Add to my shelf), on your shelf (Open), load error |
+| My shelf: selecting (TASK-40) | Select several albums and change their tags, hide or remove them | Edit several albums | none selected (actions off), some selected, all in filter selected, applied, error |
+| Tags for several (sheet, TASK-40) | Put tags on or take them off all selected albums | Edit several albums | mixed (✓ / – / empty, with counts), one-per-album note, saving, error |
 
 One screen, **Album entry**, serves both adding and editing, so tags,
 rating and comment work the same everywhere. In add mode the primary action
@@ -71,8 +73,10 @@ flowchart LR
   are full screen, without the bar.
 - Back follows the platform: system back / swipe on phones, the app bar back
   arrow everywhere. Back from Album entry after a share goes to My shelf.
-- Overflow menu (⋮) on My shelf: Tags, Filters, Sign out (with a
-  confirmation dialog).
+- Overflow menu (⋮) on My shelf: Select albums, Tags, Filters, Sign out
+  (with a confirmation dialog). Selecting (TASK-40, wireframe
+  [select](wireframes/select.html)) swaps the app bar for "n selected", ✕
+  and Select all, and the bottom row for Tags, Hide and Remove.
 
 ## Interaction decisions
 - **Tags** (design in [../features/tags.md](../features/tags.md)): the album

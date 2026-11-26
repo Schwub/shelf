@@ -471,8 +471,44 @@ class SupabaseShelfRepository implements ShelfRepository {
   ].wait;
 
   @override
-  Future<void> remove(String entryId) async {
-    await _db.from('shelf_entries').delete().eq('id', entryId);
+  Future<void> remove(List<String> entryIds) async {
+    await _db.from('shelf_entries').delete().inFilter('id', entryIds);
+    _changes.value++;
+  }
+
+  @override
+  Future<void> changeTags(
+    List<String> entryIds, {
+    Set<String> remove = const {},
+    List<String> add = const [],
+  }) async {
+    try {
+      if (remove.isNotEmpty) {
+        await _db
+            .from('entry_tags')
+            .delete()
+            .inFilter('entry_id', entryIds)
+            .inFilter('tag_id', remove.toList());
+      }
+      // One insert per tag, in order: the database checks that a sub-tag's
+      // parent is on the album already.
+      for (final tag in add) {
+        await _db.from('entry_tags').upsert([
+          for (final id in entryIds) {'entry_id': id, 'tag_id': tag},
+        ], ignoreDuplicates: true);
+      }
+    } finally {
+      // Also after a failure halfway, so the shelf shows what did change.
+      _changes.value++;
+    }
+  }
+
+  @override
+  Future<void> hide(List<String> entryIds, bool hidden) async {
+    await _db
+        .from('shelf_entries')
+        .update({'hidden': hidden})
+        .inFilter('id', entryIds);
     _changes.value++;
   }
 }

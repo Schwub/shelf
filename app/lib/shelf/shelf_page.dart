@@ -18,12 +18,16 @@ import '../share/shared_link_inbox.dart';
 import '../theme/shelf_colors.dart';
 import '../theme/theme_sheet.dart';
 import '../widgets/filter_bar.dart';
+import '../widgets/counts.dart';
 import '../widgets/message.dart';
 import '../widgets/shelf_board.dart';
 import '../widgets/shelf_key.dart';
 import 'albums_list_view.dart';
+import 'bulk_tags.dart';
+import 'bulk_tags_sheet.dart';
 import 'covers_view.dart';
 import 'entry_page.dart';
+import 'selection_bar.dart';
 import 'shelf.dart';
 import 'shelf_repository.dart';
 import 'sort_sheet.dart';
@@ -58,6 +62,10 @@ class _ShelfPageState extends State<ShelfPage> {
 
   /// The selected filter; null for All.
   String? _filterId;
+
+  /// The albums selected to change together (TASK-40); null when not
+  /// selecting.
+  Set<String>? _selected;
 
   /// Removed but still undoable: hidden until the snackbar closes.
   final _removing = <String>{};
@@ -148,7 +156,17 @@ class _ShelfPageState extends State<ShelfPage> {
   List<ShelfEntry> get _visible =>
       _shelf!.entries.where((e) => !_removing.contains(e.id)).toList();
 
+  /// Opens the album, or while selecting, adds it to the selection or
+  /// takes it out.
   Future<void> _open(ShelfEntry entry) async {
+    if (_selected case final selected?) {
+      setState(
+        () => selected.contains(entry.id)
+            ? selected.remove(entry.id)
+            : selected.add(entry.id),
+      );
+      return;
+    }
     final result = await Navigator.of(context).push(
       MaterialPageRoute<EntryResult>(
         builder: (_) => EntryPage(
@@ -163,7 +181,7 @@ class _ShelfPageState extends State<ShelfPage> {
       case EntryResult.saved || EntryResult.added:
         await _load();
       case EntryResult.removed:
-        _remove(entry);
+        _remove([entry]);
       case null:
         break;
     }
@@ -192,13 +210,18 @@ class _ShelfPageState extends State<ShelfPage> {
     }
   }
 
-  void _remove(ShelfEntry entry) {
-    setState(() => _removing.add(entry.id));
+  void _remove(List<ShelfEntry> entries) {
+    final ids = [for (final e in entries) e.id];
+    setState(() => _removing.addAll(ids));
     final messenger = ScaffoldMessenger.of(context);
     messenger
         .showSnackBar(
           SnackBar(
-            content: const Text('Removed from your shelf'),
+            content: Text(
+              ids.length == 1
+                  ? 'Removed from your shelf'
+                  : '${albumCount(ids.length)} removed',
+            ),
             action: SnackBarAction(label: 'Undo', onPressed: () {}),
             // Snackbars with an action stay open by default; the removal
             // happens when this one closes.
@@ -209,19 +232,25 @@ class _ShelfPageState extends State<ShelfPage> {
         .closed
         .then((reason) async {
           if (reason == SnackBarClosedReason.action) {
-            if (mounted) setState(() => _removing.remove(entry.id));
+            if (mounted) setState(() => _removing.removeAll(ids));
             return;
           }
           try {
-            await widget.shelf.remove(entry.id);
+            await widget.shelf.remove(ids);
           } catch (e, stack) {
             reportError(e, stack);
             messenger.showSnackBar(
-              const SnackBar(content: Text("Couldn't remove the album.")),
+              SnackBar(
+                content: Text(
+                  ids.length == 1
+                      ? "Couldn't remove the album."
+                      : "Couldn't remove the albums.",
+                ),
+              ),
             );
           }
           if (!mounted) return;
-          _removing.remove(entry.id);
+          _removing.removeAll(ids);
           await _load();
         });
   }
@@ -232,40 +261,164 @@ class _ShelfPageState extends State<ShelfPage> {
     final shelf = _shelf;
     final text = Theme.of(context).textTheme;
     final count = shelf == null ? null : _visible.length;
-    return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                children: [
-                  Expanded(child: Text('My shelf', style: text.headlineSmall)),
-                  if (count != null)
-                    Text(
-                      count == 1 ? '1 album' : '$count albums',
-                      style: text.labelMedium!.copyWith(color: c.muted),
-                    ),
-                  const SizedBox(width: 8),
-                  Builder(
-                    builder: (context) => ShelfKey(
-                      semanticLabel: 'Menu',
-                      padding: EdgeInsets.zero,
-                      onPressed: () => _menu(context),
-                      child: const Icon(Icons.more_vert),
-                    ),
+    return PopScope(
+      // Back ends selecting first.
+      canPop: _selected == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _selected = null);
+      },
+      child: Scaffold(
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_selected case final selected? when shelf != null)
+                SelectionHeader(
+                  count: _chosen.length,
+                  all: _inFilter.every((e) => selected.contains(e.id)),
+                  onDone: () => setState(() => _selected = null),
+                  onAll: (all) => setState(() {
+                    final ids = [for (final e in _inFilter) e.id];
+                    all ? selected.addAll(ids) : selected.removeAll(ids);
+                  }),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text('My shelf', style: text.headlineSmall),
+                      ),
+                      if (count != null)
+                        Text(
+                          albumCount(count),
+                          style: text.labelMedium!.copyWith(color: c.muted),
+                        ),
+                      const SizedBox(width: 8),
+                      Builder(
+                        builder: (context) => ShelfKey(
+                          semanticLabel: 'Menu',
+                          padding: EdgeInsets.zero,
+                          onPressed: () => _menu(context),
+                          child: const Icon(Icons.more_vert),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (shelf != null && !_failed) _filterBar(shelf),
-            Expanded(child: _body(context)),
-            _bottomBar(context),
-          ],
+                ),
+              const SizedBox(height: 16),
+              if (shelf != null && !_failed) _filterBar(shelf),
+              Expanded(child: _body(context)),
+              if (_selected != null && shelf != null)
+                SelectionBar(
+                  count: _chosen.length,
+                  allHidden:
+                      _chosen.isNotEmpty && _chosen.every((e) => e.hidden),
+                  onTags: _changeTags,
+                  onHide: _hideChosen,
+                  onRemove: () {
+                    _remove(_chosen);
+                    setState(() => _selected = null);
+                  },
+                )
+              else
+                _bottomBar(context),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  /// The selected albums shown in the current filter: only those are
+  /// changed; others stay selected for when their filter is back.
+  List<ShelfEntry> get _chosen => [
+    for (final e in _inFilter)
+      if (_selected?.contains(e.id) ?? false) e,
+  ];
+
+  List<ShelfEntry> get _inFilter => Shelf(entries: _visible).matching(_filter);
+
+  /// The tags sheet for the selection, then the changes on all of it.
+  Future<void> _changeTags() async {
+    final chosen = _chosen;
+    final changes = await showBulkTagsSheet(
+      context,
+      tags: BulkTags(_shelf!.groups, chosen),
+      onCreate: (group, name) => widget.shelf.createTag(group.id, name),
+    );
+    if (changes == null || !mounted) return;
+    final (:remove, :add) = changes.changes;
+    await _changeAll(
+      chosen,
+      () => widget.shelf.changeTags(
+        [for (final e in chosen) e.id],
+        remove: remove,
+        add: add,
+      ),
+      done: 'Tags changed on ${albumCount(chosen.length)}',
+    );
+  }
+
+  /// Hides the selection from friends, or shows it when all of it is
+  /// hidden; Undo turns back only the albums that changed.
+  Future<void> _hideChosen() async {
+    final hide = !_chosen.every((e) => e.hidden);
+    final changed = [
+      for (final e in _chosen)
+        if (e.hidden != hide) e,
+    ];
+    final ids = [for (final e in changed) e.id];
+    await _changeAll(
+      changed,
+      () => widget.shelf.hide(ids, hide),
+      done:
+          '${albumCount(changed.length)} ${hide ? 'hidden from' : 'shown to'} '
+          'friends',
+      undo: () => widget.shelf.hide(ids, !hide),
+    );
+  }
+
+  /// Runs [change] on [entries], then says so ([undo] offers to turn it
+  /// back), or that it failed, with Try again. The selection stays.
+  Future<void> _changeAll(
+    List<ShelfEntry> entries,
+    Future<void> Function() change, {
+    required String done,
+    Future<void> Function()? undo,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await change();
+    } catch (e, stack) {
+      reportError(e, stack);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            "Couldn't change ${albumCount(entries.length)}. "
+            'Check your connection.',
+          ),
+          action: SnackBarAction(
+            label: 'Try again',
+            onPressed: () =>
+                _changeAll(entries, change, done: done, undo: undo),
+          ),
+        ),
+      );
+      return;
+    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(done),
+        action: undo == null
+            ? null
+            : SnackBarAction(
+                label: 'Undo',
+                onPressed: () => _changeAll(entries, undo, done: 'Undone'),
+              ),
+        persist: false,
       ),
     );
   }
@@ -339,9 +492,21 @@ class _ShelfPageState extends State<ShelfPage> {
         ],
       );
     }
+    // Press and hold starts selecting with that album.
+    void hold(ShelfEntry e) => setState(() => (_selected ??= {}).add(e.id));
     return _list
-        ? AlbumsListView(entries: entries, onOpen: _open)
-        : CoversView(entries: entries, onOpen: _open);
+        ? AlbumsListView(
+            entries: entries,
+            onOpen: _open,
+            onHold: hold,
+            selected: _selected,
+          )
+        : CoversView(
+            entries: entries,
+            onOpen: _open,
+            onHold: hold,
+            selected: _selected,
+          );
   }
 
   /// Covers or a list.
@@ -424,6 +589,11 @@ class _ShelfPageState extends State<ShelfPage> {
             child: Text('Components', style: style),
           ),
         PopupMenuItem(
+          value: 'select',
+          height: 48,
+          child: Text('Select albums', style: style),
+        ),
+        PopupMenuItem(
           value: 'tags',
           height: 48,
           child: Text('Tags', style: style),
@@ -450,6 +620,8 @@ class _ShelfPageState extends State<ShelfPage> {
       case 'components':
         await Navigator.of(context)
             .push(MaterialPageRoute<void>(builder: (_) => const PreviewPage()));
+      case 'select':
+        setState(() => _selected = {});
       case 'tags':
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
