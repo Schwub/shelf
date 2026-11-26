@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:share_plus/share_plus.dart';
@@ -8,20 +7,15 @@ import '../theme/shelf_theme.dart';
 import '../widgets/shelf_key.dart';
 import 'friends_repository.dart';
 
-/// Where invite links point: the web app (docs/features/friends.md).
-const _siteUrl = String.fromEnvironment(
-  'SITE_URL',
-  defaultValue: 'https://shelf.pages.dev',
-);
-
-Uri inviteLink(String code) => Uri.parse(
-  '${kIsWeb ? Uri.base.origin : _siteUrl}/invite/${formatCode(code)}',
-);
+/// Opens the app on the Invitation (Android; iPhones use the code until
+/// the scheme is registered there, TASK-20).
+Uri inviteLink(String code) =>
+    Uri.parse('de.schwubware.shelf://invite/${formatCode(code)}');
 
 /// The message the Share key sends.
 String inviteMessage(String inviter, String code) =>
     '$inviter invites you to shelf: ${inviteLink(code)} '
-    '(or enter the code ${formatCode(code)} in the app)';
+    '(or open shelf and enter the code ${formatCode(code)} under Friends)';
 
 /// A new invite's link and code, to share or copy.
 Future<void> showInviteSheet(

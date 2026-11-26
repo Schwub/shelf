@@ -17,7 +17,7 @@ Flows are in [flows.md](flows.md), wireframes in [wireframes/](wireframes/).
 | Filters | Choose and order the filters of the shelf's filter bar | Filters | loading, list, empty (only All), add picker, error |
 | Import tags (sheet, M2) | After adding an album from a friend: copy their tags you don't have | Add from a friend | missing tags, nothing missing (not shown), save error |
 | Your name (M2) | Set the name friends see; asked once after the first sign-in, changeable from Friends | Your name, Accept an invite | first time, change, too long or empty, save error |
-| Feed (M2, tab) | What friends added and rated, newest first | Feed | loading, no friends, nothing yet, filled, loading more, error, error loading more |
+| Feed (M2, tab) | What friends added and rated, newest first | Feed | loading, no friends, nothing yet, filled, loading more, error, error loading more (no automatic retry) |
 | Friends (M2, tab) | Friends and waiting invites; invite, enter a code, remove | Invite, Accept, Friends | loading, no friends, filled, invites waiting, error |
 | Invite (sheet, M2) | The new invite's link and code; share or copy | Invite a friend | created, creating, error (snackbar) |
 | Enter code (M2) | Type or paste an invite code | Accept an invite | empty, wrong code, checking |

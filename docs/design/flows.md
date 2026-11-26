@@ -256,9 +256,11 @@ flowchart TD
 ```
 
 Notes:
-- The message reads: "Anna invites you to shelf: https://…/invite/K7Q2-M9XD
-  (or enter the code K7Q2-M9XD in the app)". The link opens the web app
-  until app links work (TASK-20, web on staging).
+- The message reads: "Anna invites you to shelf:
+  de.schwubware.shelf://invite/K7Q2-M9XD (or open shelf and enter the code
+  K7Q2-M9XD under Friends)". The link opens the Android app (decided
+  2026-11-26: we own no web domain); iPhones and chat apps that don't make
+  such links tappable use the code.
 - Several invites can wait at once; each makes one friend.
 
 ## Accept an invite
@@ -267,7 +269,7 @@ Done: inviter and invitee are friends; the invitee sees the inviter's shelf.
 
 ```mermaid
 flowchart TD
-  link([Opens the invite link: web]) --> signed{Signed in?}
+  link([Opens the invite link: Android app]) --> signed{Signed in?}
   code([Friends: Have a code? Enter it]) --> enter[Enter code] --> check
   signed -- no --> signin[Sign in; the invite waits on the device] --> named
   signed -- yes --> named{Has a name?}
@@ -328,7 +330,7 @@ flowchart TD
   tab([Feed tab]) --> load{Loaded?}
   load -- loading --> skel[Skeleton items]
   load -- error --> err[Couldn't load the feed. Try again.]
-  load -- no friends --> nofriends[See what friends add and rate. Invite a friend.] -- Invite a friend --> invite([Invite a friend])
+  load -- no friends --> nofriends[See what friends add and rate. Invite a friend under Friends.]
   load -- friends, nothing yet --> quiet[Nothing yet. When friends add or rate albums, they show here.]
   load -- yes --> items[Items: Anna added Kid A · 2 h; Ben rated Blue ★★★★½ · yesterday]
   items -- scroll to end --> more{More?}

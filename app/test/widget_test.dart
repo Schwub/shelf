@@ -11,6 +11,7 @@ import 'search/fake_search.dart';
 import 'share/fake_links.dart';
 import 'settings/fake_settings.dart';
 import 'friends/fake_friends.dart';
+import 'feed/fake_feed.dart';
 
 void main() {
   testWidgets('starts on the shelf when signed in', (tester) async {
@@ -24,6 +25,7 @@ void main() {
         pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();
@@ -43,6 +45,7 @@ void main() {
         pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
 
@@ -65,6 +68,7 @@ void main() {
         pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: FakeFriends('Michael'),
+        feed: FakeFeed(),
       ),
     );
     await tester.pumpAndSettle();

@@ -81,7 +81,11 @@
   except entries with `hidden` set. The app filters its own data by
   `user_id` (`SupabaseShelfRepository._load`); `loadFriend` reads a
   friend's, with one filter per built-in tag.
-- M2 (planned): `shelf_entries.rated_at` and a `feed` view (TASK-38).
+- The feed (TASK-38): a `feed` view (`security_invoker`) over friends'
+  `shelf_entries`, one "added" item per entry and a "rated" item when the
+  rating changed after adding (`rated_at`, set by a trigger). The database
+  alone sets `created_at`, `updated_at` and `rated_at` (column grants).
+  Paged by `(at, entry_id)`.
 - pgTAP tests in `supabase/tests/`, run by `mise run test:db` and the `db`
   workflow (only Postgres is started).
 
@@ -116,6 +120,12 @@
   screenshots without adding albums one by one. Locally `mise run dev:albums -- <email>`; on
   staging the `staging-test-albums` workflow (by hand, email as input). The
   account must have signed in once; running it again changes nothing.
+- **Test friend:** `supabase/dev/test_friend.sql` makes "Testa"
+  (`testa@shelf.invalid`, never signs in) one account's friend, with eight
+  albums added and rated over the past week (one hidden), for the Friends
+  tab, a friend's shelf and the feed. Locally `mise run dev:friend --
+  <email>`; on staging the `staging-test-friend` workflow. Both scripts run
+  through `supabase/dev/test-data.sh`.
 - **Production:** later, a second hosted project the same way.
 
 One-time Android setup (TASK-23):

@@ -17,7 +17,7 @@ export API_URL SERVICE_ROLE_KEY
 curl -s -o /dev/null -X POST "$API_URL/auth/v1/admin/users" \
   -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
   -H 'Content-Type: application/json' -d "{\"email\":\"$email\",\"email_confirm\":true}"
-supabase/dev/test-albums.sh "$email" >/dev/null
+supabase/dev/test-data.sh albums "$email" >/dev/null
 
 # The web build, served where the local Supabase expects the app.
 # The renderer comes with the build: cloud sessions can't reach its CDN.

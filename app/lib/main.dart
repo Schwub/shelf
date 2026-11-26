@@ -8,8 +8,11 @@ import 'auth/auth.dart';
 import 'auth/auth_gate.dart';
 import 'errors.dart';
 import 'feed/feed_page.dart';
+import 'feed/feed_repository.dart';
+import 'feed/supabase_feed_repository.dart';
 import 'friends/friends_page.dart';
 import 'friends/friends_repository.dart';
+import 'friends/invite_links.dart';
 import 'friends/name_gate.dart';
 import 'friends/pending_invite.dart';
 import 'friends/supabase_friends_repository.dart';
@@ -82,8 +85,9 @@ Future<void> main() async {
           search: MusicBrainzSearch(musicBrainz),
           links: SupabaseLinkResolver(supabase.client, client),
           friends: SupabaseFriendsRepository(supabase.client),
+          feed: SupabaseFeedRepository(supabase.client),
           inbox: inbox,
-          pendingInvite: await PendingInvite.load(Uri.base),
+          pendingInvite: await PendingInvite.load(inviteCodes()),
           settings: await Settings.load(
             SupabaseSettingsRepository(supabase.client),
           ),
@@ -104,6 +108,7 @@ class ShelfApp extends StatelessWidget {
     required this.pendingInvite,
     required this.settings,
     required this.friends,
+    required this.feed,
   });
 
   final Auth auth;
@@ -114,6 +119,7 @@ class ShelfApp extends StatelessWidget {
   final PendingInvite pendingInvite;
   final Settings settings;
   final FriendsRepository friends;
+  final FeedRepository feed;
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +145,7 @@ class ShelfApp extends StatelessWidget {
               inbox: inbox,
               settings: settings,
             ),
-            feed: const FeedPage(),
+            feed: FeedPage(feed: feed, friends: friends, shelf: shelf),
             friends: FriendsPage(
               friends: friends,
               name: name,

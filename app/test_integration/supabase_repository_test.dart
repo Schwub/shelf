@@ -1,4 +1,4 @@
-// The Supabase repositories (shelf, settings, friends) against a local
+// The Supabase repositories (shelf, settings, friends, feed) against a local
 // Supabase (`mise run test:integration` starts it and passes its URL and
 // keys). Checks what the in-memory fakes can't: PostgREST queries,
 // database errors mapped to app errors, triggers and row-level security as
@@ -7,6 +7,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:shelf_app/feed/feed_repository.dart';
+import 'package:shelf_app/feed/supabase_feed_repository.dart';
 import 'package:shelf_app/friends/friends_repository.dart';
 import 'package:shelf_app/friends/supabase_friends_repository.dart';
 import 'package:shelf_app/search/musicbrainz.dart';
@@ -69,6 +71,34 @@ Map<String, String> tagIds(Shelf shelf) => {
 };
 
 void main() {
+  test("the feed: a friend's add, then their rating, newest first", () async {
+    final alice = await signIn();
+    final bob = await signIn();
+    await SupabaseFriendsRepository(alice.db).saveName('Alice');
+    await SupabaseFriendsRepository(bob.db).saveName('Bob');
+    final invite = await SupabaseFriendsRepository(alice.db).createInvite();
+    await SupabaseFriendsRepository(bob.db).accept(invite.code);
+    final entry = await shelve(alice);
+    final hidden = await shelve(alice);
+    await alice.repo.save(hidden, hidden: true);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await alice.repo.save(entry, rating: 8);
+
+    final feed = SupabaseFeedRepository(bob.db);
+    final items = await feed.page();
+    expect(items.map((i) => (i.kind, i.entryId)), [
+      (FeedKind.rated, entry),
+      (FeedKind.added, entry),
+    ]);
+    expect(items.first.friendName, 'Alice');
+    expect(items.first.rating, 8);
+    expect(await feed.page(after: items.first), [
+      isA<FeedItem>().having((i) => i.kind, 'kind', FeedKind.added),
+    ]);
+    expect(await feed.page(after: items.last), isEmpty);
+    expect(await SupabaseFeedRepository(alice.db).page(), isEmpty);
+  });
+
   test("friends' shelves: own shelf stays own, hidden stays hidden", () async {
     final alice = await signIn();
     final bob = await signIn();

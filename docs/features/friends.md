@@ -13,12 +13,12 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
 ## Acceptance criteria
 1. **Names:** after the first sign-in the user sets the name friends see
    (1–40 characters, not unique); it can be changed under Friends.
-2. **Invite:** Friends → Invite a friend creates an invite with a link
-   (`<web app>/invite/K7Q2-M9XD`) and the code, shared through the system
-   share sheet or copied. An invite works once, for 7 days, and can be
-   cancelled while it waits.
-3. **Accept:** the link (web) or Friends → Enter code (any app) leads,
-   after sign-in and naming, to "Anna invited you": Accept makes both
+2. **Invite:** Friends → Invite a friend creates an invite with an app
+   link (`de.schwubware.shelf://invite/K7Q2-M9XD`) and the code, shared
+   through the system share sheet or copied. An invite works once, for 7
+   days, and can be cancelled while it waits.
+3. **Accept:** the link (Android app) or Friends → Enter code (any app)
+   leads, after sign-in and naming, to "Anna invited you": Accept makes both
    friends at once. Expired, used, cancelled, own and already-friends
    invites and wrong codes say so.
 4. **Friends:** the list shows each friend's name and album count; removing
@@ -108,14 +108,19 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
   Friends; an `IndexedStack` of one `Navigator` per tab so each keeps its
   back stack; system back pops the current tab first. No routing package.
 - The auth gate adds a step: signed in without a profile → Your name.
-- Invite links: on the web, `main.dart` reads `/invite/<code>` from
-  `Uri.base` into a `PendingInvite` notifier (like `SharedLinkInbox`); the
-  shell shows Friends, which opens the Invitation once signed in and
-  named, then clears it. The code is kept in `shared_preferences`, since
-  signing in by the emailed link reloads the app at its start page. Links
-  use the web app's own origin on the web, else `--dart-define=SITE_URL`
-  (default `https://shelf.pages.dev`, staging's `site_url`). Phones use the code until app links
-  exist (TASK-20, web deploys TASK-22).
+- Invite links (changed 2026-11-26: no web domain of our own): the custom
+  scheme of the sign-in link, `de.schwubware.shelf://invite/<code>`, a
+  second host in the Android intent filter. `invite_links.dart`, the only
+  code that imports `app_links` (already used by supabase_flutter for the
+  sign-in link; a direct dependency, agreed 2026-11-26), turns them into
+  codes for a `PendingInvite` notifier (like `SharedLinkInbox`); the shell
+  shows Friends, which opens the Invitation once signed in and named, then
+  clears it. The code is kept in `shared_preferences` in case the app
+  closes before that. iOS doesn't register the scheme yet (TASK-20):
+  iPhones use the code, and so does the web app (a link shared from it
+  opens only the Android app). The launch link is read with
+  `getInitialLink`: supabase_flutter listens to the stream first, which
+  doesn't replay it.
 - Share sheet: the invite message goes through the platform share sheet
   (`share_plus`, BSD-3, Flutter Community; agreed 2026-11-26; supports
   Swift Package Manager). Copy link uses the clipboard.
