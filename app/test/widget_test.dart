@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shelf_app/friends/pending_invite.dart';
 import 'package:shelf_app/main.dart';
 import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/share/link_resolver.dart';
@@ -20,6 +21,7 @@ void main() {
         search: FakeSearch({}),
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
+        pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: FakeFriends('Michael'),
       ),
@@ -38,6 +40,7 @@ void main() {
         search: FakeSearch({}),
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
+        pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: FakeFriends('Michael'),
       ),
@@ -59,6 +62,7 @@ void main() {
         search: FakeSearch({}),
         links: links,
         inbox: SharedLinkInbox(Stream.value(shared)),
+        pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: FakeFriends('Michael'),
       ),

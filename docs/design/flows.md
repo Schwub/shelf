@@ -252,7 +252,7 @@ flowchart TD
   sheet -- Share --> system[System share sheet: link and code in one message] --> waiting([Friends: invite waiting])
   sheet -- Copy link --> copied[Snackbar: Link copied] --> waiting
   sheet -- Close --> waiting
-  waiting -- Cancel invite --> cancelled[Snackbar: Invite cancelled · Undo] --> friends
+  waiting -- Cancel invite --> cancelled[Snackbar: Invite cancelled] --> friends
 ```
 
 Notes:
@@ -269,7 +269,7 @@ Done: inviter and invitee are friends; the invitee sees the inviter's shelf.
 flowchart TD
   link([Opens the invite link: web]) --> signed{Signed in?}
   code([Friends: Have a code? Enter it]) --> enter[Enter code] --> check
-  signed -- no --> signin[Sign in, with: Anna invited you to shelf] --> named
+  signed -- no --> signin[Sign in; the invite waits on the device] --> named
   signed -- yes --> named{Has a name?}
   named -- no --> name[Your name] --> check
   named -- yes --> check{Invite still valid?}
@@ -283,6 +283,10 @@ flowchart TD
   ok -- no network / error --> acceptErr[Couldn't accept the invite. Try again.] --> accept
   accept -- Not now --> friends2([Friends; the link still works until it expires])
 ```
+
+Built (TASK-36): the sign-in screen doesn't name the inviter (looking up an
+invite needs a signed-in user); Close on an expired, own or already-friends
+invite returns to Enter code, to try another.
 
 ## Friends and their shelves
 

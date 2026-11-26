@@ -11,6 +11,7 @@ import 'feed/feed_page.dart';
 import 'friends/friends_page.dart';
 import 'friends/friends_repository.dart';
 import 'friends/name_gate.dart';
+import 'friends/pending_invite.dart';
 import 'friends/supabase_friends_repository.dart';
 import 'home/home_page.dart';
 import 'search/album_search.dart';
@@ -82,6 +83,7 @@ Future<void> main() async {
           links: SupabaseLinkResolver(supabase.client, client),
           friends: SupabaseFriendsRepository(supabase.client),
           inbox: inbox,
+          pendingInvite: await PendingInvite.load(Uri.base),
           settings: await Settings.load(
             SupabaseSettingsRepository(supabase.client),
           ),
@@ -99,6 +101,7 @@ class ShelfApp extends StatelessWidget {
     required this.search,
     required this.links,
     required this.inbox,
+    required this.pendingInvite,
     required this.settings,
     required this.friends,
   });
@@ -108,6 +111,7 @@ class ShelfApp extends StatelessWidget {
   final AlbumSearch search;
   final LinkResolver links;
   final SharedLinkInbox inbox;
+  final PendingInvite pendingInvite;
   final Settings settings;
   final FriendsRepository friends;
 
@@ -126,6 +130,7 @@ class ShelfApp extends StatelessWidget {
           friends: friends,
           builder: (context, name) => HomePage(
             inbox: inbox,
+            pendingInvite: pendingInvite,
             shelf: ShelfPage(
               auth: auth,
               shelf: shelf,
@@ -135,7 +140,11 @@ class ShelfApp extends StatelessWidget {
               settings: settings,
             ),
             feed: const FeedPage(),
-            friends: FriendsPage(friends: friends, name: name),
+            friends: FriendsPage(
+              friends: friends,
+              name: name,
+              pending: pendingInvite,
+            ),
           ),
         ),
       ),

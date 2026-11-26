@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shelf_app/friends/pending_invite.dart';
 import 'package:shelf_app/main.dart';
 import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/share/link_resolver.dart';
@@ -27,6 +28,7 @@ void main() {
         search: FakeSearch({}),
         links: FakeLinks(UnsupportedLink()),
         inbox: SharedLinkInbox(const Stream.empty()),
+        pendingInvite: PendingInvite(),
         settings: Settings(FakeSettings()),
         friends: friends,
       ),

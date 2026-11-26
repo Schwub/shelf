@@ -119,8 +119,11 @@ flowchart LR
   the albums; it starts with All, Own, Want, Want to listen, Listened. Look and components: [visual-system.md](visual-system.md).
 - **Friends (M2):** mutual, from an invite only (no user search). An
   invite is a link plus an 8-character code (`K7Q2-M9XD`), used once,
-  valid 7 days, cancellable while waiting. Removing a friend asks first and
-  is mutual.
+  valid 7 days, cancellable while waiting (no Undo: invite again). Removing
+  a friend asks first and is mutual. "Invite a friend" is a key at the end
+  of the list rather than a floating button, like the app's other keys;
+  album counts per friend come with TASK-37, when friends' albums are
+  readable.
 - **Hidden from friends (M2):** a switch on the album entry, "Hide from
   friends", with the help line "Friends don't see this album, and it stays
   out of the feed." Hidden albums carry a small eye-off mark on My shelf.

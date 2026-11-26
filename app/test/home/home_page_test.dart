@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shelf_app/friends/pending_invite.dart';
 import 'package:shelf_app/home/home_page.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/theme/shelf_colors.dart';
@@ -36,6 +37,7 @@ void main() {
         theme: shelfTheme(AppTheme.tobacco.colors),
         home: HomePage(
           inbox: inbox,
+          pendingInvite: PendingInvite(),
           shelf: const _Root('Shelf'),
           feed: const _Root('Feed'),
           friends: const _Root('Friends'),

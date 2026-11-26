@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:shelf_app/friends/friends_repository.dart';
 import 'package:shelf_app/friends/supabase_friends_repository.dart';
 import 'package:shelf_app/search/musicbrainz.dart';
 import 'package:shelf_app/settings/supabase_settings_repository.dart';
@@ -68,6 +69,44 @@ Map<String, String> tagIds(Shelf shelf) => {
 };
 
 void main() {
+  test('friends: invite, accept, both see each other, remove', () async {
+    final alice = SupabaseFriendsRepository((await signIn()).db);
+    final bob = SupabaseFriendsRepository((await signIn()).db);
+    await alice.saveName('Alice');
+    await bob.saveName('Bob');
+
+    final invite = await alice.createInvite();
+    expect((await alice.load()).invites.map((i) => i.code), [invite.code]);
+    expect(await bob.preview(formatCode(invite.code).toLowerCase()), (
+      status: InviteStatus.valid,
+      inviterName: 'Alice',
+    ));
+    await bob.accept(invite.code);
+
+    expect((await bob.load()).friends.map((f) => f.name), ['Alice']);
+    final aliceList = await alice.load();
+    expect(aliceList.friends.map((f) => f.name), ['Bob']);
+    expect(aliceList.invites, isEmpty, reason: 'used');
+    await expectLater(
+      bob.accept(invite.code),
+      throwsA(
+        isA<InviteFailed>().having(
+          (e) => e.status,
+          'status',
+          InviteStatus.friends,
+        ),
+      ),
+    );
+
+    await bob.remove((await bob.load()).friends.single.id);
+    expect((await alice.load()).friends, isEmpty);
+
+    final waiting = await alice.createInvite();
+    await alice.cancelInvite(waiting.code);
+    expect((await alice.load()).invites, isEmpty);
+    expect((await bob.preview(waiting.code)).status, InviteStatus.unknown);
+  });
+
   test('names: none at first, then saved and changed', () async {
     final s = await signIn();
     final friends = SupabaseFriendsRepository(s.db);

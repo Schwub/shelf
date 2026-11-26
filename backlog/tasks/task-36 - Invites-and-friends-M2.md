@@ -1,10 +1,10 @@
 ---
 id: TASK-36
 title: Invites and friends (M2)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T10:05:00Z'
-updated_date: '2026-11-26T10:05:00Z'
+updated_date: '2026-11-26T10:35:00Z'
 labels: []
 dependencies:
   - TASK-35
