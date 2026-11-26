@@ -89,8 +89,13 @@ class _FriendsPageState extends State<FriendsPage> {
     final id = await _root.push(route);
     if (id == null || !mounted) return;
     await _load();
+    if (!mounted) return;
     final friend = _list?.friends.where((f) => f.id == id).firstOrNull;
-    if (friend == null || !mounted) return;
+    if (friend == null) {
+      // Accepted, but the list didn't load: it says so with Try again.
+      _say("You're friends now");
+      return;
+    }
     _say('You and ${friend.name} are friends');
     await _openShelf(friend);
   }

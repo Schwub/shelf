@@ -76,7 +76,10 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
     (an `exists` on `shelf_entries`, which applies its policy).
   - `tags`, `tag_groups`: `is_friend(user_id)` (needed to show their tag
     names; filters stay owner-only).
-  - `albums`: also `created_by` is a friend (manual albums).
+  - `albums`: also manual albums on an entry the reader may see (an
+    `exists` on `shelf_entries`, whose policies leave out hidden entries).
+  - Accepted (TASK-37): friends see every column of a visible entry,
+    including `added_from_name`, the friend it came from.
   - `profiles`: `is_friend(user_id)`.
 - `feed` view (`security_invoker`, so the caller's RLS applies): one row
   per friend entry for "added" (`at = created_at`) and one for "rated"

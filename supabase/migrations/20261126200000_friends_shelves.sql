@@ -25,9 +25,10 @@ create policy "Friends read tag groups" on public.tag_groups
 create policy "Friends read tags" on public.tags
   for select to authenticated using (public.is_friend(user_id));
 
--- Albums friends added by hand.
+-- Albums friends added by hand, while on an entry the reader may see: the
+-- subquery applies shelf_entries' policies, so hidden entries don't count.
 drop policy "Signed-in users read catalog albums and their own" on public.albums;
-create policy "Signed-in users read catalog albums, their own and friends'"
+create policy "Signed-in users read catalog albums, their own and friends' visible ones"
   on public.albums for select to authenticated
   using (created_by is null or created_by = (select auth.uid())
-         or public.is_friend(created_by));
+         or exists (select 1 from public.shelf_entries e where e.album_id = albums.id));

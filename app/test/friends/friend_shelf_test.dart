@@ -77,6 +77,22 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> removeEntry(WidgetTester tester) async {
+    await tester.scrollUntilVisible(
+      find.text('Remove from shelf'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(EntryPage),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove from shelf'));
+    await tester.pumpAndSettle();
+  }
+
   Future<void> openAnna(WidgetTester tester) async {
     await pumpApp(tester);
     await tester.tap(find.text('Friends').last);
@@ -177,6 +193,55 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Save'), findsOneWidget);
+  });
+
+  testWidgets("removing from a friend's album waits for Undo", (tester) async {
+    await openAnna(tester);
+    await tester.tap(find.text('Blue'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open on your shelf'));
+    await tester.pumpAndSettle();
+
+    await removeEntry(tester);
+    expect(find.text('Removed from your shelf'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(shelf.removed, isEmpty);
+
+    await tester.tap(find.text('Blue'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open on your shelf'));
+    await tester.pumpAndSettle();
+    await removeEntry(tester);
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(shelf.removed, ['2']);
+  });
+
+  testWidgets("a friend's album added by hand is added once, as a copy", (
+    tester,
+  ) async {
+    shelf.friendShelves['anna'] = Shelf(
+      entries: [
+        const ShelfEntry(
+          id: 'd',
+          album: Album(id: 'anna-demo', title: 'Demo', artist: 'Anna'),
+        ),
+      ],
+    );
+    await openAnna(tester);
+    await tester.tap(find.text('Demo'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add to my shelf'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add to shelf'));
+    await tester.pumpAndSettle();
+    expect(shelf.manual.single.title, 'Demo');
+
+    await tester.tap(find.text('Demo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Open on your shelf'), findsOneWidget);
   });
 
   testWidgets('an album can be hidden from friends, and is marked', (

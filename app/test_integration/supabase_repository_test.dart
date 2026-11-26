@@ -96,11 +96,22 @@ void main() {
     final seen = await bob.repo.loadFriend(aliceId);
     expect(seen.entries.map((e) => e.id), [aliceEntry]);
     expect(seen.allFilters.map((f) => f.label), [
-      'Want',
       'Own',
+      'Want',
       'Want to listen',
       'Listened',
     ]);
+    final bobId = bob.db.auth.currentUser!.id;
+    expect(
+      (await alice.repo.loadFriend(bobId)).entries,
+      hasLength(1),
+      reason: "and Alice sees Bob's",
+    );
+    expect(
+      (await SupabaseFriendsRepository(bob.db).load()).friends.single.albums,
+      1,
+      reason: "the count leaves out Alice's hidden album",
+    );
 
     // A new group still goes after Bob's own, not Alice's.
     await bob.repo.createGroup('Mood', exclusive: false);

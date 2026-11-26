@@ -7,12 +7,14 @@ class SupabaseSettingsRepository implements SettingsRepository {
 
   final SupabaseClient _db;
 
-  // Row-level security limits the table to the signed-in user's row.
+  // Filtered by owner like every own-data query, although friends can't
+  // read settings.
   @override
   Future<SavedSettings?> load() async {
     final row = await _db
         .from('user_settings')
         .select('theme, shelf_view')
+        .eq('user_id', _db.auth.currentUser!.id)
         .maybeSingle();
     if (row == null) return null;
     return (

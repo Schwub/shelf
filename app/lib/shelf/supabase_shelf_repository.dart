@@ -100,11 +100,10 @@ class SupabaseShelfRepository implements ShelfRepository {
       ],
       allFilters: friend
           ? [
-              for (final g in groups)
-                if (g['builtin'] != null)
-                  for (final t in tags)
-                    if (t['group_id'] == g['id'] && t['builtin'] != null)
-                      ShelfFilter.tag(t['id'], t['name']),
+              // The order new users' filters start in.
+              for (final key in ['own', 'want', 'want_to_listen', 'listened'])
+                for (final t in tags)
+                  if (t['builtin'] == key) ShelfFilter.tag(t['id'], t['name']),
             ]
           : [
               for (final f in filters)
@@ -413,6 +412,7 @@ class SupabaseShelfRepository implements ShelfRepository {
       final last = await _db
           .from('shelf_filters')
           .select('position')
+          .eq('user_id', _me)
           .order('position', ascending: false)
           .limit(1)
           .maybeSingle();

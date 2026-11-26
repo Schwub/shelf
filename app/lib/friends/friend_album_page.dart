@@ -31,8 +31,18 @@ class FriendAlbumPage extends StatelessWidget {
   final Shelf theirs, mine;
   final ShelfRepository shelf;
 
-  ShelfEntry? get _myEntry =>
-      mine.entries.where((e) => e.album.id == entry.album.id).firstOrNull;
+  /// The same catalog album, or the user's copy of one the friend added by
+  /// hand (a separate album with the same title and artist).
+  ShelfEntry? get _myEntry {
+    final album = entry.album;
+    bool same(Album a) =>
+        a.id == album.id ||
+        (album.musicbrainzId == null &&
+            a.musicbrainzId == null &&
+            a.title.toLowerCase() == album.title.toLowerCase() &&
+            a.artist.toLowerCase() == album.artist.toLowerCase());
+    return mine.entries.where((e) => same(e.album)).firstOrNull;
+  }
 
   Future<void> _addOrOpen(BuildContext context) async {
     final album = entry.album;
@@ -75,12 +85,22 @@ class FriendAlbumPage extends StatelessWidget {
         );
         navigator.pop();
       case EntryResult.removed:
+        // As on My shelf: removed once the snackbar closes without Undo.
+        final removing = _myEntry!.id;
+        navigator.pop();
+        final reason = await messenger
+            .showSnackBar(
+              SnackBar(
+                content: const Text('Removed from your shelf'),
+                action: SnackBarAction(label: 'Undo', onPressed: () {}),
+                persist: false,
+                duration: const Duration(seconds: 5),
+              ),
+            )
+            .closed;
+        if (reason == SnackBarClosedReason.action) return;
         try {
-          await shelf.remove(_myEntry!.id);
-          messenger.showSnackBar(
-            const SnackBar(content: Text('Removed from your shelf')),
-          );
-          navigator.pop();
+          await shelf.remove(removing);
         } catch (e, stack) {
           reportError(e, stack);
           messenger.showSnackBar(

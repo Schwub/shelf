@@ -42,29 +42,25 @@ class SupabaseFriendsRepository implements FriendsRepository {
     ).wait;
     final ids = [for (final f in friendships) f['friend_id'] as String];
     // Friendships point at accounts, not profiles, so names come separately.
-    final (names, entries) = ids.isEmpty
-        ? (const <Map<String, dynamic>>[], const <Map<String, dynamic>>[])
-        : await (
-            _db
+    final (names, counts) = await (
+      ids.isEmpty
+          ? Future.value(const <Map<String, dynamic>>[])
+          : _db
                 .from('profiles')
                 .select('user_id, name')
                 .inFilter('user_id', ids),
-            // Row-level security leaves out entries hidden from friends.
-            _db
-                .from('shelf_entries')
-                .select('user_id')
-                .inFilter('user_id', ids),
-          ).wait;
+      [
+        // Row-level security leaves out entries hidden from friends.
+        for (final id in ids)
+          _db.from('shelf_entries').count().eq('user_id', id),
+      ].wait,
+    ).wait;
     final nameOf = {for (final p in names) p['user_id']: p['name'] as String};
-    final albums = <String, int>{};
-    for (final e in entries) {
-      albums.update(e['user_id'], (n) => n + 1, ifAbsent: () => 1);
-    }
     return (
       friends: [
-        for (final id in ids)
+        for (final (i, id) in ids.indexed)
           if (nameOf[id] case final name?)
-            (id: id, name: name, albums: albums[id] ?? 0),
+            (id: id, name: name, albums: counts[i]),
       ],
       invites: [for (final i in invites) _invite(i)],
     );
