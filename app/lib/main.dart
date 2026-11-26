@@ -154,7 +154,7 @@ class ShelfApp extends StatelessWidget {
               name: name,
               pending: pendingInvite,
               shelf: shelf,
-              sort: settings.sort,
+              settings: settings,
             ),
           ),
         ),

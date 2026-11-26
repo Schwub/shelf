@@ -23,7 +23,8 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
    invites and wrong codes say so.
 4. **Friends:** the list shows each friend's name and album count; removing
    one asks first and ends access both ways. Albums added from them stay.
-5. **A friend's shelf:** read-only, covers or list, built-in filters only;
+5. **A friend's shelf:** read-only, covers or list, their filters (since
+   2026-11-26; built-in ones only before) and the user's sort order;
    their album shows their rating, comment, tags and favorite tracks, with
    Add to my shelf (TASK-19 imports their tags) or Open on your shelf.
 6. **Feed:** friends' albums added and ratings set or changed, newest
@@ -75,7 +76,9 @@ and navigation in [../design/screens.md](../design/screens.md), wireframes
   - `entry_tags`, `entry_tracks`: the entry is a friend's and not hidden
     (an `exists` on `shelf_entries`, which applies its policy).
   - `tags`, `tag_groups`: `is_friend(user_id)` (needed to show their tag
-    names; filters stay owner-only).
+    names).
+  - `shelf_filters`, `shelf_filter_tags`: `is_friend(user_id)`, read only
+    (2026-11-26, so friends use each other's filters).
   - `albums`: also manual albums on an entry the reader may see (an
     `exists` on `shelf_entries`, whose policies leave out hidden entries).
   - Accepted (TASK-37): friends see every column of a visible entry,

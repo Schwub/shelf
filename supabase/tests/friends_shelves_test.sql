@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(20);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -52,8 +52,12 @@ select ok((select count(*) from public.tags
     where user_id = '11111111-1111-1111-1111-111111111111') > 0, 'and the friend''s tags');
 select ok((select count(*) from public.tag_groups
     where user_id = '11111111-1111-1111-1111-111111111111') > 0, 'and tag groups');
-select is_empty($$select * from public.shelf_filters
-    where user_id = '11111111-1111-1111-1111-111111111111'$$, 'but not their filters');
+select ok((select count(*) from public.shelf_filters
+    where user_id = '11111111-1111-1111-1111-111111111111') > 0, 'and their filters');
+select ok((select count(*) from public.shelf_filter_tags
+    where user_id = '11111111-1111-1111-1111-111111111111') > 0, 'with their tags');
+update public.shelf_filters set name = 'Bob''s'
+  where user_id = '11111111-1111-1111-1111-111111111111';
 select results_eq($$select title from public.albums
     where id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'$$,
   array['By hand'], 'a friend reads albums the other added by hand');
@@ -67,6 +71,9 @@ reset role;
 select results_eq($$select count(*)::int from public.shelf_entries
     where user_id = '11111111-1111-1111-1111-111111111111' and comment is null$$,
   array[4], 'a friend cannot change or delete entries');
+select is_empty($$select * from public.shelf_filters
+    where user_id = '11111111-1111-1111-1111-111111111111' and name is not null$$,
+  'nor filters');
 
 -- Carol, a stranger.
 select pg_temp.as_user('33333333-3333-3333-3333-333333333333');
@@ -79,6 +86,8 @@ select is_empty($$select * from public.entry_tracks
     where user_id = '11111111-1111-1111-1111-111111111111'$$, 'nor tracks');
 select is_empty($$select * from public.albums
     where id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'$$, 'nor albums added by hand');
+select is_empty($$select * from public.shelf_filters
+    where user_id = '11111111-1111-1111-1111-111111111111'$$, 'nor filters');
 
 -- Alice still reads everything of hers, hidden or not.
 reset role;

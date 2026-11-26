@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../theme/shelf_colors.dart';
 import '../widgets/help_line.dart';
+import '../widgets/shelf_key.dart';
 import 'shelf.dart';
 import 'tag_sheet.dart';
 
@@ -66,5 +67,25 @@ Future<ShelfSort?> showSortSheet(BuildContext context, ShelfSort current) {
         ),
       ),
     ),
+  );
+}
+
+/// The bottom bar's Sort key: says the order to screen readers, opens the
+/// sheet.
+class SortKey extends StatelessWidget {
+  const SortKey({super.key, required this.sort, required this.onChanged});
+
+  final ShelfSort sort;
+  final ValueChanged<ShelfSort> onChanged;
+
+  @override
+  Widget build(BuildContext context) => ShelfKey(
+    semanticLabel: 'Sort: ${sortName(sort.by)}, ${sortDirection(sort)}',
+    padding: EdgeInsets.zero,
+    onPressed: () async {
+      final chosen = await showSortSheet(context, sort);
+      if (chosen != null) onChanged(chosen);
+    },
+    child: const Icon(Icons.sort),
   );
 }

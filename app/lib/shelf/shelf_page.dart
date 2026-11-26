@@ -351,7 +351,6 @@ class _ShelfPageState extends State<ShelfPage> {
 
   Widget _bottomBar(BuildContext context) {
     final c = context.shelf;
-    final sort = widget.settings.sort.value;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: c.bg,
@@ -376,15 +375,9 @@ class _ShelfPageState extends State<ShelfPage> {
                 ),
                 const SizedBox(width: 8),
               ],
-              ShelfKey(
-                semanticLabel:
-                    'Sort: ${sortName(sort.by)}, ${sortDirection(sort)}',
-                padding: EdgeInsets.zero,
-                onPressed: () async {
-                  final chosen = await showSortSheet(context, sort);
-                  if (chosen != null) widget.settings.chooseSort(chosen);
-                },
-                child: const Icon(Icons.sort),
+              SortKey(
+                sort: widget.settings.sort.value,
+                onChanged: widget.settings.chooseSort,
               ),
               const SizedBox(width: 8),
               Expanded(

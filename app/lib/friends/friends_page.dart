@@ -1,8 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../errors.dart';
-import '../shelf/shelf.dart';
+import '../settings/settings.dart';
 import '../shelf/shelf_repository.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/confirm_dialog.dart';
@@ -27,7 +26,7 @@ class FriendsPage extends StatefulWidget {
     required this.name,
     required this.pending,
     required this.shelf,
-    required this.sort,
+    required this.settings,
   });
 
   final FriendsRepository friends;
@@ -36,7 +35,7 @@ class FriendsPage extends StatefulWidget {
   final ShelfRepository shelf;
 
   /// The user's shelf order, for friends' shelves too.
-  final ValueListenable<ShelfSort> sort;
+  final Settings settings;
 
   @override
   State<FriendsPage> createState() => _FriendsPageState();
@@ -111,7 +110,7 @@ class _FriendsPageState extends State<FriendsPage> {
       builder: (_) => FriendShelfPage(
         friend: friend,
         shelf: widget.shelf,
-        sort: widget.sort,
+        settings: widget.settings,
       ),
     ),
   );

@@ -1,11 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../errors.dart';
 import '../shelf/albums_list_view.dart';
 import '../shelf/covers_view.dart';
+import '../settings/settings.dart';
 import '../shelf/shelf.dart';
 import '../shelf/shelf_repository.dart';
+import '../shelf/sort_sheet.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/message.dart';
@@ -13,20 +14,20 @@ import '../widgets/shelf_key.dart';
 import 'friend_album_page.dart';
 import 'friends_repository.dart';
 
-/// A friend's albums, read-only: covers or a list in the user's own order,
-/// filtered by their built-in tags. Loads the user's own shelf too, to tell which albums are
+/// A friend's albums, read-only: covers or a list in the user's own order
+/// (sorted here too), with their filters. Loads the user's own shelf too, to tell which albums are
 /// on it.
 class FriendShelfPage extends StatefulWidget {
   const FriendShelfPage({
     super.key,
     required this.friend,
     required this.shelf,
-    required this.sort,
+    required this.settings,
   });
 
   final Friend friend;
   final ShelfRepository shelf;
-  final ValueListenable<ShelfSort> sort;
+  final Settings settings;
 
   @override
   State<FriendShelfPage> createState() => _FriendShelfPageState();
@@ -43,7 +44,7 @@ class _FriendShelfPageState extends State<FriendShelfPage> {
     super.initState();
     _load();
     widget.shelf.changes.addListener(_load);
-    widget.sort.addListener(_rebuild);
+    widget.settings.sort.addListener(_rebuild);
   }
 
   void _rebuild() => setState(() {});
@@ -51,7 +52,7 @@ class _FriendShelfPageState extends State<FriendShelfPage> {
   @override
   void dispose() {
     widget.shelf.changes.removeListener(_load);
-    widget.sort.removeListener(_rebuild);
+    widget.settings.sort.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -119,7 +120,7 @@ class _FriendShelfPageState extends State<FriendShelfPage> {
       );
     } else {
       final filter = theirs.filters.where((f) => f.id == _filterId).firstOrNull;
-      final entries = widget.sort.value.apply(theirs.matching(filter));
+      final entries = widget.settings.sort.value.apply(theirs.matching(filter));
       body = Column(
         children: [
           const SizedBox(height: 8),
@@ -178,6 +179,10 @@ class _FriendShelfPageState extends State<FriendShelfPage> {
               ),
               const SizedBox(width: 8),
             ],
+            SortKey(
+              sort: widget.settings.sort.value,
+              onChanged: widget.settings.chooseSort,
+            ),
           ],
         ),
       ),

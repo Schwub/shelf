@@ -22,7 +22,7 @@ Flows are in [flows.md](flows.md), wireframes in [wireframes/](wireframes/).
 | Invite (sheet, M2) | The new invite's link and code; share or copy | Invite a friend | created, creating, error (snackbar) |
 | Enter code (M2) | Type or paste an invite code | Accept an invite | empty, wrong code, checking |
 | Invitation (M2) | "Anna invited you": accept or not now | Accept an invite | valid, expired or used, own invite, already friends, accepting, error |
-| Friend's shelf (M2) | A friend's albums, read-only, with the built-in filters | Friends and their shelves | loading, empty, filled grid, filled list, filter with no matches, error |
+| Friend's shelf (M2) | A friend's albums, read-only, with their filters | Friends and their shelves | loading, empty, filled grid, filled list, filter with no matches, error |
 | Friend's album (M2) | One album as the friend has it: rating, comment, tags, favorite tracks; add it | Friends and their shelves, Feed | not on your shelf (Add to my shelf), on your shelf (Open), load error |
 
 One screen, **Album entry**, serves both adding and editing, so tags,
@@ -132,7 +132,8 @@ flowchart LR
   friends", with the help line "Friends don't see this album, and it stays
   out of the feed." Hidden albums carry a small eye-off mark on My shelf.
 - **A friend's shelf** looks like My shelf without anything to edit: no
-  Add album, no ⋮ menu, only the built-in filters. Their tags show on
+  Add album, no ⋮ menu; their own filters and the user's Sort key (one
+  order for both shelves). Their tags show on
   their album as plain labels. Its Covers / List keys are for that screen
   only. "Add to my shelf" opens Album entry in add mode (TASK-19 adds
   copying their tags); an album they added by hand becomes the user's own
