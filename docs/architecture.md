@@ -137,6 +137,14 @@
   tab, a friend's shelf and the feed. Locally `mise run dev:friend --
   <email>`; on staging the `staging-test-friend` workflow. Both scripts run
   through `supabase/dev/test-data.sh`.
+- **Staging data** (TASK-43, 2026-11-26): testers' data stays. The `db`
+  workflow runs `supabase/check-migrations.sh` on pull requests: a new
+  migration with `drop table`, `drop column`, `drop schema`, `truncate` or
+  `delete from` outside a function body fails unless it has a
+  `-- keeps data: <how>` line, and an edited merged migration fails (staging
+  never runs it again). Backups: none yet; artifacts in GitHub were ruled
+  out (collaborators can download them), Cloudflare R2 is the plan
+  (TASK-47). Considered: Supabase Pro's daily backups (not free).
 - **Production:** later, a second hosted project the same way.
 
 One-time Android setup (TASK-23):
