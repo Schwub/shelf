@@ -187,10 +187,10 @@ flowchart TD
   friend([Friend's shelf: album]) -- Add to my shelf --> entry[Album entry: add, no tags set]
   entry --> any{Friend has tags on it?}
   any -- no --> entry
-  any -- yes --> sheet[Anna's tags: the album's tags, none ticked, each with where it goes]
-  sheet -- where it goes --> pick[Any of my groups or tags, or a new group; another group is remembered for Anna] --> sheet
-  sheet -- Tick the N that match --> sheet
-  sheet -- Use N tags --> entry2[Album entry with the tags; new groups and tags created]
+  any -- yes --> sheet[Anna's tags: the album's tags in her tree, none ticked, each with where it goes]
+  sheet -- where it goes --> pick[Copy, or anywhere in my tree, folded, with search] --> sheet
+  sheet -- Tick the N you have --> sheet
+  sheet -- Use N tags --> entry2[Album entry with the tags; new groups and tags created; choices remembered]
   sheet -- Skip --> entry
   entry -- See Anna's tags --> sheet
   entry2 -- Add to shelf --> done([My shelf + snackbar: Added to your shelf])

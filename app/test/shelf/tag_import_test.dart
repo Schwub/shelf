@@ -64,25 +64,26 @@ TagImport plan(
   Set<String> tags, {
   List<TagGroup>? theirs,
   List<TagGroup>? mine,
-  Map<String, String> destinations = const {},
+  Map<String, CopyTarget> remembered = const {},
+  Set<String> taken = const {},
 }) => TagImport(
   from: anna,
   theirs: Shelf(entries: const [], allGroups: theirs ?? annasGroups),
   tagIds: {for (final t in tags) 'their-$t'},
   mine: Shelf(entries: const [], allGroups: mine ?? suggestedGroups),
-  destinations: destinations,
+  memory: (targets: remembered, taken: taken),
 );
 
-/// Where the suggestions put each row: "group/tag", "group/+" for a new tag
-/// there, "+" for a new group.
-List<String> targets(TagImport p) => [
-  for (final t in p.rows)
-    switch (p.suggest(t)) {
-      TagTarget(:final tag?, :final group?) => '${group.id}/${tag.id}',
-      TagTarget(:final group?) => '${group.id}/+',
-      _ => '+',
-    },
-];
+/// Where the friend's tag [name] goes: "tag-id" when the user has it,
+/// "+path" when it is new.
+String place(
+  TagImport p,
+  String name, [
+  Map<String, CopyTarget> picked = const {},
+]) {
+  final t = p.tagPlace(p.theirTag('their-$name'), picked);
+  return t.existing?.id ?? '+${t.path}';
+}
 
 final pressing = TagGroup(
   id: 'a-pressing',
@@ -93,97 +94,126 @@ final pressing = TagGroup(
 );
 
 void main() {
-  test("only the album's tags are rows, parents before sub-tags", () {
-    final p = plan({'vinyl', 'Have', 'Rainy day', 'jazz'});
+  test("rows are the friend's tree down to the album's tags", () {
+    final p = plan({'vinyl', 'jazz'});
 
     expect(
-      [for (final t in p.rows) t.name],
-      ['Have', 'jazz', 'Rainy day', 'vinyl'],
+      [
+        for (final r in p.rows)
+          '${'  ' * r.depth}${r.group?.name ?? r.tag!.name}',
+      ],
+      ['Records', '  Have', '    format', '      vinyl', 'GENRE', '  jazz'],
     );
   });
 
-  test("the friend's hidden groups are left out", () {
-    final theirs = [
-      for (final g in annasGroups)
-        g.id == 'a-mood' ? g.copyWith(hidden: true) : g,
-    ];
-    expect(
-      plan({'jazz', 'Rainy day'}, theirs: theirs).rows.map((t) => t.name),
-      ['jazz'],
-    );
-  });
-
-  test('built-in tags match by key, whatever they are called', () {
-    expect(targets(plan({'Have', 'Listened'})), [
-      'collection/own',
-      'listening/listened',
-    ]);
-  });
-
-  test('other tags match by group and name, ignoring case', () {
-    expect(targets(plan({'jazz', 'Shoegaze'})), ['genre/jazz', 'genre/+']);
-  });
-
-  test('a sub-group matches under the matching parent tag', () {
-    expect(targets(plan({'Have', 'vinyl', 'Shellac'})), [
-      'collection/own',
-      'format/vinyl',
-      'format/+',
-    ]);
-  });
-
-  test("a group I don't have is suggested as a new one", () {
-    expect(targets(plan({'Parlophone', 'Rainy day'})), ['+', '+']);
-  });
-
-  test('a group goes where it went before', () {
-    final p = plan({'Parlophone'}, destinations: {'a-label': 'genre'});
-
-    expect(targets(p), ['genre/+']);
-    expect(targets(plan({'Parlophone'}).withDestination('a-label', 'genre')), [
-      'genre/+',
-    ]);
-  });
-
-  test('a remembered group that is gone is ignored', () {
-    expect(targets(plan({'jazz'}, destinations: {'a-genre': 'gone'})), [
-      'genre/jazz',
-    ]);
-  });
-
-  test('tags in a built-in group I hide are left out, with their sub-tags', () {
+  test('a built-in group I hide is left out, with what is under it', () {
     final mine = [
       for (final g in suggestedGroups)
         g.id == 'collection' ? g.copyWith(hidden: true) : g,
     ];
-    final p = plan({'Have', 'vinyl', 'jazz'}, mine: mine);
-
-    expect([for (final t in p.rows) t.name], ['jazz']);
+    expect(
+      plan({'Have', 'vinyl', 'jazz'}, mine: mine).tags.map((t) => t.name),
+      ['jazz'],
+    );
   });
 
-  test("a sub-tag whose parent tag isn't on the album is left out", () {
-    expect(plan({'vinyl', 'jazz'}).rows.map((t) => t.name), ['jazz']);
+  test('Copy reuses what I have along the same path', () {
+    final p = plan({'Have', 'vinyl', 'Shellac', 'Shoegaze'});
+
+    expect(place(p, 'Have'), 'own', reason: 'built-in by key');
+    expect(place(p, 'vinyl'), 'vinyl');
+    expect(place(p, 'Shellac'), '+Own › Format › Shellac');
+    expect(place(p, 'Shoegaze'), '+Genre › Shoegaze');
   });
 
-  test('nothing is suggested into a group I hide', () {
-    final mine = [
-      for (final g in suggestedGroups)
-        g.id == 'genre' ? g.copyWith(hidden: true) : g,
-    ];
-    expect(targets(plan({'jazz'}, mine: mine)), ['+']);
+  test("a group I don't have becomes a new group, sub-groups under it", () {
+    final p = plan({'First'}, theirs: [...annasGroups, pressing]);
+
+    expect(place(p, 'First'), '+Parlophone › Pressing › First');
+    expect(p.creates({'their-First'}, {}), [
+      'group Label',
+      'tag Parlophone in Label',
+      'sub-group Pressing under Parlophone',
+      'tag First in Pressing',
+    ]);
+    expect(p.along({'their-First'}, {}), {'their-Parlophone'});
   });
 
-  test("a sub-tag follows the target picked for its parent", () {
+  test(
+    'a new tag goes onto my tag of the same name elsewhere, unless Copy',
+    () {
+      final theirs = [
+        ...annasGroups,
+        TagGroup(
+          id: 'a-style',
+          name: 'Style',
+          exclusive: false,
+          tags: [theirTag('a-style', 'Jazz')],
+        ),
+      ];
+      final p = plan({'Jazz'}, theirs: theirs);
+
+      expect(place(p, 'Jazz'), 'jazz');
+      expect(
+        place(p, 'Jazz', {'their-Jazz': const CopyAsIs()}),
+        '+Style › Jazz',
+      );
+    },
+  );
+
+  test('a group goes where it was remembered or picked', () {
+    final p = plan(
+      {'Parlophone'},
+      remembered: {'a-label': const IntoGroup('genre')},
+    );
+
+    expect(place(p, 'Parlophone'), '+Genre › Parlophone');
+    expect(
+      place(p, 'Parlophone', {'a-label': const UnderTag('vinyl')}),
+      '+Own › Vinyl › Label › Parlophone',
+    );
+  });
+
+  test('a tag can go onto any of my tags, and then goes alone', () {
     final p = plan({'Have', 'vinyl'});
-    final collection = suggestedGroups.first;
-    final want = collection.tags.first;
+    final picked = {'their-vinyl': const OntoTag('cd')};
+
+    expect(place(p, 'vinyl', picked), 'cd');
+    expect(p.along({'their-vinyl'}, {}), {'their-Have'});
+    expect(p.along({'their-vinyl'}, picked), isEmpty);
+  });
+
+  test('a remembered target that is gone is ignored', () {
+    expect(
+      place(
+        plan({'jazz'}, remembered: {'a-genre': const IntoGroup('gone')}),
+        'jazz',
+      ),
+      'jazz',
+    );
+  });
+
+  test("a group named like one of my built-in groups goes into it", () {
+    final theirs = [
+      TagGroup(
+        id: 'a-coll',
+        name: 'collection',
+        exclusive: false,
+        tags: [theirTag('a-coll', 'Boxed')],
+      ),
+    ];
+    expect(
+      place(plan({'Boxed'}, theirs: theirs), 'Boxed'),
+      '+Collection › Boxed',
+    );
+  });
+
+  test('a tag follows a target picked above it, not a same-name tag', () {
+    final p = plan({'Have', 'vinyl'});
 
     expect(
-      p.suggest(p.rows.last, {
-        'their-Have': TagTarget(group: collection, tag: want),
-      }),
-      const TagTarget(),
-      reason: 'no Format under Want: a new group',
+      place(p, 'vinyl', {'their-Have': const OntoTag('want')}),
+      '+Want › format › vinyl',
     );
   });
 
@@ -191,79 +221,53 @@ void main() {
     late FakeShelf shelf;
     setUp(() => shelf = FakeShelf([]));
 
-    test('sets matches and creates only the ticked new tags', () async {
-      final p = plan({'jazz', 'Shoegaze', 'Parlophone', 'Rainy day'});
-      final rows = {for (final t in p.rows) t.name: t};
-
-      final after = await p.apply(shelf, {
-        for (final name in ['jazz', 'Shoegaze', 'Parlophone'])
-          rows[name]!.id: p.suggest(rows[name]!),
-      });
-
-      expect(after.tagIds, {'jazz', 'shoegaze', 'parlophone'});
-      final label = shelf.groups.firstWhere((g) => g.name == 'Label');
-      expect(label.exclusive, isFalse);
-      expect(label.pickFromList, isTrue);
-      expect(shelf.groups.any((g) => g.name == 'Mood'), isFalse);
-      expect(
-        after.mine.allGroups.any((g) => g.name == 'Label'),
-        isTrue,
-        reason: 'the shelf after',
-      );
-    });
-
-    test('puts a tag into any tag or group of mine', () async {
-      final p = plan({'Parlophone', 'Rainy day'});
-      final genre = suggestedGroups.firstWhere((g) => g.id == 'genre');
-
-      final after = await p.apply(shelf, {
-        'their-Parlophone': TagTarget(group: genre),
-        'their-Rainy day': TagTarget(group: genre, tag: genre.tags.first),
-      });
-
-      expect(after.tagIds, {'parlophone', genre.tags.first.id});
-      expect(
-        shelf.groups.firstWhere((g) => g.id == 'genre').tags.map((t) => t.name),
-        contains('Parlophone'),
-      );
-      expect(shelf.groups.any((g) => g.name == 'Label'), isFalse);
-    });
-
-    test('a sub-tag goes under its parent and brings it along', () async {
+    test('creates what is new and sets the tags with their parents', () async {
       final p = plan(
-        {'Parlophone', 'First'},
+        {'Shellac', 'First', 'jazz'},
         theirs: [...annasGroups, pressing],
       );
 
-      final after = await p.apply(shelf, {
-        for (final t in p.rows) t.id: p.suggest(t),
-      });
+      final after = await p.apply(shelf, {'their-Shellac', 'their-First'}, {});
 
-      expect(after.tagIds, {'parlophone', 'first'});
+      expect(after.tagIds, {'shellac', 'own', 'first', 'parlophone'});
       expect(
         shelf.groups.firstWhere((g) => g.name == 'Pressing').parentTagId,
         'parlophone',
       );
+      expect(
+        shelf.groups.firstWhere((g) => g.name == 'Label').pickFromList,
+        isTrue,
+      );
+      expect(after.mine.allGroups.any((g) => g.name == 'Label'), isTrue);
     });
 
-    test("a sub-tag of mine brings my parent tag", () async {
-      final p = plan({'Have', 'vinyl'});
-      final format = suggestedGroups.firstWhere((g) => g.id == 'format');
+    test('puts a tag where it was picked', () async {
+      final p = plan({'Rainy day', 'Parlophone'});
 
-      final after = await p.apply(shelf, {
-        'their-vinyl': TagTarget(group: format, tag: format.tags.first),
-      });
+      final after = await p.apply(
+        shelf,
+        {'their-Rainy day', 'their-Parlophone'},
+        {
+          'their-Rainy day': const OntoTag('jazz'),
+          'a-label': const UnderTag('vinyl'),
+        },
+      );
 
-      expect(after.tagIds, {'vinyl', 'own'});
+      expect(after.tagIds, {'jazz', 'parlophone', 'vinyl', 'own'});
+      expect(
+        shelf.groups.firstWhere((g) => g.name == 'Label').parentTagId,
+        'vinyl',
+      );
+      expect(shelf.groups.any((g) => g.name == 'Mood'), isFalse);
     });
 
     test('trying again after a failure creates nothing twice', () async {
       final p = plan({'Shoegaze', 'Rainy day'});
-      final ticked = {for (final t in p.rows) t.id: p.suggest(t)};
+      final ticked = {'their-Shoegaze', 'their-Rainy day'};
       shelf.failEdit = true; // The new group fails; Shoegaze is created.
 
-      await expectLater(p.apply(shelf, ticked), throwsException);
-      final after = await p.apply(shelf, ticked);
+      await expectLater(p.apply(shelf, ticked, {}), throwsException);
+      final after = await p.apply(shelf, ticked, {});
 
       expect(after.tagIds, {'shoegaze', 'rainy day'});
       expect(
@@ -274,5 +278,41 @@ void main() {
         hasLength(1),
       );
     });
+
+    test('remembers picked groups and the ticked tags', () async {
+      final p = plan({'jazz', 'Parlophone'});
+
+      await p.remember(
+        shelf,
+        {'their-jazz'},
+        {
+          'a-label': const IntoGroup('genre'),
+          'their-jazz': const OntoTag('pop'),
+        },
+      );
+
+      expect(shelf.copyTargets, {
+        'a-label': const IntoGroup('genre'),
+        'their-jazz': const OntoTag('pop'),
+      });
+      expect(shelf.taken, {'their-jazz'});
+    });
+
+    test(
+      'remembers the tags that came along, and Copy forgets a group',
+      () async {
+        final p = plan({'vinyl'});
+        shelf.copyTargets['a-format'] = const IntoGroup('genre');
+
+        await p.remember(
+          shelf,
+          {'their-vinyl'},
+          {'a-format': const CopyAsIs()},
+        );
+
+        expect(shelf.taken, {'their-vinyl', 'their-Have'});
+        expect(shelf.copyTargets, isEmpty);
+      },
+    );
   });
 }

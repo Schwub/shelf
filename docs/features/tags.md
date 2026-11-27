@@ -73,8 +73,38 @@ menu.
   Different suggested sets per media type (books: Read / To read) come with
   the second media type.
 
+## Copy or map a friend's tags (TASK-49)
+Agreed 2026-11-27 after TASK-48 below; wireframe
+`docs/design/wireframes/copy-tags-4.html`.
+
+- `app/lib/shelf/copy_tags_page.dart`: "Anna's tags" shows the album's
+  tags with their paths in the friend's tree (groups, tags, sub-groups;
+  parent tags not on the album too). Every group and tag row says where it
+  goes; its picker offers Copy (keep the friend's structure) and the
+  user's whole tree, folded, with a search: into a group, onto a tag,
+  under a tag as a sub-group, or at the top level. Built-in groups and
+  tags can go anywhere. Nothing is ticked; "Tick the N you have (or took
+  before)". A ticked tag brings the friend's tags above its place
+  ("comes along"); a tag sent elsewhere goes alone; unticking a tag
+  unticks the ones that need it. In a one-per-album group the newer tick
+  wins, with a note. A summary lists what Use N tags creates.
+- `TagImport` (`tag_import.dart`) works out a `GroupPlace` or `TagPlace`
+  for each of the friend's groups and tags: an existing one of the user's
+  or a new one (name, parent). A tag's default: remembered, else Copy when
+  that lands on a tag the user has, else a tag of the same name anywhere in
+  the user's shown groups, else Copy. `apply` creates what is new (reusing
+  same-name groups and tags, so a retry creates nothing twice) and returns
+  the tags to set with their parent tags; `remember` saves the targets.
+- Remembered per friend (`ShelfRepository.copyMemory`, `rememberCopy`):
+  group targets in `tag_group_destinations` (now also `parent_tag_id`, a
+  sub-group under one of the user's tags), and in `tag_destinations` (migration
+  `20261127120000`) each friend's tag taken before, with the user's tag or
+  group it went to. Both owner-only; a row goes with either side.
+- `CopyTarget` (`shelf.dart`): `CopyAsIs`, `IntoGroup`, `OntoTag`,
+  `UnderTag`, `AtRoot`.
+
 ## Copy a friend's tags (TASK-48)
-Agreed 2026-11-27; replaces TASK-19's sheet (below). Wireframes
+Agreed 2026-11-27; replaces TASK-19's sheet (below); replaced by TASK-49 (above). Wireframes
 `docs/design/wireframes/copy-tags.html`.
 
 Reworked the same day: only the album's tags, none ticked, each to any

@@ -138,22 +138,27 @@ class _EntryPageState extends State<EntryPage> {
   /// The friend's tags as last planned, with the groups chosen so far.
   late TagImport? _plan = widget.fromFriend;
 
+  /// The targets picked on "Anna's tags" so far.
+  Map<String, CopyTarget> _picked = const {};
+
   /// The tags last set from the friend's, which come off when they're
   /// chosen again.
   Set<String> _fromPlan = const {};
 
-  /// The friend's tags on the album, to pick from (TASK-48).
+  /// The friend's tags on the album, to pick from (TASK-49).
   Future<void> _importTags() async {
     if (!mounted) return;
     final result = await Navigator.of(context).push(
       MaterialPageRoute<CopyTagsResult>(
-        builder: (_) => CopyTagsPage(plan: _plan!, shelf: widget.shelf),
+        builder: (_) =>
+            CopyTagsPage(plan: _plan!, picked: _picked, shelf: widget.shelf),
       ),
     );
     if (result == null || !mounted) return;
-    final (:plan, :tagIds) = result;
+    final (:plan, :picked, :tagIds) = result;
     setState(() {
       _plan = plan;
+      _picked = picked;
       if (tagIds == null) return;
       // The new tags go on by the usual rules, so a tag in a one-per-album
       // group replaces the other.

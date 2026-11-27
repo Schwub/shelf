@@ -196,6 +196,7 @@ class TagRow extends StatelessWidget {
     this.chosen = false,
     this.create = false,
     this.below,
+    this.along = false,
   });
 
   final String title;
@@ -203,6 +204,9 @@ class TagRow extends StatelessWidget {
 
   /// Under the subtitle, e.g. a link of its own.
   final Widget? below;
+
+  /// Not chosen itself, but comes along with a chosen one: a faint mark.
+  final bool along;
   final bool chosen, create;
   final VoidCallback? onTap;
 
@@ -233,9 +237,15 @@ class TagRow extends StatelessWidget {
                           width: 10,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: chosen ? c.signal : c.window,
+                            color: chosen
+                                ? c.signal
+                                : along
+                                ? c.muted
+                                : c.window,
                             borderRadius: BorderRadius.circular(2),
-                            border: chosen ? null : Border.all(color: c.off),
+                            border: chosen || along
+                                ? null
+                                : Border.all(color: c.off),
                           ),
                         ),
                       ),

@@ -339,16 +339,44 @@ class FakeShelf implements ShelfRepository {
     _changes.value++;
   }
 
-  /// Remembered destinations by the friend's group.
-  final savedDestinations = <String, String>{};
+  /// Remembered targets by the friend's group or tag ID, and the friend's
+  /// tags taken before.
+  final copyTargets = <String, CopyTarget>{};
+  final taken = <String>{};
 
   @override
-  Future<Map<String, String>> destinations(List<String> friendGroupIds) async =>
-      {for (final id in friendGroupIds) id: ?savedDestinations[id]};
+  Future<CopyMemory> copyMemory({
+    required List<String> friendGroupIds,
+    required List<String> friendTagIds,
+  }) async => (
+    targets: {
+      for (final id in [...friendGroupIds, ...friendTagIds])
+        id: ?copyTargets[id],
+    },
+    taken: taken.intersection(friendTagIds.toSet()),
+  );
 
   @override
-  Future<void> saveDestination(String friendGroupId, String groupId) async =>
-      savedDestinations[friendGroupId] = groupId;
+  Future<void> rememberCopy({
+    required Map<String, CopyTarget> groups,
+    required Map<String, CopyTarget?> tags,
+  }) async {
+    for (final MapEntry(:key, :value) in groups.entries) {
+      if (value is IntoGroup || value is UnderTag) {
+        copyTargets[key] = value;
+      } else {
+        copyTargets.remove(key);
+      }
+    }
+    for (final MapEntry(:key, :value) in tags.entries) {
+      if (value == null) {
+        copyTargets.remove(key);
+      } else {
+        copyTargets[key] = value;
+      }
+    }
+    taken.addAll(tags.keys);
+  }
 
   @override
   Future<void> hide(List<String> entryIds, bool hidden) async {

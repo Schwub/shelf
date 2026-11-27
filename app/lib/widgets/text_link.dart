@@ -27,6 +27,8 @@ class TextLink extends StatelessWidget {
       decorationColor: c.muted,
     );
     return Semantics(
+      // Its own node, not merged into the text around it.
+      container: true,
       button: true,
       label: semanticLabel ?? label,
       // The gesture's own semantics are excluded with the text, so the tap
@@ -46,7 +48,8 @@ class TextLink extends StatelessWidget {
                 Icon(icon, size: 16, color: c.muted),
                 const SizedBox(width: 4),
               ],
-              Text(label, style: style),
+              // Wraps when it is longer than the space it has.
+              Flexible(child: Text(label, style: style)),
             ],
           ),
         ),
