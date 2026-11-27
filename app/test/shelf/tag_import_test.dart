@@ -64,11 +64,13 @@ TagImport plan(
   Set<String> tags, {
   List<TagGroup>? theirs,
   List<TagGroup>? mine,
+  Map<String, Destination> destinations = const {},
 }) => TagImport(
   from: anna,
   theirs: Shelf(entries: const [], allGroups: theirs ?? annasGroups),
   tagIds: {for (final t in tags) 'their-$t'},
   mine: Shelf(entries: const [], allGroups: mine ?? suggestedGroups),
+  destinations: destinations,
 );
 
 List<String> missingNames(TagImport p) => [
@@ -190,6 +192,37 @@ void main() {
     expect(missingNames(p), ['Parlophone']);
   });
 
+  test('a group can go into another group of mine', () {
+    final p = plan(
+      {'Parlophone'},
+      destinations: {'a-label': const Destination.into('genre')},
+    );
+
+    expect(p.missing.single.into?.id, 'genre');
+    final label = annasGroups.firstWhere((g) => g.id == 'a-label');
+    expect(p.target(label).into?.id, 'genre');
+  });
+
+  test('a group that goes nowhere is neither set nor copyable', () {
+    final p = plan(
+      {'Parlophone', 'Have'},
+      destinations: {'a-label': const Destination.nowhere()},
+    );
+
+    expect(p.missing, isEmpty);
+    expect(p.copyable('their-Parlophone'), isFalse);
+    expect(p.preset, {'own'}, reason: 'other groups as before');
+  });
+
+  test('every tag in the tree is marked, not only the album\'s', () {
+    final p = plan({'Have'});
+
+    expect(p.has('their-jazz'), isTrue, reason: 'my Genre has Jazz');
+    expect(p.has('their-Shoegaze'), isFalse);
+    expect(p.copyable('their-Shoegaze'), isTrue);
+    expect(p.copyable('their-jazz'), isFalse);
+  });
+
   group('copy', () {
     late FakeShelf shelf;
     setUp(() => shelf = FakeShelf([]));
@@ -205,6 +238,32 @@ void main() {
       expect(label.exclusive, isFalse);
       expect(label.pickFromList, isTrue);
       expect(shelf.groups.firstWhere((g) => g.name == 'Mood').exclusive, true);
+    });
+
+    test('copies tags that are not on the album too', () async {
+      final p = plan({'Have'});
+
+      final after = await p.copy(shelf, {'their-Shoegaze', 'their-Rainy day'});
+
+      expect(after.has('their-Shoegaze'), isTrue);
+      expect(after.has('their-Rainy day'), isTrue);
+      expect(after.preset, {'own'}, reason: 'only the album\'s tags go on it');
+    });
+
+    test('copies into the chosen group', () async {
+      final p = plan(
+        {'Parlophone'},
+        destinations: {'a-label': const Destination.into('genre')},
+      );
+
+      final after = await p.copy(shelf, {'their-Parlophone'});
+
+      expect(after.preset, {'parlophone'});
+      expect(
+        shelf.groups.firstWhere((g) => g.id == 'genre').tags.map((t) => t.name),
+        contains('Parlophone'),
+      );
+      expect(shelf.groups.any((g) => g.name == 'Label'), isFalse);
     });
 
     test('copies only the picked tags', () async {
