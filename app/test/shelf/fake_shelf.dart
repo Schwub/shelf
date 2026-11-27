@@ -359,6 +359,10 @@ class FakeShelf implements ShelfRepository {
   }) async => copyTargetsSaved[friendId] = target;
 
   @override
+  Future<void> forgetCopy(String friendId, {required bool group}) async =>
+      copyTargetsSaved.remove(friendId);
+
+  @override
   Future<void> hide(List<String> entryIds, bool hidden) async {
     _bulk();
     for (final (i, e) in entries.indexed.toList()) {

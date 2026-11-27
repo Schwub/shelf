@@ -43,7 +43,6 @@ class _MapTagsPageState extends State<MapTagsPage> {
 
   TagImport get _plan => widget.plan;
   String get _startName => (_start.group?.name ?? _start.tag?.name)!;
-  String get _startId => (_start.group?.id ?? _start.tag?.id)!;
 
   @override
   void initState() {
@@ -376,7 +375,7 @@ class _MapTagsPageState extends State<MapTagsPage> {
     final text = Theme.of(context).textTheme;
     final c = context.shelf;
     final name = _plan.from.name;
-    final planned = _plan.withTarget(_startId, _target!);
+    final planned = _plan.remap(_start, _target!, widget.tag);
     final others = _others;
     final (:creates, :merges) = planned.preview([
       if (_bring) ...others,

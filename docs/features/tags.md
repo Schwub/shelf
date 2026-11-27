@@ -132,8 +132,12 @@ Step two (TASK-52, built): **Map…** on every line opens `MapTagsPage`
   `group_id`). A group of its own is remembered as that group once it
   exists. "Use my X" is remembered as a tag target. Lines that were on and
   go elsewhere after a mapping come off.
-- Not built: a list of the mappings with a friend, to review and remove
-  them (they can be changed by mapping again).
+- A new mapping replaces what was mapped below its starting point on the
+  way to the tag. A tag mapped on its own has **Forget** on its line
+  (`forgetCopy`). When a mapping puts a tag into a one-per-album group,
+  the list names the tag that came off.
+- Not built: a list of all mappings with a friend, to review and remove
+  them in one place.
 
 ## Copy a friend's tags (TASK-48)
 Agreed 2026-11-27; replaces TASK-19's sheet (below); replaced by TASK-51 (above). Wireframes

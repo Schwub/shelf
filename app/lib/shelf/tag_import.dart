@@ -386,6 +386,30 @@ class TagImport {
     targets: {...targets, id: target},
   );
 
+  /// The friend's groups and tags between [start] and [t] ([t] included)
+  /// that are mapped on their own: a new mapping at [start] replaces them.
+  List<Start> mappedBelow(Start start, Tag t) {
+    final chain = chainOf(t);
+    return [
+      for (final s in chain.sublist(chain.indexOf(start) + 1))
+        if (targets.containsKey(s.group?.id ?? s.tag?.id)) s,
+    ];
+  }
+
+  /// This plan with [start] mapped to [target] on the way to [t].
+  TagImport remap(Start start, CopyTarget target, Tag t) => withoutTargets([
+    for (final s in mappedBelow(start, t)) (s.group?.id ?? s.tag?.id)!,
+  ]).withTarget((start.group?.id ?? start.tag?.id)!, target);
+
+  /// This plan with nothing mapped for the friend's groups or tags [ids].
+  TagImport withoutTargets(Iterable<String> ids) => TagImport(
+    from: from,
+    theirs: theirs,
+    tagIds: tagIds,
+    mine: mine,
+    targets: {...targets}..removeWhere((id, _) => ids.contains(id)),
+  );
+
   /// Puts the friend's [tags] in their places, creating what is new, and
   /// returns the user's shelf after with, for the last of them, the tags to
   /// set on the album: parents first, then the tag. Reuses same-name groups

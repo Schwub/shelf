@@ -502,6 +502,10 @@ void main() {
       tags[1]: IntoGroup(group(mine, 'Genre')),
     });
     expect(await saved(bob.repo), isEmpty, reason: "Alice's own");
+
+    await alice.repo.forgetCopy(groups[1], group: true);
+    await alice.repo.forgetCopy(tags[0], group: false);
+    expect((await saved(alice.repo)).keys, {groups[0], tags[1]});
   });
 
   test('a new group comes back with its ID', () async {

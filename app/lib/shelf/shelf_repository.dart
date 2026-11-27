@@ -59,6 +59,9 @@ abstract class ShelfRepository {
     required bool group,
   });
 
+  /// Forgets where the friend's group or tag with this ID goes.
+  Future<void> forgetCopy(String friendId, {required bool group});
+
   /// Adds the album with this MusicBrainz ID to the shelf: the add-album
   /// function puts it in the shared catalog (with its cover) if needed.
   /// [addedFrom] is the friend whose shelf it came from.

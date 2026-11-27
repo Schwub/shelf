@@ -772,6 +772,58 @@ void main() {
         expect(find.text('→ my Genre › Ambient · remembered'), findsOneWidget);
       });
 
+      testWidgets('a mapping of the tag itself can be forgotten', (
+        tester,
+      ) async {
+        shelf.copyTargetsSaved['a-free'] = const OntoTag('ambient');
+        annaNests(const {'a-free'});
+        await annasTags(tester, 'OK Computer');
+
+        await tapKey(tester, 'Forget where Free jazz goes');
+
+        expect(
+          find.text('→ new: Genre › Jazz › Subgenre › Free jazz'),
+          findsOneWidget,
+        );
+        expect(shelf.copyTargetsSaved, isEmpty);
+      });
+
+      testWidgets('a mapping above replaces what was mapped below it', (
+        tester,
+      ) async {
+        shelf.copyTargetsSaved['a-free'] = const OntoTag('ambient');
+        await mapFreeJazz(tester);
+
+        await tapText(tester, 'from this sub-group');
+        await tapText(tester, 'Next');
+        await tapText(tester, 'Genre');
+        await tapText(tester, 'Put its tags into Genre');
+        expect(find.text('tag Free jazz in Genre'), findsOneWidget);
+        await tapText(tester, 'Map');
+
+        expect(find.text('On the album as Genre › Free jazz'), findsOneWidget);
+        expect(shelf.copyTargetsSaved, {'a-sub': const IntoGroup('genre')});
+      });
+
+      testWidgets('a tag pushed out of a one-per-album group is named', (
+        tester,
+      ) async {
+        await annasTags(tester, 'OK Computer');
+        await tapKey(tester, 'Add Own');
+
+        await tapKey(tester, 'Map Listened');
+        await tapText(tester, 'Next');
+        await tapText(tester, 'My tags');
+        await tapText(tester, 'Collection');
+        await tapText(tester, 'Put Listened here, in Collection');
+        await tapText(tester, 'Map');
+
+        expect(
+          find.text('Own came off: only one tag per album fits there.'),
+          findsOneWidget,
+        );
+      });
+
       testWidgets('the steps meet the accessibility guidelines', (
         tester,
       ) async {
