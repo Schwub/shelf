@@ -81,8 +81,10 @@ Agreed 2026-11-27; replaces TASK-19's sheet (below). Wireframes
   tree with marks (on this album, you have it, new); the album's new tags
   are ticked, any other can be. Ticking a sub-tag ticks its parent;
   unticking a parent unticks its sub-tags. Each of the friend's top-level
-  groups shows where it goes; the picker offers the user's top-level
-  groups, a new group (when none has its name) and "Don't copy". Copy, or
+  groups shows where it goes; the picker offers the user's own top-level
+  groups (not the built-in statuses), a new group (when none has its
+  name) and "Don't copy". A changed destination takes the old plan's tags
+  off the album before the new ones go on. Copy, or
   Skip, returns the plan, so destinations apply to the album either way;
   the entry's "See Anna's tags" link opens it again.
 - `TagImport` takes `destinations` (by the friend's top-level group ID):

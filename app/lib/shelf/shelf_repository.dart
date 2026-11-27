@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 import 'shelf.dart';
-import 'tag_import.dart';
 
 /// The signed-in user's shelf. An interface so the screens can be tested
 /// without a server.

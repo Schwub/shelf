@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(9);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -40,8 +40,13 @@ select lives_ok(
 
 select lives_ok(
   $$delete from public.tag_group_destinations
-    where friend_group_id = pg_temp.group_of('22222222-2222-2222-2222-222222222222', 'Collection')$$,
+    where friend_group_id = pg_temp.group_of('22222222-2222-2222-2222-222222222222', 'Listening')$$,
   'and forgets it');
+select results_eq(
+  $$select count(*)::int from public.tag_group_destinations$$, array[1],
+  'only the Genre row is left');
+insert into public.tag_group_destinations (friend_group_id, group_id)
+  values (pg_temp.group_of('22222222-2222-2222-2222-222222222222', 'Listening'), null);
 
 -- Bob sees none of it.
 reset role;

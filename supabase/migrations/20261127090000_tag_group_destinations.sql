@@ -12,6 +12,10 @@ create table public.tag_group_destinations (
   foreign key (group_id, user_id) references public.tag_groups (id, user_id) on delete cascade
 );
 
+-- For the cascades when a group goes.
+create index on public.tag_group_destinations (friend_group_id);
+create index on public.tag_group_destinations (group_id);
+
 revoke insert, update on public.tag_group_destinations from anon, authenticated;
 -- An upsert updates every column it sends, the key included.
 grant insert (friend_group_id, group_id), update (friend_group_id, group_id)

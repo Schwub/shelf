@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../tracks/track_source.dart';
 import 'shelf.dart';
 import 'shelf_repository.dart';
-import 'tag_import.dart';
 
 class SupabaseShelfRepository implements ShelfRepository {
   SupabaseShelfRepository(this._db, this._tracks);

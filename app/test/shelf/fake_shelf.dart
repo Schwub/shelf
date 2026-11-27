@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 
 import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/shelf/shelf_repository.dart';
-import 'package:shelf_app/shelf/tag_import.dart';
 
 final own = ShelfFilter.tag('own', 'Own');
 final want = ShelfFilter.tag('want', 'Want');

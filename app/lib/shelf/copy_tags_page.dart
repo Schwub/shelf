@@ -69,7 +69,13 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
     final (:destination) = choice;
     setState(() {
       _plan = _plan.withDestination(group, destination);
-      _picked.removeWhere((id) => !_plan.copyable(id));
+      _picked
+        ..removeWhere((id) => !_plan.copyable(id))
+        // The album's new tags are ticked again when their group is back.
+        ..addAll([
+          for (final m in _plan.missing)
+            if (_plan.copyable(m.tag.id)) m.tag.id,
+        ]);
     });
     try {
       await widget.shelf.saveDestination(group.id, destination);
@@ -84,13 +90,18 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
   Future<({Destination? destination})?> _pickDestination(TagGroup group) {
     final c = context.shelf;
     final text = Theme.of(context).textTheme;
+    // Built-in groups are statuses (Collection, Listening), not places to
+    // copy to; they match the friend's by key anyway.
     final mine = [
       for (final g in _plan.mine.groups)
-        if (g.parentTagId == null) g,
+        if (g.parentTagId == null && g.builtin == null) g,
     ];
     final current = _plan.target(group);
-    final sameName = mine.any(
-      (g) => g.name.toLowerCase() == group.name.toLowerCase(),
+    // Hidden groups too: a group of that name catches the copies anyway.
+    final sameName = _plan.mine.allGroups.any(
+      (g) =>
+          g.parentTagId == null &&
+          g.name.toLowerCase() == group.name.toLowerCase(),
     );
     String have(TagGroup g) {
       final names = {for (final t in g.tags) t.name.toLowerCase()};
@@ -193,7 +204,11 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
     final name = _plan.from.name;
     final count = _picked.length;
     return PopScope(
-      canPop: !_copying,
+      // Back, like Skip, keeps the destinations chosen here.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_copying) Navigator.of(context).pop(_plan);
+      },
       child: Scaffold(
         body: SafeArea(
           child: Column(
@@ -319,9 +334,9 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
                 ],
               ),
             ),
-            if (where == null)
+            if (where == null || _copying)
               Text(
-                'Matches yours',
+                where ?? 'Matches yours',
                 style: text.bodySmall!.copyWith(color: c.muted),
               )
             else
@@ -329,7 +344,7 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
                 label: where,
                 icon: Icons.arrow_drop_down,
                 semanticLabel: 'Where ${g.name} goes: $where',
-                onPressed: _copying ? () {} : () => _choose(g),
+                onPressed: () => _choose(g),
               ),
           ],
         ),
@@ -354,7 +369,7 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
         child: TagRow(
           title: t.name,
           subtitle: marks,
-          chosen: _picked.contains(t.id) || (has && onAlbum),
+          chosen: _picked.contains(t.id) || _plan.setOnAlbum(t.id),
           onTap: _plan.copyable(t.id) && !_copying ? () => _toggle(t.id) : null,
         ),
       ),

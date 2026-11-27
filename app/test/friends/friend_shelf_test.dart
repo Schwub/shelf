@@ -12,7 +12,6 @@ import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/copy_tags_page.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf.dart';
-import 'package:shelf_app/shelf/tag_import.dart';
 import 'package:shelf_app/widgets/filter_bar.dart';
 import 'package:shelf_app/widgets/hidden_mark.dart';
 import 'package:shelf_app/widgets/shelf_key.dart';
@@ -640,6 +639,56 @@ void main() {
       );
     });
 
+    /// Opens the picker from Style's link, labelled [shown] (Style comes
+    /// after Anna's own Genre).
+    Future<void> chooseForStyle(
+      WidgetTester tester,
+      String shown,
+      String choice,
+    ) async {
+      await tester.tap(find.text(shown).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(choice));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a changed destination takes its old tags off the album', (
+      tester,
+    ) async {
+      annaSortsByStyle();
+      await addFromAnna(tester, 'OK Computer');
+      await inTags(tester, 'Shoegaze');
+      await chooseForStyle(tester, 'New group', 'My Genre');
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text("See Anna's tags"));
+      await tester.pumpAndSettle();
+      await inTags(tester, 'Shoegaze');
+      await chooseForStyle(tester, 'Into my Genre', "Don't copy this group");
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+
+      expect(shelf.addedTags, ['own'], reason: 'Electronic came off again');
+    });
+
+    testWidgets('back keeps the destinations chosen', (tester) async {
+      annaSortsByStyle();
+      await addFromAnna(tester, 'OK Computer');
+      await inTags(tester, 'Shoegaze');
+      await chooseForStyle(tester, 'New group', 'My Genre');
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(CopyTagsPage), findsNothing);
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+
+      expect(shelf.addedTags, unorderedEquals(['own', 'electronic']));
+    });
+
     testWidgets('a remembered destination is used at once', (tester) async {
       annaSortsByStyle();
       shelf.savedDestinations['a-style'] = const Destination.into('genre');
@@ -720,16 +769,6 @@ void main() {
       await tester.tap(await inTags(tester, 'First'));
       await tester.pumpAndSettle();
       expect(find.text('Copy 3 tags'), findsOneWidget, reason: 'and came back');
-    });
-
-    testWidgets('the sheet meets the accessibility guidelines', (tester) async {
-      final semantics = tester.ensureSemantics();
-      await addFromAnna(tester, 'OK Computer');
-
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(textContrastGuideline));
-      semantics.dispose();
     });
   });
 

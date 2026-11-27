@@ -16,7 +16,6 @@ import 'package:shelf_app/settings/supabase_settings_repository.dart';
 import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/shelf/shelf_repository.dart';
 import 'package:shelf_app/shelf/supabase_shelf_repository.dart';
-import 'package:shelf_app/shelf/tag_import.dart';
 import 'package:shelf_app/tracks/track_source.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

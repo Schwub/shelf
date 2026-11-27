@@ -151,8 +151,17 @@ class _EntryPageState extends State<EntryPage> {
     );
     if (plan == null || !mounted) return;
     setState(() {
+      // What the last plan set comes off; the new plan's tags go on by the
+      // usual rules, so a tag in a one-per-album group replaces the other.
+      var tags = TagChoice(
+        plan.mine.groups,
+        _tags.chosen.difference(_plan!.preset),
+      );
+      for (final id in plan.preset) {
+        if (!tags.chosen.contains(id)) tags = tags.toggle(id);
+      }
       _plan = plan;
-      _tags = TagChoice(plan.mine.groups, {..._tags.chosen, ...plan.preset});
+      _tags = tags;
     });
   }
 

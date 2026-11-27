@@ -23,25 +23,6 @@ class MissingTag {
       into != null || group.parentTagId == null || parentTagId != null;
 }
 
-/// Where a friend's top-level group goes, chosen on the copy screen and
-/// remembered per friend: into one of the user's groups ([groupId]), or
-/// nowhere. Without one, it goes into the user's group of the same name,
-/// or a new group like it.
-@immutable
-class Destination {
-  const Destination.into(String this.groupId);
-  const Destination.nowhere() : groupId = null;
-
-  final String? groupId;
-
-  @override
-  bool operator ==(Object other) =>
-      other is Destination && other.groupId == groupId;
-
-  @override
-  int get hashCode => groupId.hashCode;
-}
-
 /// Adding a friend's album: which of their tags the user has, which are
 /// missing, and where copies go (docs/features/tags.md, "Copy a friend's
 /// tags").
@@ -79,6 +60,11 @@ class TagImport {
 
   /// The user's tags to set on the album.
   Set<String> get preset => _matched.values.toSet();
+
+  /// Whether the friend's tag [tagId] goes on the album as one of the
+  /// user's (not when its group allows one tag and another got there
+  /// first, or the user's group is hidden).
+  bool setOnAlbum(String tagId) => _matched.containsKey(tagId);
 
   /// The user's built-in tags among [preset], for the "set like" note.
   List<Tag> get builtins => [
