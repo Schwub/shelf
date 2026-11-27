@@ -204,10 +204,14 @@ class TagRow extends StatelessWidget {
     this.subtitle,
     this.chosen = false,
     this.create = false,
+    this.below,
   });
 
   final String title;
   final String? subtitle;
+
+  /// Under the subtitle, e.g. a link of its own.
+  final Widget? below;
   final bool chosen, create;
   final VoidCallback? onTap;
 
@@ -256,6 +260,7 @@ class TagRow extends StatelessWidget {
                         subtitle!,
                         style: text.bodySmall!.copyWith(color: c.muted),
                       ),
+                    ?below,
                   ],
                 ),
               ),

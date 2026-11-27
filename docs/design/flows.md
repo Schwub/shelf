@@ -184,12 +184,13 @@ copy; copies are ordinary, editable tags.
 
 ```mermaid
 flowchart TD
-  friend([Friend's shelf: album]) -- Add to my shelf --> entry[Album entry: add; built-in tags pre-set from the friend]
-  entry --> missing{Friend has tags you don't?}
-  missing -- no --> entry
-  missing -- yes --> sheet[Anna's tags: her whole tree, the album's new tags ticked]
-  sheet -- group's destination --> pick[Into my group / new group / don't copy; remembered for Anna] --> sheet
-  sheet -- Copy N tags --> entry2[Album entry with the tags; new groups and tags created]
+  friend([Friend's shelf: album]) -- Add to my shelf --> entry[Album entry: add, no tags set]
+  entry --> any{Friend has tags on it?}
+  any -- no --> entry
+  any -- yes --> sheet[Anna's tags: the album's tags, none ticked, each with where it goes]
+  sheet -- where it goes --> pick[Any of my groups or tags, or a new group; another group is remembered for Anna] --> sheet
+  sheet -- Tick the N that match --> sheet
+  sheet -- Use N tags --> entry2[Album entry with the tags; new groups and tags created]
   sheet -- Skip --> entry
   entry -- See Anna's tags --> sheet
   entry2 -- Add to shelf --> done([My shelf + snackbar: Added to your shelf])
@@ -197,7 +198,7 @@ flowchart TD
 ```
 
 Notes:
-- Built-in tags match by their key and are never asked about.
+- Built-in tags match by their key; like all tags, they are set only when ticked.
 - Other tags match by group and tag name, ignoring case.
 - If your group of the same name is "several" while the friend's is "one",
   your group's type wins.

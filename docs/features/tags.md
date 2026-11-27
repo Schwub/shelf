@@ -77,25 +77,34 @@ menu.
 Agreed 2026-11-27; replaces TASK-19's sheet (below). Wireframes
 `docs/design/wireframes/copy-tags.html`.
 
-- `app/lib/shelf/copy_tags_page.dart`: "Anna's tags", the friend's whole
-  tree with marks (on this album, you have it, new); the album's new tags
-  are ticked, any other can be. Ticking a sub-tag ticks its parent;
-  unticking a parent unticks its sub-tags. Each of the friend's top-level
-  groups shows where it goes; the picker offers the user's own top-level
-  groups (not the built-in statuses), a new group (when none has its
-  name) and "Don't copy". A changed destination takes the old plan's tags
-  off the album before the new ones go on. Copy, or
-  Skip, returns the plan, so destinations apply to the album either way;
-  the entry's "See Anna's tags" link opens it again.
-- `TagImport` takes `destinations` (by the friend's top-level group ID):
-  `Destination.into(group)` or `.nowhere()`; without one, a group goes
-  into the user's group of the same name or a new one. It plans the whole
-  tree (`has`, `copyable`) besides the album (`preset`, `missing`); the
-  one-per-album rule applies only on the album, not to copies.
+Reworked the same day: only the album's tags, none ticked, each to any
+group or tag of the user's (the wireframes show the first version).
+
+- `app/lib/shelf/copy_tags_page.dart`: "Anna's tags", one row per tag of
+  the friend's on the album (in their shown groups, parents first), none
+  ticked. Each row shows where it goes ("Genre: Shoegaze", "Genre: new",
+  "New group Style"); the picker lists all the user's shown groups,
+  built-in ones too, the likely ones first, with their tags, "New “X”
+  here" and a new group like the friend's. Picking another group for a
+  friend's top-level group remembers it for all its tags; picking another
+  tag in the same group is for this album only. "Tick the N that match"
+  ticks the rows whose target the user has; nothing is ticked otherwise.
+  Ticking a sub-tag ticks its parent; unticking a parent unticks its
+  sub-tags. Use N tags applies the ticked rows and returns the tags to set;
+  using it again replaces what it set before. Skip and Back set nothing
+  but keep the groups chosen; the entry's "See Anna's tags" link opens
+  the page again.
+- `TagImport` (`tag_import.dart`): `rows`, `suggest(tag)` (a `TagTarget`:
+  an existing tag, a new tag in a group, or a new group) from the
+  remembered group, else the built-in key, else the same name (a sub-group
+  under the target of its parent tag). `apply` creates what is new,
+  reusing same-name groups and tags so a retry creates nothing twice, and
+  returns the user's shelf and the tags to set, parents included.
 - `tag_group_destinations` (migration `20261127090000`): user, friend's
-  group, the user's group or null for nowhere; owner-only; a row goes with
-  either group. `ShelfRepository.destinations` and `saveDestination` (null
-  forgets the choice). A failed save still applies to this album.
+  group, the user's group; owner-only; a row goes with either group. Rows
+  with no group (the first version's "Don't copy") are ignored.
+  `ShelfRepository.destinations` and `saveDestination`; a failed save
+  still applies to this album. `createGroup` returns the new group's ID.
 
 ## Import from a friend (TASK-19)
 Agreed 2026-11-26. All in the app; considered: one database function for

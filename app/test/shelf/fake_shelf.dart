@@ -339,31 +339,16 @@ class FakeShelf implements ShelfRepository {
     _changes.value++;
   }
 
-  /// Remembered destinations by friend group; [failDestination] makes the
-  /// next save fail.
-  final savedDestinations = <String, Destination>{};
-  bool failDestination = false;
+  /// Remembered destinations by the friend's group.
+  final savedDestinations = <String, String>{};
 
   @override
-  Future<Map<String, Destination>> destinations(
-    List<String> friendGroupIds,
-  ) async => {for (final id in friendGroupIds) id: ?savedDestinations[id]};
+  Future<Map<String, String>> destinations(List<String> friendGroupIds) async =>
+      {for (final id in friendGroupIds) id: ?savedDestinations[id]};
 
   @override
-  Future<void> saveDestination(
-    String friendGroupId,
-    Destination? destination,
-  ) async {
-    if (failDestination) {
-      failDestination = false;
-      throw Exception('offline');
-    }
-    if (destination == null) {
-      savedDestinations.remove(friendGroupId);
-    } else {
-      savedDestinations[friendGroupId] = destination;
-    }
-  }
+  Future<void> saveDestination(String friendGroupId, String groupId) async =>
+      savedDestinations[friendGroupId] = groupId;
 
   @override
   Future<void> hide(List<String> entryIds, bool hidden) async {
@@ -403,7 +388,7 @@ class FakeShelf implements ShelfRepository {
   }
 
   @override
-  Future<void> createGroup(
+  Future<String> createGroup(
     String name, {
     required bool exclusive,
     bool pickFromList = false,
@@ -424,6 +409,7 @@ class FakeShelf implements ShelfRepository {
       ),
     );
     _changes.value++;
+    return id;
   }
 
   @override

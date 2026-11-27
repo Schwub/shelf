@@ -43,12 +43,13 @@ abstract class ShelfRepository {
   /// Hides [entryIds] from friends, or shows them.
   Future<void> hide(List<String> entryIds, bool hidden);
 
-  /// Where the friend's groups [friendGroupIds] go when copying their tags,
-  /// as chosen before (TASK-48); groups never chosen are left out.
-  Future<Map<String, Destination>> destinations(List<String> friendGroupIds);
+  /// The user's group for each of the friend's groups [friendGroupIds],
+  /// as chosen before when copying their tags (TASK-48); groups never
+  /// chosen are left out.
+  Future<Map<String, String>> destinations(List<String> friendGroupIds);
 
-  /// [destination] null forgets the choice.
-  Future<void> saveDestination(String friendGroupId, Destination? destination);
+  /// Remembers that the friend's group goes into the user's [groupId].
+  Future<void> saveDestination(String friendGroupId, String groupId);
 
   /// Adds the album with this MusicBrainz ID to the shelf: the add-album
   /// function puts it in the shared catalog (with its cover) if needed.
@@ -86,8 +87,8 @@ abstract class ShelfRepository {
   // The tag editor. Names must be new on their level ([DuplicateName]).
 
   /// A new group at the end, or the sub-group shown while [parentTagId] is
-  /// chosen, with [tags] in their order.
-  Future<void> createGroup(
+  /// chosen, with [tags] in their order; returns its ID.
+  Future<String> createGroup(
     String name, {
     required bool exclusive,
     bool pickFromList = false,
