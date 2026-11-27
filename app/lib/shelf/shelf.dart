@@ -434,3 +434,22 @@ class ShelfSort {
   @override
   int get hashCode => Object.hash(by, reversed);
 }
+
+/// Where a friend's top-level group goes, chosen on the copy screen and
+/// remembered per friend: into one of the user's groups ([groupId]), or
+/// nowhere. Without one, it goes into the user's group of the same name,
+/// or a new group like it.
+@immutable
+class Destination {
+  const Destination.into(String this.groupId);
+  const Destination.nowhere() : groupId = null;
+
+  final String? groupId;
+
+  @override
+  bool operator ==(Object other) =>
+      other is Destination && other.groupId == groupId;
+
+  @override
+  int get hashCode => groupId.hashCode;
+}

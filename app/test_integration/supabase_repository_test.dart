@@ -450,6 +450,38 @@ void main() {
     expect((await s.repo.load()).entries, isEmpty);
   });
 
+  test("where a friend's groups go is remembered, and forgotten", () async {
+    final alice = await signIn();
+    final bob = await signIn();
+    await SupabaseFriendsRepository(alice.db).saveName('Alice');
+    await SupabaseFriendsRepository(bob.db).saveName('Bob');
+    final invite = await SupabaseFriendsRepository(alice.db).createInvite();
+    await SupabaseFriendsRepository(bob.db).accept(invite.code);
+    final bobs = await alice.repo.loadFriend(bob.db.auth.currentUser!.id);
+    final mine = await alice.repo.load();
+    String group(Shelf s, String name) =>
+        s.allGroups.firstWhere((g) => g.name == name).id;
+    final ids = [group(bobs, 'Genre'), group(bobs, 'Listening')];
+
+    expect(await alice.repo.destinations(ids), isEmpty);
+    await alice.repo.saveDestination(
+      ids[0],
+      Destination.into(group(mine, 'Genre')),
+    );
+    await alice.repo.saveDestination(ids[1], const Destination.nowhere());
+    expect(await alice.repo.destinations(ids), {
+      ids[0]: Destination.into(group(mine, 'Genre')),
+      ids[1]: const Destination.nowhere(),
+    });
+
+    await alice.repo.saveDestination(ids[0], const Destination.nowhere());
+    await alice.repo.saveDestination(ids[1], null);
+    expect(await alice.repo.destinations(ids), {
+      ids[0]: const Destination.nowhere(),
+    });
+    expect(await bob.repo.destinations(ids), isEmpty, reason: "Alice's own");
+  });
+
   test('a tag filter goes when its tag is deleted', () async {
     final s = await signIn();
     final repo = s.repo;

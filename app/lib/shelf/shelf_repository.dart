@@ -43,6 +43,13 @@ abstract class ShelfRepository {
   /// Hides [entryIds] from friends, or shows them.
   Future<void> hide(List<String> entryIds, bool hidden);
 
+  /// Where the friend's groups [friendGroupIds] go when copying their tags,
+  /// as chosen before (TASK-48); groups never chosen are left out.
+  Future<Map<String, Destination>> destinations(List<String> friendGroupIds);
+
+  /// [destination] null forgets the choice.
+  Future<void> saveDestination(String friendGroupId, Destination? destination);
+
   /// Adds the album with this MusicBrainz ID to the shelf: the add-album
   /// function puts it in the shared catalog (with its cover) if needed.
   /// [addedFrom] is the friend whose shelf it came from.

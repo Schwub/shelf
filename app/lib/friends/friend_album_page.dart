@@ -53,10 +53,18 @@ class FriendAlbumPage extends StatelessWidget {
     if (_myEntry case final own?) {
       page = EntryPage(entry: own, shelf: shelf, groups: mine.groups);
     } else {
-      // The user's shelf as it is now: a cancelled add may have copied tags.
+      // The user's shelf as it is now (a cancelled add may have copied
+      // tags), and where this friend's groups went before.
       final Shelf current;
+      final Map<String, Destination> destinations;
       try {
-        current = await shelf.load();
+        (current, destinations) = await (
+          shelf.load(),
+          shelf.destinations([
+            for (final g in theirs.allGroups)
+              if (g.parentTagId == null) g.id,
+          ]),
+        ).wait;
       } catch (e, stack) {
         reportError(e, stack);
         messenger.showSnackBar(
@@ -69,6 +77,7 @@ class FriendAlbumPage extends StatelessWidget {
         theirs: theirs,
         tagIds: entry.tagIds,
         mine: current,
+        destinations: destinations,
       );
       // Their track list, without their favorites.
       final tracks = [

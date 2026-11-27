@@ -9,6 +9,7 @@ import 'package:shelf_app/main.dart';
 import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
+import 'package:shelf_app/shelf/copy_tags_page.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/widgets/filter_bar.dart';
@@ -388,6 +389,23 @@ void main() {
       );
     });
 
+    /// Scrolls Anna's tags (a long tree) until [text] shows.
+    Future<Finder> inTags(WidgetTester tester, String text) async {
+      final f = find.text(text);
+      await tester.scrollUntilVisible(
+        f,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(CopyTagsPage),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      return f;
+    }
+
     Future<void> addFromAnna(WidgetTester tester, String title) async {
       await openAnna(tester);
       await tester.tap(find.text(title));
@@ -427,14 +445,18 @@ void main() {
     testWidgets('offers their missing tags and copies them', (tester) async {
       await addFromAnna(tester, 'OK Computer');
 
-      expect(find.text("Anna has 2 tags you don't"), findsOneWidget);
-      expect(find.text('New tag in your Genre'), findsOneWidget);
-      expect(find.text('Label · new group, several per album'), findsOneWidget);
+      expect(find.text("Anna's tags"), findsOneWidget);
+      expect(find.text('Into my Genre'), findsOneWidget, reason: 'same name');
+      expect(
+        await inTags(tester, 'New group'),
+        findsOneWidget,
+        reason: 'Label',
+      );
       expect(shelf.trackLookups, ['mb-ok'], reason: 'no list of theirs');
-      await tester.tap(find.text('Add 2 tags'));
+      await tester.tap(find.text('Copy 2 tags'));
       await tester.pumpAndSettle();
 
-      expect(find.text("Anna has 2 tags you don't"), findsNothing);
+      expect(find.text("Anna's tags"), findsNothing);
       expect(find.text('Shoegaze'), findsOneWidget);
       expect(find.text('Parlophone'), findsOneWidget);
       await tester.tap(find.text('Add to shelf'));
@@ -448,9 +470,9 @@ void main() {
     testWidgets('copies only the ticked tags', (tester) async {
       await addFromAnna(tester, 'OK Computer');
 
-      await tester.tap(find.text('Parlophone'));
+      await tester.tap(await inTags(tester, 'Parlophone'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Add 1 tag'));
+      await tester.tap(find.text('Copy 1 tag'));
       await tester.pumpAndSettle();
 
       expect(find.text('Shoegaze'), findsOneWidget);
@@ -474,7 +496,7 @@ void main() {
       shelf.failEdit = true;
       await addFromAnna(tester, 'OK Computer');
 
-      await tester.tap(find.text('Add 2 tags'));
+      await tester.tap(find.text('Copy 2 tags'));
       await tester.pumpAndSettle();
       expect(
         find.text(
@@ -491,7 +513,7 @@ void main() {
 
     testWidgets('copies stay when the add is cancelled', (tester) async {
       await addFromAnna(tester, 'OK Computer');
-      await tester.tap(find.text('Add 2 tags'));
+      await tester.tap(find.text('Copy 2 tags'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Cancel'));
@@ -507,7 +529,7 @@ void main() {
       tester,
     ) async {
       await addFromAnna(tester, 'OK Computer');
-      await tester.tap(find.text('Add 2 tags'));
+      await tester.tap(find.text('Copy 2 tags'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
@@ -517,7 +539,7 @@ void main() {
       await tester.tap(find.text('Add to my shelf'));
       await tester.pumpAndSettle();
 
-      expect(find.text("Anna has 2 tags you don't"), findsNothing);
+      expect(find.text("Anna's tags"), findsNothing);
       await tester.tap(find.text('Add to shelf'));
       await tester.pumpAndSettle();
       expect(
@@ -539,14 +561,14 @@ void main() {
       expect(find.text('Add to shelf'), findsNothing);
     });
 
-    testWidgets("the sheet stays open while it copies", (tester) async {
+    testWidgets("Anna's tags stay open while they copy", (tester) async {
       await addFromAnna(tester, 'OK Computer');
       shelf.holdLoad = Completer();
 
-      await tester.tap(find.text('Add 2 tags'));
+      await tester.tap(find.text('Copy 2 tags'));
       await tester.pump();
       expect(find.text('Copying…'), findsOneWidget);
-      await tester.tapAt(const Offset(200, 40)); // The barrier.
+      await tester.binding.handlePopRoute(); // Back.
       await tester.pumpAndSettle();
       expect(find.text('Copying…'), findsOneWidget);
 
@@ -554,6 +576,160 @@ void main() {
       shelf.holdLoad = null;
       await tester.pumpAndSettle();
       expect(find.text('Shoegaze'), findsOneWidget);
+    });
+
+    /// Anna keeps genres in "Style": Electronic (which the user has in
+    /// Genre) and Shoegaze, both on OK Computer.
+    void annaSortsByStyle() {
+      final anna = shelf.friendShelves['anna']!;
+      shelf.friendShelves['anna'] = Shelf(
+        entries: [
+          for (final e in anna.entries)
+            e.id == 'ok'
+                ? ShelfEntry(
+                    id: e.id,
+                    addedAt: e.addedAt,
+                    album: e.album,
+                    tagIds: const {'own', 'a-electronic', 'a-shoegaze2'},
+                  )
+                : e,
+        ],
+        allGroups: [
+          ...suggestedGroups,
+          const TagGroup(
+            id: 'a-style',
+            name: 'Style',
+            exclusive: false,
+            pickFromList: true,
+            tags: [
+              Tag(id: 'a-electronic', groupId: 'a-style', name: 'Electronic'),
+              Tag(id: 'a-shoegaze2', groupId: 'a-style', name: 'Shoegaze'),
+            ],
+          ),
+        ],
+      );
+    }
+
+    testWidgets('a group goes into another of mine, and that is remembered', (
+      tester,
+    ) async {
+      annaSortsByStyle();
+      await addFromAnna(tester, 'OK Computer');
+      expect(find.text('Copy 2 tags'), findsOneWidget, reason: 'new group');
+
+      await tester.tap(await inTags(tester, 'New group'));
+      await tester.pumpAndSettle();
+      expect(find.text("Copy Anna's Style into"), findsOneWidget);
+      await tester.tap(find.text('My Genre'));
+      await tester.pumpAndSettle();
+
+      expect(
+        shelf.savedDestinations['a-style'],
+        const Destination.into('genre'),
+      );
+      expect(find.text('Copy 1 tag'), findsOneWidget, reason: 'has Electronic');
+      await tester.tap(find.text('Copy 1 tag'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+      expect(
+        shelf.addedTags,
+        unorderedEquals(['own', 'electronic', 'shoegaze']),
+        reason: 'both in my Genre',
+      );
+    });
+
+    /// Opens the picker from Style's link, labelled [shown] (Style comes
+    /// after Anna's own Genre).
+    Future<void> chooseForStyle(
+      WidgetTester tester,
+      String shown,
+      String choice,
+    ) async {
+      await tester.tap(find.text(shown).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(choice));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a changed destination takes its old tags off the album', (
+      tester,
+    ) async {
+      annaSortsByStyle();
+      await addFromAnna(tester, 'OK Computer');
+      await inTags(tester, 'Shoegaze');
+      await chooseForStyle(tester, 'New group', 'My Genre');
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text("See Anna's tags"));
+      await tester.pumpAndSettle();
+      await inTags(tester, 'Shoegaze');
+      await chooseForStyle(tester, 'Into my Genre', "Don't copy this group");
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+
+      expect(shelf.addedTags, ['own'], reason: 'Electronic came off again');
+    });
+
+    testWidgets('back keeps the destinations chosen', (tester) async {
+      annaSortsByStyle();
+      await addFromAnna(tester, 'OK Computer');
+      await inTags(tester, 'Shoegaze');
+      await chooseForStyle(tester, 'New group', 'My Genre');
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(CopyTagsPage), findsNothing);
+      await tester.tap(find.text('Add to shelf'));
+      await tester.pumpAndSettle();
+
+      expect(shelf.addedTags, unorderedEquals(['own', 'electronic']));
+    });
+
+    testWidgets('a remembered destination is used at once', (tester) async {
+      annaSortsByStyle();
+      shelf.savedDestinations['a-style'] = const Destination.into('genre');
+      await addFromAnna(tester, 'OK Computer');
+
+      expect(await inTags(tester, 'Into my Genre'), findsNWidgets(2));
+      expect(find.text('Copy 1 tag'), findsOneWidget);
+    });
+
+    testWidgets("a group can stay uncopied; Skip, then the link reopens it", (
+      tester,
+    ) async {
+      annaSortsByStyle();
+      await addFromAnna(tester, 'OK Computer');
+
+      await tester.tap(await inTags(tester, 'New group'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text("Don't copy this group"));
+      await tester.pumpAndSettle();
+      expect(find.text("Don't copy"), findsOneWidget);
+      expect(find.text('Shoegaze'), findsNothing, reason: 'its tags fold away');
+      expect(shelf.savedDestinations['a-style'], const Destination.nowhere());
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CopyTagsPage), findsNothing);
+      await tester.tap(find.text("See Anna's tags"));
+      await tester.pumpAndSettle();
+      expect(find.byType(CopyTagsPage), findsOneWidget);
+    });
+
+    testWidgets("Anna's tags meet the accessibility guidelines", (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await addFromAnna(tester, 'OK Computer');
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+      semantics.dispose();
     });
 
     testWidgets('a sub-tag is ticked and unticked with its parent', (
@@ -584,25 +760,15 @@ void main() {
         ],
       );
       await addFromAnna(tester, 'OK Computer');
-      expect(find.text('Add 3 tags'), findsOneWidget);
+      expect(find.text('Copy 3 tags'), findsOneWidget);
 
-      await tester.tap(find.text('Parlophone'));
+      await tester.tap(await inTags(tester, 'Parlophone'));
       await tester.pumpAndSettle();
-      expect(find.text('Add 1 tag'), findsOneWidget, reason: 'First went too');
+      expect(find.text('Copy 1 tag'), findsOneWidget, reason: 'First went too');
 
-      await tester.tap(find.text('First'));
+      await tester.tap(await inTags(tester, 'First'));
       await tester.pumpAndSettle();
-      expect(find.text('Add 3 tags'), findsOneWidget, reason: 'and came back');
-    });
-
-    testWidgets('the sheet meets the accessibility guidelines', (tester) async {
-      final semantics = tester.ensureSemantics();
-      await addFromAnna(tester, 'OK Computer');
-
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(textContrastGuideline));
-      semantics.dispose();
+      expect(find.text('Copy 3 tags'), findsOneWidget, reason: 'and came back');
     });
   });
 

@@ -504,6 +504,39 @@ class SupabaseShelfRepository implements ShelfRepository {
   }
 
   @override
+  Future<Map<String, Destination>> destinations(
+    List<String> friendGroupIds,
+  ) async {
+    final rows = await _db
+        .from('tag_group_destinations')
+        .select('friend_group_id, group_id')
+        .eq('user_id', _me)
+        .inFilter('friend_group_id', friendGroupIds);
+    return {
+      for (final r in rows)
+        r['friend_group_id'] as String: switch (r['group_id']) {
+          final String id => Destination.into(id),
+          _ => const Destination.nowhere(),
+        },
+    };
+  }
+
+  @override
+  Future<void> saveDestination(
+    String friendGroupId,
+    Destination? destination,
+  ) => destination == null
+      ? _db
+            .from('tag_group_destinations')
+            .delete()
+            .eq('user_id', _me)
+            .eq('friend_group_id', friendGroupId)
+      : _db.from('tag_group_destinations').upsert({
+          'friend_group_id': friendGroupId,
+          'group_id': destination.groupId,
+        });
+
+  @override
   Future<void> hide(List<String> entryIds, bool hidden) async {
     await _db
         .from('shelf_entries')

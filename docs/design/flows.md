@@ -187,9 +187,11 @@ flowchart TD
   friend([Friend's shelf: album]) -- Add to my shelf --> entry[Album entry: add; built-in tags pre-set from the friend]
   entry --> missing{Friend has tags you don't?}
   missing -- no --> entry
-  missing -- yes --> sheet[Import tags sheet: missing tags ticked, grouped]
-  sheet -- Add selected --> entry2[Album entry with the tags; new groups and tags created]
+  missing -- yes --> sheet[Anna's tags: her whole tree, the album's new tags ticked]
+  sheet -- group's destination --> pick[Into my group / new group / don't copy; remembered for Anna] --> sheet
+  sheet -- Copy N tags --> entry2[Album entry with the tags; new groups and tags created]
   sheet -- Skip --> entry
+  entry -- See Anna's tags --> sheet
   entry2 -- Add to shelf --> done([My shelf + snackbar: Added to your shelf])
   sheet -- error --> err[Couldn't copy the tags. Try again.] --> sheet
 ```

@@ -339,6 +339,32 @@ class FakeShelf implements ShelfRepository {
     _changes.value++;
   }
 
+  /// Remembered destinations by friend group; [failDestination] makes the
+  /// next save fail.
+  final savedDestinations = <String, Destination>{};
+  bool failDestination = false;
+
+  @override
+  Future<Map<String, Destination>> destinations(
+    List<String> friendGroupIds,
+  ) async => {for (final id in friendGroupIds) id: ?savedDestinations[id]};
+
+  @override
+  Future<void> saveDestination(
+    String friendGroupId,
+    Destination? destination,
+  ) async {
+    if (failDestination) {
+      failDestination = false;
+      throw Exception('offline');
+    }
+    if (destination == null) {
+      savedDestinations.remove(friendGroupId);
+    } else {
+      savedDestinations[friendGroupId] = destination;
+    }
+  }
+
   @override
   Future<void> hide(List<String> entryIds, bool hidden) async {
     _bulk();
