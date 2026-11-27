@@ -7,6 +7,7 @@ import '../widgets/shelf_key.dart';
 import 'bulk_tags.dart';
 import 'shelf.dart';
 import 'tag_sheet.dart';
+import '../widgets/shelf_sheet.dart';
 
 /// "Tags for 3 albums" (TASK-40, docs/design/wireframes/select.html): every
 /// visible group with its tags, lit when all selected albums have it, with
@@ -16,17 +17,8 @@ Future<BulkTags?> showBulkTagsSheet(
   required BulkTags tags,
   required Future<Tag> Function(TagGroup group, String name) onCreate,
 }) {
-  final c = context.shelf;
-  return showModalBottomSheet<BulkTags>(
+  return showShelfSheet<BulkTags>(
     context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    backgroundColor: c.bg,
-    barrierColor: const Color(0x73000000),
-    shape: RoundedRectangleBorder(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-      side: BorderSide(color: c.line),
-    ),
     builder: (_) => _BulkTagsSheet(tags: tags, onCreate: onCreate),
   );
 }

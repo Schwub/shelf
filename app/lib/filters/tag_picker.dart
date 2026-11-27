@@ -4,6 +4,7 @@ import '../shelf/shelf.dart';
 import '../theme/shelf_colors.dart';
 import '../widgets/list_row.dart';
 import '../widgets/shelf_key.dart';
+import '../widgets/shelf_sheet.dart';
 
 /// All tags by group, for filters. With [multiple] they are ticked and Done
 /// returns the chosen ones; otherwise tapping a tag returns it alone.
@@ -16,18 +17,8 @@ Future<Set<String>?> showTagPicker(
   bool multiple = false,
   Widget? extra,
 }) {
-  final c = context.shelf;
-  return showModalBottomSheet<Set<String>>(
+  return showShelfSheet<Set<String>>(
     context: context,
-    // Over the navigation bar, like a dialog.
-    useRootNavigator: true,
-    isScrollControlled: true,
-    backgroundColor: c.bg,
-    barrierColor: const Color(0x73000000),
-    shape: RoundedRectangleBorder(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-      side: BorderSide(color: c.line),
-    ),
     builder: (_) => _TagPicker(
       title: title,
       groups: groups,

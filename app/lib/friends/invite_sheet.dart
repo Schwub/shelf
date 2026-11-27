@@ -6,6 +6,7 @@ import '../theme/shelf_colors.dart';
 import '../theme/shelf_theme.dart';
 import '../widgets/shelf_key.dart';
 import 'friends_repository.dart';
+import '../widgets/shelf_sheet.dart';
 
 /// Opens the app on the Invitation (Android; iPhones use the code until
 /// the scheme is registered there, TASK-20).
@@ -26,17 +27,8 @@ Future<void> showInviteSheet(
   final c = context.shelf;
   final link = inviteLink(invite.code).toString();
   var copied = false;
-  return showModalBottomSheet<void>(
+  return showShelfSheet<void>(
     context: context,
-    // Over the navigation bar, like a dialog.
-    useRootNavigator: true,
-    isScrollControlled: true,
-    backgroundColor: c.bg,
-    barrierColor: const Color(0x73000000),
-    shape: RoundedRectangleBorder(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-      side: BorderSide(color: c.line),
-    ),
     builder: (context) {
       final text = Theme.of(context).textTheme;
       final label = text.labelSmall!.copyWith(color: c.muted);

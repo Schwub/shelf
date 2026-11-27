@@ -6,6 +6,7 @@ import '../widgets/help_line.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
 import 'shelf.dart';
+import '../widgets/shelf_sheet.dart';
 
 /// What the Add sheet ends with: the group (with any tags created in it)
 /// and the chosen tags.
@@ -19,18 +20,8 @@ Future<TagSheetResult?> showTagSheet(
   required Set<String> chosen,
   required Future<Tag> Function(String name) onCreate,
 }) {
-  final c = context.shelf;
-  return showModalBottomSheet<TagSheetResult>(
+  return showShelfSheet<TagSheetResult>(
     context: context,
-    // Over the navigation bar, like a dialog.
-    useRootNavigator: true,
-    isScrollControlled: true,
-    backgroundColor: c.bg,
-    barrierColor: const Color(0x73000000),
-    shape: RoundedRectangleBorder(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-      side: BorderSide(color: c.line),
-    ),
     builder: (_) => _TagSheet(group: group, chosen: chosen, onCreate: onCreate),
   );
 }
