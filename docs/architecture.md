@@ -58,9 +58,9 @@
 - Tags (`tag_groups`, `tags`, `entry_tags`): user-defined
   groups, exclusive or multiple choice, sub-groups under a tag, built-in
   groups Collection and Listening shared in meaning across users; suggested
-  groups created for each new user. `tag_group_destinations` remembers,
-  per user, which of their groups a friend's group goes into when adding
-  that friend's tags (`tag_destinations` is unused until Map, TASK-52). Details: `docs/features/tags.md`.
+  groups created for each new user. `tag_group_destinations` and
+  `tag_destinations` remember, per user, where a friend's groups and tags
+  go in the user's tags once mapped (TASK-52). Details: `docs/features/tags.md`.
 - `shelf_filters` and `shelf_filter_tags`: the filter bar's filters, one tag
   or combined conditions (tags any/all, minimum rating or unrated, favorite
   tracks, added in the last N days or between two dates). The owner writes;

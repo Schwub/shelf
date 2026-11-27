@@ -189,6 +189,10 @@ flowchart TD
   list -- Add: I have it --> list
   list -- Copy: I don't; her path is created --> list
   list -- Use my X: my nearest tag above --> list
+  list -- Map --> m1[What to bring: starting point in her path]
+  m1 --> m2[Where it goes: my tags, one level per screen, search]
+  m2 --> m3[Check: what is created and merged; bring the rest along]
+  m3 -- Map, remembered for Anna --> list
   list -- Undo --> list
   list -- error --> err[Couldn't copy the tag. Try again.] --> list
   list -- Done --> entry

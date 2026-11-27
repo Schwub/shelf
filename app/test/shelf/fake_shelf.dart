@@ -339,16 +339,24 @@ class FakeShelf implements ShelfRepository {
     _changes.value++;
   }
 
-  /// The user's group remembered for each of the friend's groups.
-  final copyTargetsSaved = <String, String>{};
+  /// Where the friend's groups and tags go, as remembered (by their IDs).
+  final copyTargetsSaved = <String, CopyTarget>{};
 
   @override
-  Future<Map<String, String>> copyTargets(List<String> friendGroupIds) async =>
-      {for (final id in friendGroupIds) id: ?copyTargetsSaved[id]};
+  Future<Map<String, CopyTarget>> copyTargets({
+    required List<String> friendGroupIds,
+    required List<String> friendTagIds,
+  }) async => {
+    for (final id in [...friendGroupIds, ...friendTagIds])
+      id: ?copyTargetsSaved[id],
+  };
 
   @override
-  Future<void> rememberCopy(String friendGroupId, String groupId) async =>
-      copyTargetsSaved[friendGroupId] = groupId;
+  Future<void> rememberCopy(
+    String friendId,
+    CopyTarget target, {
+    required bool group,
+  }) async => copyTargetsSaved[friendId] = target;
 
   @override
   Future<void> hide(List<String> entryIds, bool hidden) async {

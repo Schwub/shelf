@@ -31,7 +31,7 @@ enum Match {
   /// The user has a tag of that name somewhere else.
   name,
 
-  /// The friend's group goes into a group the user chose before.
+  /// The user mapped it, or something above it, before.
   remembered,
 }
 
@@ -67,16 +67,22 @@ class TagPlace {
   }
 }
 
+/// One of the friend's groups or tags as the point a mapping starts at.
+typedef Start = ({TagGroup? group, Tag? tag});
+
 /// Adding a friend's album: their tags on it, and where each goes in the
-/// user's tags (docs/features/tags.md, "A friend's tags on the album
-/// entry"). Nothing is set or created until the user taps a tag.
+/// user's tags (docs/features/tags.md, "A friend's tags, line by line").
+/// A place is worked out in this order: where the user mapped the tag,
+/// where they mapped a group or tag above it, a tag of the same name, and
+/// last the friend's structure as it is. Nothing is set or created until
+/// the user says so.
 class TagImport {
   TagImport({
     required this.from,
     required this.theirs,
     required this.tagIds,
     required this.mine,
-    this.remembered = const {},
+    this.targets = const {},
   });
 
   final AddedFrom from;
@@ -88,8 +94,8 @@ class TagImport {
   /// The user's shelf the places are worked out in.
   final Shelf mine;
 
-  /// The user's group for the friend's groups (by ID), as answered before.
-  final Map<String, String> remembered;
+  /// Where the user mapped the friend's groups and tags (by their IDs).
+  final Map<String, CopyTarget> targets;
 
   late final _theirGroupOfTag = {
     for (final g in theirs.allGroups)
@@ -108,18 +114,41 @@ class TagImport {
   /// The friend's group of their tag [tagId].
   TagGroup groupOf(String tagId) => _theirGroupOfTag[tagId]!;
 
+  /// The friend's tag above their group [g], when it is a sub-group.
+  Tag? parentOf(TagGroup g) => _theirTags[g.parentTagId];
+
   /// The names above the friend's tag [t] in their structure, from the top:
   /// "Collection", "Own", "Format" for Vinyl.
-  List<String> pathOf(Tag t) {
+  List<String> pathOf(Tag t) => [
+    for (final s in chainOf(t))
+      if (s.tag?.id != t.id) (s.group?.name ?? s.tag?.name)!,
+  ];
+
+  /// The friend's groups and tags from the top down to [t], [t] included:
+  /// the points a mapping of [t] can start at.
+  List<Start> chainOf(Tag t) {
     final group = groupOf(t.id);
     return [
-      if (_theirTags[group.parentTagId] case final parent?) ...[
-        ...pathOf(parent),
-        parent.name,
-      ],
-      group.name,
+      if (parentOf(group) case final parent?) ...chainOf(parent),
+      (group: group, tag: null),
+      (group: null, tag: t),
     ];
   }
+
+  /// The friend's tags below [start] in their shown groups, at any depth
+  /// ([start] itself left out).
+  List<Tag> below(Start start) {
+    List<Tag> under(Tag t) => [
+      for (final g in theirs.groups)
+        if (g.parentTagId == t.id) ...inGroup(g),
+    ];
+    return start.group != null ? inGroup(start.group!) : under(start.tag!);
+  }
+
+  /// The tags of the friend's group [g], each followed by what is below it.
+  List<Tag> inGroup(TagGroup g) => [
+    for (final t in g.tags) ...[t, ...below((group: null, tag: t))],
+  ];
 
   /// The friend's tags on the album, in their order. Left out: tags in
   /// groups the friend hides, and in or under built-in groups the user
@@ -141,31 +170,33 @@ class TagImport {
     };
   }
 
-  /// The target for the friend's group [id]: answered just now ([picked]),
-  /// else remembered; null when never asked.
-  CopyTarget? _chosen(String id, Map<String, CopyTarget> picked) =>
-      picked[id] ??
-      switch (remembered[id]) {
-        // A remembered group that is gone or hidden counts as never asked.
-        final g? when _myGroups.containsKey(g) => IntoGroup(g),
-        _ => null,
-      };
+  /// The target for the friend's group or tag [id], when its place in the
+  /// user's tags is still there and shown.
+  CopyTarget? target(String id) => switch (targets[id]) {
+    final IntoGroup t when _myGroups.containsKey(t.groupId) => t,
+    final OntoTag t when _myGroupOfTag.containsKey(t.tagId) => t,
+    final UnderTag t when _myGroupOfTag.containsKey(t.tagId) => t,
+    final AtTop t => t,
+    _ => null,
+  };
 
-  /// Where the friend's group [g] goes: into the chosen group of the
-  /// user's, else their group of the same name in the same place, else a
-  /// new one there.
-  GroupPlace groupPlace(
-    TagGroup g, [
-    Map<String, CopyTarget> picked = const {},
-  ]) {
-    if (_chosen(g.id, picked) case IntoGroup(:final groupId)
-        when _myGroups.containsKey(groupId)) {
-      return _existingGroup(_myGroups[groupId]!, from: g);
+  /// Where the friend's group [g] goes: as mapped, else the user's group of
+  /// the same name in the same place, else a new one there.
+  GroupPlace groupPlace(TagGroup g) {
+    final TagPlace? parent;
+    switch (target(g.id)) {
+      case IntoGroup(:final groupId):
+        return _existingGroup(_myGroups[groupId]!, from: g);
+      case UnderTag(:final tagId):
+        parent = _existingTag(tagId);
+      case AtTop():
+        parent = null;
+      default:
+        parent = switch (parentOf(g)) {
+          final p? => tagPlace(p),
+          null => null,
+        };
     }
-    final parent = switch (g.parentTagId) {
-      final p? => tagPlace(_theirTags[p]!, picked),
-      null => null,
-    };
     final there = parent == null || parent.existing != null
         ? mine.groups
               .where(
@@ -184,13 +215,23 @@ class TagImport {
     );
   }
 
-  /// Where the friend's tag [t] goes: the tag of that name in its group's
-  /// place, or a new one there. When nothing was chosen for the groups
-  /// above it and the user has a tag of that name elsewhere, that one.
-  TagPlace tagPlace(Tag t, [Map<String, CopyTarget> picked = const {}]) {
-    final group = groupPlace(groupOf(t.id), picked);
+  /// Where the friend's tag [t] goes: as mapped, else the tag of that name
+  /// in its group's place, or a new one there. When nothing above it is
+  /// mapped and the user has a tag of that name elsewhere, that one.
+  TagPlace tagPlace(Tag t) {
+    final GroupPlace group;
+    switch (target(t.id)) {
+      case OntoTag(:final tagId):
+        return _existingTag(tagId, match: Match.remembered);
+      case IntoGroup(:final groupId):
+        group = _existingGroup(_myGroups[groupId]!);
+      default:
+        group = groupPlace(groupOf(t.id));
+    }
+    final mapped = chainOf(t)
+        .any((s) => target((s.group?.id ?? s.tag?.id)!) != null);
     final there = group.existing?.tags.where((m) => _sameTag(m, t)).firstOrNull;
-    if (there == null && !_chosenAbove(t, picked)) {
+    if (there == null && !mapped) {
       final elsewhere = [
         for (final g in mine.groups)
           for (final m in g.tags)
@@ -204,31 +245,23 @@ class TagImport {
       existing: there,
       name: there?.name ?? t.name,
       group: group,
-      match: _chosenAbove(t, picked) ? Match.remembered : Match.path,
+      match: mapped ? Match.remembered : Match.path,
     );
   }
 
   /// The user's tag for the nearest tag above [t] in the friend's
   /// structure that the user has: their Metal for the friend's Metal ›
   /// Subgenre › Black metal. Null when [t] is top-level or none matches.
-  TagPlace? nearestAbove(Tag t, [Map<String, CopyTarget> picked = const {}]) {
+  TagPlace? nearestAbove(Tag t) {
     for (
-      var parent = _theirTags[groupOf(t.id).parentTagId];
+      var parent = parentOf(groupOf(t.id));
       parent != null;
-      parent = _theirTags[groupOf(parent.id).parentTagId]
+      parent = parentOf(groupOf(parent.id))
     ) {
-      final place = tagPlace(parent, picked);
+      final place = tagPlace(parent);
       if (!place.isNew) return place;
     }
     return null;
-  }
-
-  bool _chosenAbove(Tag t, Map<String, CopyTarget> picked) {
-    for (TagGroup? g = groupOf(t.id); g != null;) {
-      if (_chosen(g.id, picked) != null) return true;
-      g = _theirGroupOfTag[g.parentTagId];
-    }
-    return false;
   }
 
   GroupPlace _existingGroup(TagGroup g, {TagGroup? from}) => GroupPlace._(
@@ -278,6 +311,47 @@ class TagImport {
     return best != null && shared(best) > 0 ? best : null;
   }
 
+  /// What putting the friend's [tags] in their places creates, in order,
+  /// and which of the user's tags several of them land on ("Metal": 2).
+  ({List<String> creates, Map<String, int> merges}) preview(List<Tag> tags) {
+    final seen = <String>{};
+    final creates = <String>[];
+    final landings = <String, int>{};
+    late void Function(TagPlace) tag;
+    void group(GroupPlace g) {
+      if (g.parent case final p?) tag(p);
+      if (!g.isNew) return;
+      final under = g.parent;
+      final key = [...?under?.path, g.name].join('\u0000').toLowerCase();
+      if (!seen.add('g:$key')) return;
+      creates.add(
+        under == null
+            ? 'group ${g.name}'
+            : 'sub-group ${g.name} under ${under.name}',
+      );
+    }
+
+    tag = (t) {
+      group(t.group);
+      if (t.isNew && seen.add('t:${t.path.join('\u0000').toLowerCase()}')) {
+        creates.add('tag ${t.name} in ${t.group.name}');
+      }
+    };
+    for (final t in tags) {
+      final place = tagPlace(t);
+      tag(place);
+      final key = place.path.join(' › ');
+      landings[key] = (landings[key] ?? 0) + 1;
+    }
+    return (
+      creates: creates,
+      merges: {
+        for (final MapEntry(:key, :value) in landings.entries)
+          if (value > 1) key: value,
+      },
+    );
+  }
+
   /// This plan with the user's shown groups as they are now ([shown]):
   /// tags made on the album entry since count as theirs.
   TagImport withMyGroups(List<TagGroup> shown) {
@@ -300,61 +374,75 @@ class TagImport {
     theirs: theirs,
     tagIds: tagIds,
     mine: mine,
-    remembered: remembered,
+    targets: targets,
   );
 
-  /// Puts the friend's tag [t] in its place, creating what is new, and
-  /// returns the user's shelf after with the tags to set on the album: the
-  /// tag, parents first. Reuses same-name groups and tags on the shelf as
-  /// it is now, so trying again creates nothing twice.
+  /// This plan with the friend's group or tag [id] mapped to [target].
+  TagImport withTarget(String id, CopyTarget target) => TagImport(
+    from: from,
+    theirs: theirs,
+    tagIds: tagIds,
+    mine: mine,
+    targets: {...targets, id: target},
+  );
+
+  /// Puts the friend's [tags] in their places, creating what is new, and
+  /// returns the user's shelf after with, for the last of them, the tags to
+  /// set on the album: parents first, then the tag. Reuses same-name groups
+  /// and tags on the shelf as it is, so trying again creates nothing twice.
   Future<({Shelf mine, List<String> tagIds})> add(
     ShelfRepository shelf,
-    Tag t, [
-    Map<String, CopyTarget> picked = const {},
-  ]) async {
-    final current = await shelf.load();
-    final made = <Object, String>{}; // a new place → the user's ID
-    late Future<String> Function(TagPlace) tag;
+    List<Tag> tags,
+  ) async {
+    var plan = withMine(await shelf.load());
+    var ids = <String>[];
+    for (final t in tags) {
+      final place = plan.tagPlace(t);
+      final made = <Object, String>{}; // a new place → the user's ID
+      late Future<String> Function(TagPlace) tag;
 
-    Future<String> group(GroupPlace g) async {
-      if (g.existing case final e?) return e.id;
-      if (made[g] case final id?) return id;
-      final parent = switch (g.parent) {
-        final p? => await tag(p),
-        null => null,
+      Future<String> group(GroupPlace g) async {
+        if (g.existing case final e?) return e.id;
+        if (made[g] case final id?) return id;
+        final parent = switch (g.parent) {
+          final p? => await tag(p),
+          null => null,
+        };
+        final there = plan.mine.allGroups.where(
+          (m) =>
+              m.parentTagId == parent &&
+              m.name.toLowerCase() == g.name.toLowerCase(),
+        );
+        return made[g] =
+            there.firstOrNull?.id ??
+            await shelf.createGroup(
+              g.name,
+              exclusive: g.exclusive,
+              pickFromList: g.pickFromList,
+              parentTagId: parent,
+            );
+      }
+
+      tag = (t) async {
+        if (t.existing case final e?) return e.id;
+        if (made[t] case final id?) return id;
+        final groupId = await group(t.group);
+        final there = plan.mine.allGroups
+            .where((g) => g.id == groupId)
+            .expand((g) => g.tags)
+            .where((m) => m.name.toLowerCase() == t.name.toLowerCase());
+        return made[t] =
+            there.firstOrNull?.id ??
+            (await shelf.createTag(groupId, t.name)).id;
       };
-      final there = current.allGroups.where(
-        (m) =>
-            m.parentTagId == parent &&
-            m.name.toLowerCase() == g.name.toLowerCase(),
-      );
-      return made[g] =
-          there.firstOrNull?.id ??
-          await shelf.createGroup(
-            g.name,
-            exclusive: g.exclusive,
-            pickFromList: g.pickFromList,
-            parentTagId: parent,
-          );
+
+      ids = [
+        for (final a in place.ancestors.toList().reversed) await tag(a),
+        await tag(place),
+      ];
+      // The next one builds on what this one made.
+      if (made.isNotEmpty) plan = plan.withMine(await shelf.load());
     }
-
-    tag = (t) async {
-      if (t.existing case final e?) return e.id;
-      if (made[t] case final id?) return id;
-      final groupId = await group(t.group);
-      final there = current.allGroups
-          .where((g) => g.id == groupId)
-          .expand((g) => g.tags)
-          .where((m) => m.name.toLowerCase() == t.name.toLowerCase());
-      return made[t] =
-          there.firstOrNull?.id ?? (await shelf.createTag(groupId, t.name)).id;
-    };
-
-    final place = tagPlace(t, picked);
-    final ids = [
-      for (final a in place.ancestors.toList().reversed) await tag(a),
-      await tag(place),
-    ];
-    return (mine: await shelf.load(), tagIds: ids);
+    return (mine: plan.mine, tagIds: ids);
   }
 }

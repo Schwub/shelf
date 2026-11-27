@@ -435,25 +435,16 @@ class ShelfSort {
   int get hashCode => Object.hash(by, reversed);
 }
 
-/// Where the tags of one of a friend's groups go when the user adds them
-/// (docs/features/tags.md, "A friend's tags on the album entry").
+/// Where one of a friend's groups or tags goes in the user's tags, when the
+/// user mapped it (docs/features/tags.md, "A friend's tags, line by line").
+/// What sits below it in the friend's structure follows.
 sealed class CopyTarget {
   const CopyTarget();
 }
 
-/// Keeps the friend's structure: the user's group of the same name in the
-/// same place, or a new one.
-class CopyAsIs extends CopyTarget {
-  const CopyAsIs();
-
-  @override
-  bool operator ==(Object other) => other is CopyAsIs;
-
-  @override
-  int get hashCode => 0;
-}
-
-/// Into one of the user's groups: a tag of the same name there, or a new one.
+/// A friend's group into one of the user's groups (its tags join that
+/// group), or a friend's tag into one: the tag of that name there, or a new
+/// one.
 class IntoGroup extends CopyTarget {
   const IntoGroup(this.groupId);
 
@@ -465,4 +456,43 @@ class IntoGroup extends CopyTarget {
 
   @override
   int get hashCode => groupId.hashCode;
+}
+
+/// A friend's tag onto one of the user's tags, used instead of it.
+class OntoTag extends CopyTarget {
+  const OntoTag(this.tagId);
+
+  final String tagId;
+
+  @override
+  bool operator ==(Object other) => other is OntoTag && other.tagId == tagId;
+
+  @override
+  int get hashCode => tagId.hashCode;
+}
+
+/// A friend's group under one of the user's tags, as a sub-group there: the
+/// one of that name, or a new one.
+class UnderTag extends CopyTarget {
+  const UnderTag(this.tagId);
+
+  final String tagId;
+
+  @override
+  bool operator ==(Object other) => other is UnderTag && other.tagId == tagId;
+
+  @override
+  int get hashCode => tagId.hashCode;
+}
+
+/// A friend's sub-group at the top of the user's tags, as a group of its
+/// own: the one of that name, or a new one.
+class AtTop extends CopyTarget {
+  const AtTop();
+
+  @override
+  bool operator ==(Object other) => other is AtTop;
+
+  @override
+  int get hashCode => 1;
 }
