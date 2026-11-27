@@ -112,6 +112,7 @@ class _EntryPageState extends State<EntryPage> {
   /// and the user's tag each of them went onto there.
   late TagImport? _plan = widget.fromFriend;
   Map<String, String> _landed = const {};
+  Set<String> _mapped = const {}, _unmapped = const {};
 
   /// [_plan] with the tags made on this page since.
   TagImport? get _friendPlan => _plan?.withMyGroups(_tags.groups);
@@ -124,6 +125,8 @@ class _EntryPageState extends State<EntryPage> {
           shelf: widget.shelf,
           choice: _tags,
           landed: _landed,
+          changed: _mapped,
+          reset: _unmapped,
         ),
       ),
     );
@@ -132,6 +135,8 @@ class _EntryPageState extends State<EntryPage> {
       _tags = result.choice;
       _plan = result.plan;
       _landed = result.landed;
+      _mapped = result.changed;
+      _unmapped = result.reset;
     });
   }
 

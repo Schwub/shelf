@@ -139,7 +139,6 @@ void main() {
     final p = plan({'Jazz', 'Dream pop'}, theirs: [...annasGroups, style]);
 
     expect(place(p, 'Jazz'), 'jazz');
-    expect(p.tagPlace(their(p, 'Jazz')).match, Match.name);
     expect(place(p, 'Dream pop'), '+?/Dream pop');
     expect(p.suggestion(style)?.id, 'genre', reason: 'has Jazz and Pop');
   });
@@ -150,7 +149,6 @@ void main() {
 
     expect(place(q, 'Dream pop'), '+listening/Dream pop');
     expect(place(q, 'Jazz'), '+listening/Jazz', reason: 'follows');
-    expect(q.tagPlace(their(q, 'Dream pop')).match, Match.remembered);
   });
 
   test('a remembered answer is used, unless the group is gone', () {
@@ -185,7 +183,6 @@ void main() {
       'Format',
       'Vinyl',
     ]);
-    expect(p.tagPlace(their(p, 'vinyl')).match, Match.path);
     expect(p.tagPlace(their(p, 'First')).path, [
       'Label',
       'Parlophone',
@@ -261,7 +258,6 @@ void main() {
       }, theirs: nested).withTarget('their-Black metal', const OntoTag('jazz'));
 
       expect(place(p, 'Black metal'), 'jazz');
-      expect(p.tagPlace(their(p, 'Black metal')).match, Match.remembered);
     });
 
     test('flat to nested: her tag goes into my sub-group', () {
@@ -309,25 +305,25 @@ void main() {
       ]);
     });
 
-    test('the preview lists what is created and what merges', () {
-      final p = plan({
-        'Black metal',
-      }, theirs: nested).withTarget('a-sub', const UnderTag('jazz'));
-      final merged = plan({'Black metal'}, theirs: nested)
-          .withTarget('their-Black metal', const OntoTag('jazz'))
-          .withTarget('their-Doom', const OntoTag('jazz'));
+    test('the parts of where a tag lands, and what each stands for', () {
+      final p = plan({'Black metal'}, theirs: nested);
+      String part(({String name, bool isNew, Start start}) x) =>
+          '${x.isNew ? '+' : ''}${x.name}'
+          '=${x.start.group?.name ?? x.start.tag?.name}';
 
-      expect(p.preview(p.below(p.chainOf(their(p, 'Doom'))[2])).creates, [
-        'sub-group Subgenre under Jazz',
-        'tag Black metal in Subgenre',
-        'tag Doom in Subgenre',
+      expect(p.toPath(their(p, 'Black metal')).map(part), [
+        'Genre=Genre',
+        '+Metal=Metal',
+        '+Subgenre=Subgenre',
+        '+Black metal=Black metal',
       ]);
-      final both = merged.preview([
-        their(merged, 'Black metal'),
-        their(merged, 'Doom'),
-      ]);
-      expect(both.creates, isEmpty);
-      expect(both.merges, {'Genre › Jazz': 2});
+      final q = p.withTarget('their-Black metal', const IntoGroup('format'));
+      expect(q.toPath(their(q, 'Black metal')).map(part), [
+        'Collection=Black metal',
+        'Own=Black metal',
+        'Format=Black metal',
+        '+Black metal=Black metal',
+      ], reason: 'my own parts on the way stand for the tag');
     });
 
     test('several tags are created in one go, sharing new parents', () async {

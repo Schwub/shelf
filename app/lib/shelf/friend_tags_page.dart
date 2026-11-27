@@ -5,11 +5,13 @@ import '../theme/shelf_colors.dart';
 import '../widgets/help_line.dart';
 import '../widgets/shelf_key.dart';
 import '../widgets/text_link.dart';
-import 'map_tags_page.dart';
 import 'shelf.dart';
 import 'shelf_repository.dart';
 import 'tag_import.dart';
+import 'tag_paths.dart';
 import 'tag_section.dart';
+import 'tag_target_sheet.dart';
+import 'tags_check_page.dart';
 
 /// What "Anna's tags" ends with: the album's tags, the plan with the user's
 /// shelf as it is now, and which of the user's tags each of the friend's
@@ -18,13 +20,15 @@ typedef FriendTagsResult = ({
   TagChoice choice,
   TagImport plan,
   Map<String, String> landed,
+  Set<String> changed,
+  Set<String> reset,
 });
 
-/// "Anna's tags" (docs/design/wireframes/copy-tags-6.html): the friend's
-/// tags on the album, one per line with its full path. A tag the user has is
-/// added; one they don't is copied with the friend's structure above it, or
-/// the user's nearest tag above it is used instead. Nothing is added until
-/// tapped.
+/// "Anna's tags" (docs/design/wireframes/copy-tags-8.html): the friend's
+/// tags on the album, each with the path it comes from and the path it
+/// lands at in the user's tags. One key adds it (creating what is new);
+/// tapping a part of where it lands sends that part elsewhere. Nothing is
+/// added until tapped.
 class FriendTagsPage extends StatefulWidget {
   const FriendTagsPage({
     super.key,
@@ -32,12 +36,18 @@ class FriendTagsPage extends StatefulWidget {
     required this.shelf,
     required this.choice,
     this.landed = const {},
+    this.changed = const {},
+    this.reset = const {},
   });
 
   final TagImport plan;
   final ShelfRepository shelf;
   final TagChoice choice;
   final Map<String, String> landed;
+
+  /// What an earlier visit changed in [plan] and hasn't saved yet (the
+  /// friend's group and tag IDs sent elsewhere, and put back).
+  final Set<String> changed, reset;
 
   @override
   State<FriendTagsPage> createState() => _FriendTagsPageState();
@@ -51,6 +61,19 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
 
   /// What the last change took off the album, for the user to see.
   String? _note;
+
+  /// The friend's groups and tags sent elsewhere here, and the ones put
+  /// back as they are: remembered, or forgotten, once a tag below them is
+  /// added.
+  late final _changed = {...widget.changed}, _reset = {...widget.reset};
+
+  /// For a friend's tag (by ID), the group or tag above it whose other tags
+  /// come along when it is added.
+  final _bring = <String, Start>{};
+
+  /// The user's tags each line set that weren't set before, parents
+  /// first: Undo takes those off again.
+  final _brought = <String, List<String>>{};
 
   /// The user's tag that the friend's tag [t] is on the album as, if it is.
   String? _on(Tag t) {
@@ -68,10 +91,6 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
     return choice;
   }
 
-  /// The user's tags each line set that weren't set before, parents
-  /// first: Undo takes those off again.
-  final _brought = <String, List<String>>{};
-
   /// Sets the user's tags [ids] (parents first) for the friend's [t].
   void _set(Tag t, TagChoice base, List<String> ids) {
     final before = _choice.chosen;
@@ -85,9 +104,7 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
       for (final id in base.chosen)
         if (!_choice.chosen.contains(id)) ?names[id],
     ];
-    _note = off.isEmpty
-        ? null
-        : '${off.join(', ')} came off: only one tag per album fits there.';
+    _note = off.isEmpty ? null : '${off.join(', ')}: off, one per album';
     _landed[t.id] = ids.last;
     _brought[t.id] = [
       for (final id in ids)
@@ -95,142 +112,154 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
     ];
   }
 
-  /// Sets the user's tag at [place], which they have, for the friend's [t].
-  void _use(Tag t, TagPlace place) => setState(() {
-    _failed = false;
-    _set(t, _choice, [
-      for (final a in place.ancestors.toList().reversed) a.existing!.id,
-      place.existing!.id,
-    ]);
-  });
+  /// The friend's tags that come along with [t], when the user asked.
+  List<Tag> _others(Tag t) => switch (_bring[t.id]) {
+    final start? => [
+      for (final u in _plan.below(start))
+        if (u.id != t.id) u,
+    ],
+    null => const [],
+  };
 
-  /// Creates the friend's [t] with their structure above it, and sets it.
-  Future<void> _copy(Tag t) async {
-    setState(() {
-      _busy = true;
-      _failed = false;
-    });
-    try {
-      final (:mine, :tagIds) = await _plan.add(widget.shelf, [t]);
-      if (!mounted) return;
-      setState(() {
-        _plan = _plan.withMine(mine);
-        _set(t, TagChoice(mine.groups, _choice.chosen), tagIds);
-      });
-    } catch (e, stack) {
-      reportError(e, stack);
-      if (mounted) setState(() => _failed = true);
-    } finally {
-      if (mounted) setState(() => _busy = false);
+  /// Adds the friend's [t] to the album where its path lands, creating
+  /// what is new, with the tags that come along; then remembers what was
+  /// changed on its path.
+  Future<void> _add(Tag t) async {
+    final others = _others(t);
+    if (others.isNotEmpty) {
+      final go = await Navigator.of(context).push(
+        MaterialPageRoute<bool>(
+          builder: (_) => TagsCheckPage(plan: _plan, tag: t, others: others),
+        ),
+      );
+      if (go != true || !mounted) return;
     }
+    final place = _plan.tagPlace(t);
+    if (place.isNew || others.isNotEmpty) {
+      setState(() {
+        _busy = true;
+        _failed = false;
+      });
+      try {
+        final (:mine, :tagIds) = await _plan.add(widget.shelf, [...others, t]);
+        if (!mounted) return;
+        setState(() {
+          _plan = _plan.withMine(mine);
+          _set(t, TagChoice(mine.groups, _choice.chosen), tagIds);
+        });
+      } catch (e, stack) {
+        reportError(e, stack);
+        if (mounted) setState(() => _failed = true);
+        return;
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
+    } else {
+      setState(() {
+        _failed = false;
+        _set(t, _choice, [
+          for (final a in place.ancestors.toList().reversed) a.existing!.id,
+          place.existing!.id,
+        ]);
+      });
+    }
+    _bring.remove(t.id);
+    await _remember(t);
   }
 
-  /// Remembers [target] for the friend's group or tag [id].
-  Future<void> _remember(
-    String id,
-    CopyTarget target, {
-    required bool group,
-  }) async {
+  /// Saves, for the friend's next albums, what was changed on the path of
+  /// [t].
+  Future<void> _remember(Tag t) async {
     try {
-      await widget.shelf.rememberCopy(id, target, group: group);
+      for (final s in _plan.chainOf(t)) {
+        final id = (s.group?.id ?? s.tag?.id)!;
+        final group = s.group != null;
+        if (_changed.contains(id)) {
+          // A group of its own exists now: remembered as that group.
+          final target = switch (_plan.targets[id]) {
+            AtTop() => switch (_plan.groupPlace(s.group!).existing) {
+              final made? => IntoGroup(made.id),
+              null => null,
+            },
+            final other => other,
+          };
+          if (target != null) {
+            await widget.shelf.rememberCopy(id, target, group: group);
+          }
+          _changed.remove(id);
+        } else if (_reset.contains(id)) {
+          await widget.shelf.forgetCopy(id, group: group);
+          _reset.remove(id);
+        }
+      }
     } catch (e, stack) {
       // Still used for this album; only remembering it failed.
       reportError(e, stack);
     }
   }
 
-  /// Uses the user's tag at [place] instead of the friend's [t], from now
-  /// on.
-  void _useInstead(Tag t, TagPlace place) {
-    final target = OntoTag(place.existing!.id);
-    setState(() => _plan = _plan.withTarget(t.id, target));
-    _use(t, place);
-    _remember(t.id, target, group: false);
-  }
-
-  /// Maps the friend's [t], or a group or tag above it, into the user's
-  /// tags (three steps on their own page), creates what that needs and sets
-  /// [t]. Lines that were on and go elsewhere now come off.
-  Future<void> _map(Tag t) async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute<MapResult>(
-        builder: (_) => MapTagsPage(plan: _plan, tag: t),
-      ),
+  /// Sends the friend's group or tag [start], on the path of [t],
+  /// elsewhere. Lines that were on and land elsewhere now come off.
+  Future<void> _change(Tag t, Start start) async {
+    final choice = await showTagTargetSheet(
+      context,
+      plan: _plan,
+      tag: t,
+      start: start,
+      bring: _bring[t.id] == start,
     );
-    if (result == null || !mounted) return;
-    final (:start, :target, :bring) = result;
+    if (choice == null || !mounted) return;
     final id = (start.group?.id ?? start.tag?.id)!;
+    // Only what was added here moves with a change, not tags the user set
+    // themselves.
     final before = {
       for (final u in _plan.tags)
-        if (u.id != t.id) u: _on(u),
+        if (_landed.containsKey(u.id)) u: _on(u),
     };
-    // The new mapping holds for everything below its start: what was
-    // mapped there on the way to this tag before is forgotten.
-    final stale = _plan.mappedBelow(start, t);
-    final planned = _plan.remap(start, target, t);
+    // What was mapped below it on the way to this tag is replaced.
+    final below = [
+      for (final s in _plan.mappedBelow(start, t)) (s.group?.id ?? s.tag?.id)!,
+    ];
     setState(() {
-      _busy = true;
-      _failed = false;
-    });
-    try {
-      final (:mine, :tagIds) = await planned.add(widget.shelf, [
-        if (bring)
-          for (final u in planned.below(start))
-            if (u.id != t.id) u,
-        t,
-      ]);
-      if (!mounted) return;
-      setState(() {
-        _plan = planned.withMine(mine);
-        _choice = TagChoice(mine.groups, _choice.chosen);
-        for (final MapEntry(key: u, value: was) in before.entries) {
-          if (was == null || !_choice.chosen.contains(was)) continue;
-          if (_plan.tagPlace(u).existing?.id != was) _takeOff(u, was);
-        }
-        _set(t, _choice, tagIds);
-      });
-      await [
-        _forget([
-          for (final s in stale)
-            if (s.group case final g?) g.id,
-        ], group: true),
-        _forget([
-          for (final s in stale)
-            if (s.tag case final tag?) tag.id,
-        ], group: false),
-      ].wait;
-      // A group of its own exists now: remembered as that group.
-      final made = start.group == null
-          ? null
-          : _plan.groupPlace(start.group!).existing;
-      final resolved = switch (target) {
-        AtTop() => made == null ? null : IntoGroup(made.id),
-        _ => target,
-      };
-      if (resolved != null) {
-        await _remember(id, resolved, group: start.group != null);
+      _note = null;
+      if (choice.bring) {
+        _bring[t.id] = start;
+      } else if (_bring[t.id] == start) {
+        _bring.remove(t.id);
       }
-    } catch (e, stack) {
-      reportError(e, stack);
-      if (mounted) setState(() => _failed = true);
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+      if (choice.target == _plan.target(id) && below.isEmpty) return;
+      _changed.removeAll(below);
+      _reset.addAll(below);
+      if (choice.target case final target?) {
+        _plan = _plan.remap(start, target, t);
+        _changed.add(id);
+        _reset.remove(id);
+      } else {
+        _plan = _plan.withoutTargets([id, ...below]);
+        _changed.remove(id);
+        _reset.add(id);
+      }
+      for (final MapEntry(key: u, value: was) in before.entries) {
+        if (was != null && _plan.tagPlace(u).existing?.id != was) {
+          _takeOff(u, was);
+        }
+      }
+    });
   }
 
-  /// Takes the friend's [t] off the album again: the user's tag [id],
-  /// unless another line has it on too, and the parents this line set that
-  /// nothing else needs.
   void _undo(Tag t, String id) => setState(() {
     _note = null;
     _takeOff(t, id);
   });
 
+  /// Takes the friend's [t] off the album again: the user's tag [id],
+  /// unless another line has it on too, and the parents this line set that
+  /// nothing else needs.
   void _takeOff(Tag t, String id) {
     _landed.remove(t.id);
     final brought = _brought.remove(t.id) ?? const <String>[];
     final shared = _plan.tags.any((u) => u.id != t.id && _on(u) == id);
-    if (!shared) _choice = _choice.toggle(id);
+    if (!shared && _choice.chosen.contains(id)) _choice = _choice.toggle(id);
     for (final parent in brought.reversed) {
       final needed = _choice.groups.any(
         (g) =>
@@ -244,23 +273,13 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
     }
   }
 
-  /// Forgets what was mapped for the friend's tag [t] itself.
-  void _reset(Tag t) {
-    setState(() => _plan = _plan.withoutTargets([t.id]));
-    _forget([t.id], group: false);
-  }
-
-  Future<void> _forget(List<String> ids, {required bool group}) async {
-    try {
-      await [for (final id in ids) widget.shelf.forgetCopy(id, group: group)]
-          .wait;
-    } catch (e, stack) {
-      reportError(e, stack);
-    }
-  }
-
-  void _leave() => Navigator.of(context)
-      .pop<FriendTagsResult>((choice: _choice, plan: _plan, landed: _landed));
+  void _leave() => Navigator.of(context).pop<FriendTagsResult>((
+    choice: _choice,
+    plan: _plan,
+    landed: _landed,
+    changed: _changed,
+    reset: _reset,
+  ));
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +292,7 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
     final wanted = <String, String>{}; // my one-per-album group → its tag
     for (final t in _plan.tags) {
       final place = _plan.tagPlace(t);
-      if (place.isNew || _on(t) != null) continue;
+      if (place.isNew || _on(t) != null || _others(t).isNotEmpty) continue;
       // Its own tag and the parents above it: none may push out a tag
       // that is set, or that an earlier line needs.
       final chain = [place, ...place.ancestors];
@@ -318,35 +337,26 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
                     Expanded(
                       child: Text("$name's tags", style: text.headlineSmall),
                     ),
+                    if (have.isNotEmpty)
+                      TextLink(
+                        label: 'Add ${have.length} = mine',
+                        semanticLabel: have.length == 1
+                            ? 'Add the one you have'
+                            : 'Add the ${have.length} you have',
+                        onPressed: () async {
+                          if (_busy) return;
+                          for (final t in have) {
+                            await _add(t);
+                          }
+                        },
+                      ),
                   ],
                 ),
               ),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                  children: [
-                    HelpLine(
-                      "$name's tags on this album. Add the ones you have, "
-                      "copy one with $name's structure above it, or map it "
-                      'into your own.',
-                    ),
-                    if (have.isNotEmpty)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextLink(
-                          label: have.length == 1
-                              ? 'Add the one you have'
-                              : 'Add the ${have.length} you have',
-                          onPressed: () {
-                            if (_busy) return;
-                            for (final t in have) {
-                              _use(t, _plan.tagPlace(t));
-                            }
-                          },
-                        ),
-                      ),
-                    for (final t in _plan.tags) _line(t),
-                  ],
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                  children: [for (final t in _plan.tags) _line(t)],
                 ),
               ),
               DecoratedBox(
@@ -387,88 +397,59 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
     );
   }
 
-  /// One of the friend's tags: its path, where it goes, and what to do.
+  /// One of the friend's tags: where it comes from, where it lands, and
+  /// the key that puts it there.
   Widget _line(Tag t) {
     final c = context.shelf;
     final text = Theme.of(context).textTheme;
-    final muted = text.bodySmall!.copyWith(color: c.muted);
-    final place = _plan.tagPlace(t);
     final on = _on(t);
-    final above = place.isNew ? _plan.nearestAbove(t) : null;
+    final isNew = _plan.tagPlace(t).isNew;
+    final others = _others(t);
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: c.line)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('${_plan.pathOf(t).join(' › ')} ›', style: muted),
-          Text(t.name, style: text.titleMedium),
-          if (on != null)
-            Row(
+          TagPaths(
+            plan: _plan,
+            tag: t,
+            landed: on,
+            onChange: on != null || _busy ? null : (s) => _change(t, s),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 44, top: 4),
+            child: Row(
               children: [
-                Expanded(
-                  child: Text(
-                    'On the album as '
-                    '${_plan.myTag(on)?.path.join(' › ') ?? t.name}',
-                    style: muted,
+                if (on != null) ...[
+                  Icon(Icons.check, size: 16, color: c.muted),
+                  const SizedBox(width: 4),
+                  Text(
+                    'On the album',
+                    style: text.bodySmall!.copyWith(color: c.muted),
                   ),
-                ),
-                TextLink(
-                  label: 'Undo',
-                  semanticLabel: 'Undo ${t.name}',
-                  onPressed: () {
-                    if (!_busy) _undo(t, on);
-                  },
-                ),
-              ],
-            )
-          else ...[
-            const SizedBox(height: 2),
-            Text(
-              place.isNew
-                  ? '→ new: ${place.path.join(' › ')}'
-                  : '→ my ${place.path.join(' › ')} · ${switch (place.match) {
-                      Match.path => 'same place',
-                      Match.name => 'same name',
-                      Match.remembered => 'remembered',
-                    }}',
-              style: muted,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ShelfKey(
-                  primary: true,
-                  semanticLabel: '${place.isNew ? 'Copy' : 'Add'} ${t.name}',
-                  onPressed: _busy
-                      ? null
-                      : () => place.isNew ? _copy(t) : _use(t, place),
-                  child: Text(place.isNew ? 'Copy' : 'Add'),
-                ),
-                if (above != null)
+                  const SizedBox(width: 12),
                   ShelfKey(
-                    semanticLabel: 'Use my ${above.name} for ${t.name}',
-                    onPressed: _busy ? null : () => _useInstead(t, above),
-                    child: Text('Use my ${above.name}'),
+                    semanticLabel: 'Undo ${t.name}',
+                    onPressed: _busy ? null : () => _undo(t, on),
+                    child: const Text('Undo'),
                   ),
-                ShelfKey(
-                  semanticLabel: 'Map ${t.name}',
-                  onPressed: _busy ? null : () => _map(t),
-                  child: const Text('Map…'),
-                ),
-                if (_plan.targets.containsKey(t.id))
+                ] else
                   ShelfKey(
-                    semanticLabel: 'Forget where ${t.name} goes',
-                    onPressed: _busy ? null : () => _reset(t),
-                    child: const Text('Forget'),
+                    primary: true,
+                    semanticLabel: '${isNew ? 'Copy' : 'Add'} ${t.name}',
+                    onPressed: _busy ? null : () => _add(t),
+                    child: Text(
+                      others.isEmpty
+                          ? (isNew ? 'Copy' : 'Add')
+                          : 'Copy ${others.length + 1} tags',
+                    ),
                   ),
               ],
             ),
-          ],
+          ),
         ],
       ),
     );

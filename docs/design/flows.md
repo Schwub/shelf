@@ -185,14 +185,13 @@ new ones are ordinary, editable tags.
 ```mermaid
 flowchart TD
   friend([Friend's shelf: album]) -- Add to my shelf --> entry[Album entry: add, no tags set; row: Anna's tags, N on this album]
-  entry -- Choose --> list[Anna's tags: one line per tag with its path and where it goes]
-  list -- Add: I have it --> list
-  list -- Copy: I don't; her path is created --> list
-  list -- Use my X: my nearest tag above --> list
-  list -- Map --> m1[What to bring: starting point in her path]
-  m1 --> m2[Where it goes: my tags, one level per screen, search]
-  m2 --> m3[Check: what is created and merged; bring the rest along]
-  m3 -- Map, remembered for Anna --> list
+  entry -- Choose --> list[Anna's tags: each with From and To path bars]
+  list -- Add: all of To exists --> list
+  list -- Copy: parts of To are new, created --> list
+  list -- tap a part of To --> sheet[That part: like hers, one of my tags or groups, another place; bring the rest]
+  sheet -- Another place --> pick[My tags, one level per screen, search] --> sheet
+  sheet -- Done: To changes --> list
+  list -- Copy N tags --> check[Check: every tag as From and To] --> list
   list -- Undo --> list
   list -- error --> err[Couldn't copy the tag. Try again.] --> list
   list -- Done --> entry
