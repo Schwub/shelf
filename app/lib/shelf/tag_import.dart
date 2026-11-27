@@ -23,18 +23,6 @@ class GroupPlace {
   bool get isNew => existing == null;
 }
 
-/// How a tag of the friend's found its place among the user's.
-enum Match {
-  /// The user has it in the same place as the friend.
-  path,
-
-  /// The user has a tag of that name somewhere else.
-  name,
-
-  /// The user mapped it, or something above it, before.
-  remembered,
-}
-
 /// A place in the user's tags for one of the friend's tags: one of the
 /// user's tags ([existing]), or a new tag [name] in [group].
 class TagPlace {
@@ -42,7 +30,6 @@ class TagPlace {
     this.existing,
     required this.name,
     required this.group,
-    this.match = Match.path,
     this.from,
   });
 
@@ -53,9 +40,6 @@ class TagPlace {
   /// The friend's tag this place stands for; null for a tag of the user's
   /// that is only on the way to it.
   final Tag? from;
-
-  /// How [existing] was found.
-  final Match match;
 
   /// The names from the top of the user's tags down to this one:
   /// "Collection", "Own", "Format", "Vinyl".
@@ -227,7 +211,7 @@ class TagImport {
     final GroupPlace group;
     switch (target(t.id)) {
       case OntoTag(:final tagId):
-        return _existingTag(tagId, match: Match.remembered, from: t);
+        return _existingTag(tagId, from: t);
       case IntoGroup(:final groupId):
         group = _existingGroup(_myGroups[groupId]!);
       default:
@@ -243,14 +227,13 @@ class TagImport {
             if (_sameTag(m, t)) m,
       ].firstOrNull;
       if (elsewhere != null) {
-        return _existingTag(elsewhere.id, match: Match.name, from: t);
+        return _existingTag(elsewhere.id, from: t);
       }
     }
     return TagPlace._(
       existing: there,
       name: there?.name ?? t.name,
       group: group,
-      match: mapped ? Match.remembered : Match.path,
       from: t,
     );
   }
@@ -321,14 +304,13 @@ class TagImport {
   TagPlace? myTag(String id) =>
       _myGroupOfTag.containsKey(id) ? _existingTag(id) : null;
 
-  TagPlace _existingTag(String id, {Match match = Match.path, Tag? from}) {
+  TagPlace _existingTag(String id, {Tag? from}) {
     final g = _myGroupOfTag[id]!;
     final t = g.tags.firstWhere((t) => t.id == id);
     return TagPlace._(
       existing: t,
       name: t.name,
       group: _existingGroup(g),
-      match: match,
       from: from,
     );
   }
@@ -352,47 +334,6 @@ class TagImport {
       (best, m) => best == null || shared(m) > shared(best) ? m : best,
     );
     return best != null && shared(best) > 0 ? best : null;
-  }
-
-  /// What putting the friend's [tags] in their places creates, in order,
-  /// and which of the user's tags several of them land on ("Metal": 2).
-  ({List<String> creates, Map<String, int> merges}) preview(List<Tag> tags) {
-    final seen = <String>{};
-    final creates = <String>[];
-    final landings = <String, int>{};
-    late void Function(TagPlace) tag;
-    void group(GroupPlace g) {
-      if (g.parent case final p?) tag(p);
-      if (!g.isNew) return;
-      final under = g.parent;
-      final key = [...?under?.path, g.name].join('\u0000').toLowerCase();
-      if (!seen.add('g:$key')) return;
-      creates.add(
-        under == null
-            ? 'group ${g.name}'
-            : 'sub-group ${g.name} under ${under.name}',
-      );
-    }
-
-    tag = (t) {
-      group(t.group);
-      if (t.isNew && seen.add('t:${t.path.join('\u0000').toLowerCase()}')) {
-        creates.add('tag ${t.name} in ${t.group.name}');
-      }
-    };
-    for (final t in tags) {
-      final place = tagPlace(t);
-      tag(place);
-      final key = place.path.join(' › ');
-      landings[key] = (landings[key] ?? 0) + 1;
-    }
-    return (
-      creates: creates,
-      merges: {
-        for (final MapEntry(:key, :value) in landings.entries)
-          if (value > 1) key: value,
-      },
-    );
   }
 
   /// This plan with the user's shown groups as they are now ([shown]):
