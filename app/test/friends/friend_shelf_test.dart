@@ -391,17 +391,15 @@ void main() {
       );
     });
 
-    /// Scrolls the topmost list (Anna's tags, or the sheet over them) until
-    /// [text] shows there.
+    /// Scrolls Anna's tags until [text] shows.
     Future<Finder> scrollTo(WidgetTester tester, String text) async {
-      final f = find.text(text).last;
       await tester.scrollUntilVisible(
-        f,
+        find.text(text),
         200,
         scrollable: find.byType(Scrollable).last,
       );
       await tester.pumpAndSettle();
-      return f;
+      return find.text(text).last;
     }
 
     Future<void> addFromAnna(WidgetTester tester, String title) async {
@@ -413,46 +411,51 @@ void main() {
     }
 
     Future<void> tapText(WidgetTester tester, String text) async {
-      await tester.tap(find.text(text));
+      await tester.tap(await scrollTo(tester, text));
       await tester.pumpAndSettle();
     }
 
-    /// Opens the target picker from the link [shown] and picks [choice].
-    Future<void> retarget(
-      WidgetTester tester,
-      String shown,
-      String choice,
-    ) async {
-      await tester.tap(find.text(shown).first);
-      await tester.pumpAndSettle();
-      final inSheet = find.descendant(
+    /// Taps [text] in the open target sheet, scrolling it into view.
+    Future<void> inSheet(WidgetTester tester, String text) async {
+      final f = find.descendant(
         of: find.byType(BottomSheet),
-        matching: find.text(choice),
+        matching: find.text(text),
       );
       await tester.scrollUntilVisible(
-        inSheet,
+        f,
         200,
         scrollable: find
             .descendant(
               of: find.byType(BottomSheet),
               matching: find.byType(Scrollable),
             )
-            .first,
+            .last,
       );
-      await tester.tap(inSheet);
+      await tester.tap(f);
       await tester.pumpAndSettle();
     }
 
-    testWidgets('nothing is ticked; matching tags are one tap away', (
+    /// Opens where [name] goes.
+    Future<void> openTarget(WidgetTester tester, String name) async {
+      final link = find.bySemanticsLabel(RegExp('^Where $name goes'));
+      await tester.scrollUntilVisible(
+        link,
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(link);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('nothing is ticked; the tags you have are one tap away', (
       tester,
     ) async {
       await addFromAnna(tester, 'Kid A');
 
       expect(find.text("Anna's tags"), findsOneWidget);
       expect(find.text('Use 0 tags'), findsOneWidget);
-      expect(find.text('Collection: Own'), findsOneWidget);
-      await tapText(tester, 'Tick the 3 that match');
-      expect(find.text('Use 3 tags'), findsOneWidget);
+      expect(find.text('→ Own › Format › Vinyl · have'), findsOneWidget);
+      await tapText(tester, 'Tick the 3 you have');
       await tapText(tester, 'Use 3 tags');
 
       expect(find.text("Added from Anna's shelf"), findsOneWidget);
@@ -470,11 +473,14 @@ void main() {
     testWidgets('copies only the ticked tags', (tester) async {
       await addFromAnna(tester, 'OK Computer');
 
-      expect(find.text('Genre: new'), findsOneWidget);
-      expect(find.text('New group Label'), findsOneWidget);
-      expect(find.text('Tick the 2 that match'), findsOneWidget);
+      expect(
+        await scrollTo(tester, '→ Genre › Shoegaze · new'),
+        findsOneWidget,
+      );
+      expect(await scrollTo(tester, '→ new group Label'), findsOneWidget);
       expect(shelf.trackLookups, ['mb-ok'], reason: 'no list of theirs');
       await tapText(tester, 'Shoegaze');
+      expect(find.text('Creates: tag Shoegaze in Genre'), findsOneWidget);
       await tapText(tester, 'Use 1 tag');
 
       expect(find.text("Anna's tags"), findsNothing);
@@ -484,7 +490,7 @@ void main() {
       expect(shelf.addedTags, ['shoegaze'], reason: 'not Own or Listened');
     });
 
-    testWidgets('creates a new group like theirs', (tester) async {
+    testWidgets('copies a new group like theirs', (tester) async {
       await addFromAnna(tester, 'OK Computer');
       await tapText(tester, 'Parlophone');
       await tapText(tester, 'Use 1 tag');
@@ -523,7 +529,7 @@ void main() {
       expect(find.text('Parlophone'), findsOneWidget);
     });
 
-    testWidgets('copies stay when the add is cancelled, and match then', (
+    testWidgets('copies stay when the add is cancelled, and are known then', (
       tester,
     ) async {
       await addFromAnna(tester, 'OK Computer');
@@ -535,8 +541,11 @@ void main() {
 
       expect(shelf.entries.any((e) => e.album.musicbrainzId == 'mb-ok'), false);
       expect(shelf.groups.any((g) => g.name == 'Label'), isTrue);
+      expect(shelf.taken, {'a-shoegaze', 'a-parlophone'});
       await tapText(tester, 'Add to my shelf');
-      expect(find.text('Tick the 4 that match'), findsOneWidget);
+      expect(find.text('Tick the 4 you have or took before'), findsOneWidget);
+      await scrollTo(tester, 'Parlophone');
+      expect(find.text('took before'), findsNWidgets(2));
     });
 
     testWidgets("adding says so when your shelf doesn't load", (tester) async {
@@ -572,7 +581,7 @@ void main() {
 
     testWidgets('choosing again replaces what was set before', (tester) async {
       await addFromAnna(tester, 'OK Computer');
-      await tapText(tester, 'Tick the 2 that match');
+      await tapText(tester, 'Tick the 2 you have');
       await tapText(tester, 'Use 2 tags');
 
       await tapText(tester, "See Anna's tags");
@@ -615,58 +624,107 @@ void main() {
       );
     }
 
-    testWidgets('a group goes into any of mine, and that is remembered', (
+    testWidgets('a whole group goes into one of mine, and is remembered', (
       tester,
     ) async {
       annaSortsByStyle();
       await addFromAnna(tester, 'OK Computer');
-      expect(find.text('New group Style'), findsNWidgets(2));
+      expect(find.text('→ Genre › Electronic · have'), findsOneWidget);
+      expect(find.text('→ Style › Shoegaze · new'), findsOneWidget);
 
-      await retarget(tester, 'New group Style', 'Electronic');
+      await openTarget(tester, 'Style');
+      await inSheet(tester, 'Genre');
+      await inSheet(tester, 'Into Genre');
 
-      expect(shelf.savedDestinations['a-style'], 'genre');
-      expect(find.text('Genre: Electronic'), findsOneWidget);
-      expect(find.text('Genre: new'), findsOneWidget, reason: 'Shoegaze too');
-      await tapText(tester, 'Tick the 2 that match');
+      expect(find.text('→ Genre › Shoegaze · new'), findsOneWidget);
+      await tapText(tester, 'Electronic');
       await tapText(tester, 'Shoegaze');
-      await tapText(tester, 'Use 3 tags');
+      await tapText(tester, 'Use 2 tags');
       await tapText(tester, 'Add to shelf');
-      expect(
-        shelf.addedTags,
-        unorderedEquals(['own', 'electronic', 'shoegaze']),
-        reason: 'both in my Genre',
-      );
+      expect(shelf.addedTags, unorderedEquals(['electronic', 'shoegaze']));
+      expect(shelf.copyTargets['a-style'], const IntoGroup('genre'));
     });
 
-    testWidgets('a tag can go elsewhere for this album only', (tester) async {
+    testWidgets('a tag can go onto any of my tags, or be found', (
+      tester,
+    ) async {
       annaSortsByStyle();
-      shelf.savedDestinations['a-style'] = 'genre';
       await addFromAnna(tester, 'OK Computer');
 
-      await retarget(tester, 'Genre: new', 'Ambient');
+      await openTarget(tester, 'Shoegaze');
+      await inSheet(tester, 'Genre');
+      await inSheet(tester, 'Ambient');
+      expect(find.text('→ Genre › Ambient · have'), findsOneWidget);
 
-      expect(find.text('Genre: Ambient'), findsOneWidget);
-      expect(shelf.savedDestinations['a-style'], 'genre');
-      await tapText(tester, 'Tick the 3 that match');
-      await tapText(tester, 'Use 3 tags');
-      await tapText(tester, 'Add to shelf');
-      expect(
-        shelf.addedTags,
-        unorderedEquals(['own', 'electronic', 'ambient']),
+      await openTarget(tester, 'Electronic');
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byType(TextField),
+        ),
+        'pop',
       );
+      await tester.pumpAndSettle();
+      await inSheet(tester, 'Genre › Pop');
+      expect(find.text('→ Genre › Pop · have'), findsOneWidget);
     });
 
-    testWidgets('back keeps the groups chosen', (tester) async {
+    testWidgets('back keeps the targets picked', (tester) async {
       annaSortsByStyle();
       await addFromAnna(tester, 'OK Computer');
-      await retarget(tester, 'New group Style', 'Electronic');
+      await openTarget(tester, 'Style');
+      await inSheet(tester, 'Genre');
+      await inSheet(tester, 'Into Genre');
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.byType(CopyTagsPage), findsNothing);
       await tapText(tester, "See Anna's tags");
 
-      expect(find.text('Genre: Electronic'), findsOneWidget);
+      expect(find.text('→ your Genre · have'), findsOneWidget);
+    });
+
+    testWidgets('in a one-per-album group, the newer tick wins', (
+      tester,
+    ) async {
+      await addFromAnna(tester, 'OK Computer');
+      await openTarget(tester, 'Listened');
+      await inSheet(tester, 'Collection');
+      await inSheet(tester, 'Want');
+
+      await tapText(tester, 'Own');
+      await tapText(tester, 'Listened');
+
+      expect(
+        find.text(
+          'Your Collection takes one tag per album, so Own was unticked '
+          'for Listened.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Use 1 tag'), findsOneWidget);
+    });
+
+    testWidgets('a new target is checked against one per album too', (
+      tester,
+    ) async {
+      await addFromAnna(tester, 'OK Computer');
+      await tapText(tester, 'Own');
+      await tapText(tester, 'Listened');
+      expect(find.text('Use 2 tags'), findsOneWidget);
+
+      await openTarget(tester, 'Listened');
+      await inSheet(tester, 'Collection');
+      await inSheet(tester, 'Want');
+
+      expect(find.text('Use 1 tag'), findsOneWidget);
+      expect(
+        find.text(
+          'Your Collection takes one tag per album, so Own was unticked '
+          'for Listened.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets("Anna's tags meet the accessibility guidelines", (
@@ -681,7 +739,7 @@ void main() {
       semantics.dispose();
     });
 
-    testWidgets('a sub-tag is ticked and unticked with its parent', (
+    testWidgets('a sub-tag brings its path, unticked with its parent', (
       tester,
     ) async {
       final anna = shelf.friendShelves['anna']!;
@@ -693,7 +751,7 @@ void main() {
                     id: e.id,
                     addedAt: e.addedAt,
                     album: e.album,
-                    tagIds: {...e.tagIds, 'a-first'},
+                    tagIds: const {'a-first'},
                   )
                 : e,
         ],
@@ -709,18 +767,29 @@ void main() {
         ],
       );
       await addFromAnna(tester, 'OK Computer');
+      expect(
+        find.text('not on this album'),
+        findsOneWidget,
+        reason: 'Parlophone',
+      );
 
-      await tester.tap(await scrollTo(tester, 'First'));
-      await tester.pumpAndSettle();
-      expect(find.text('Use 2 tags'), findsOneWidget, reason: 'Parlophone too');
+      await tapText(tester, 'First');
+      expect(find.text('Use 1 tag'), findsOneWidget);
+      expect(find.text('not on this album · comes along'), findsOneWidget);
+      expect(
+        find.text(
+          'Creates: group Label, tag Parlophone in Label, sub-group Pressing '
+          'under Parlophone, tag First in Pressing',
+        ),
+        findsOneWidget,
+      );
 
-      await tester.tap(await scrollTo(tester, 'Parlophone'));
-      await tester.pumpAndSettle();
+      await tapText(tester, 'Parlophone');
+      await tapText(tester, 'Parlophone');
       expect(find.text('Use 0 tags'), findsOneWidget, reason: 'First went too');
 
-      await tester.tap(await scrollTo(tester, 'First'));
-      await tester.pumpAndSettle();
-      await tapText(tester, 'Use 2 tags');
+      await tapText(tester, 'First');
+      await tapText(tester, 'Use 1 tag');
       await tapText(tester, 'Add to shelf');
       expect(shelf.addedTags, unorderedEquals(['parlophone', 'first']));
     });

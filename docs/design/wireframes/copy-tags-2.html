@@ -1,0 +1,105 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>shelf wireframe: Copy a friend's tags v2</title><style>
+*{box-sizing:border-box}
+body{margin:0;padding:24px;background:#e9e9e9;font:15px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#222}
+h1{font-size:20px;margin:0 0 4px}
+p.intro{margin:0 0 20px;color:#555;max-width:900px}
+nav.files{margin:0 0 20px}nav.files a{margin-right:14px;color:#222}
+.row{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+figure{margin:0}
+figcaption{font-weight:600;margin:0 0 8px;font-size:14px}
+.phone{width:390px;height:844px;background:#fff;border:2px solid #555;border-radius:28px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.status{height:28px;font-size:12px;color:#777;padding:6px 20px}
+.bar{height:56px;display:flex;align-items:center;gap:4px;padding:0 4px;border-bottom:1px solid #ddd}
+.bar .title{flex:1;font-size:20px;padding-left:12px}
+.icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#444;border-radius:24px}
+.body{flex:1;overflow:hidden;padding:16px;position:relative}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;height:100%;gap:12px;color:#444}
+label{display:block;font-size:13px;color:#444;margin:0 0 4px}
+.field{height:56px;border:1px solid #888;border-radius:4px;padding:16px 12px;color:#222;background:#fff}
+.field.placeholder{color:#888}.field.error{border:2px solid #222}
+.field.multi{height:72px}
+.help{font-size:13px;color:#555;margin:4px 0 16px}.help.error{color:#111;font-weight:600}
+.btn{height:48px;min-width:64px;border-radius:24px;display:inline-flex;align-items:center;justify-content:center;padding:0 24px;font-weight:600;border:1px solid #777;background:#fff;color:#222}
+.btn.primary{background:#444;color:#fff;border-color:#444}
+.btn.disabled{background:#ddd;color:#999;border-color:#ddd}
+.btn.text{border:none;padding:0 12px}
+.btn.block{display:flex;width:100%}
+.chips{display:flex;gap:8px;margin:0 -16px 12px 0;overflow:hidden;white-space:nowrap}.chip{flex:none}
+.chip{height:32px;padding:0 14px;border:1px solid #888;border-radius:8px;display:flex;align-items:center;font-size:14px}
+.chip.on{background:#ccc;border-color:#ccc;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tile .cover{aspect-ratio:1;background:#bbb;border-radius:4px;position:relative}
+.tile .t{font-size:13px;font-weight:600;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .a{font-size:12px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{position:absolute;left:4px;bottom:4px;right:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#fff;border:1px solid #777;border-radius:4px;font-size:11px;padding:1px 5px}
+.skel{background:#e3e3e3!important}
+.skel-line{height:10px;background:#e3e3e3;border-radius:4px;margin-top:6px}
+.list .item{display:flex;gap:12px;align-items:center;min-height:72px;border-bottom:1px solid #eee;padding:8px 0}
+.list .cover{width:56px;height:56px;background:#bbb;border-radius:4px;flex:none}
+.list .meta{flex:1;min-width:0}
+.list .t{font-weight:600}.list .a{font-size:13px;color:#555}
+.list .side{font-size:12px;color:#444;text-align:right}
+.fab{position:absolute;right:16px;bottom:16px;height:56px;border-radius:16px;background:#444;color:#fff;display:flex;align-items:center;gap:8px;padding:0 20px;font-weight:600}
+.snack{position:absolute;left:12px;right:12px;bottom:84px;background:#333;color:#fff;border-radius:4px;min-height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 16px;font-size:14px}
+.snack b{color:#fff;padding:12px}
+.seg{display:flex;border:1px solid #777;border-radius:24px;overflow:hidden;height:48px}
+.seg div{flex:1;display:flex;align-items:center;justify-content:center;border-right:1px solid #777;font-weight:600}
+.seg div:last-child{border-right:none}.seg .on{background:#ccc}
+.stars{display:flex;align-items:center}
+.star{width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:30px;color:#444}.star.off{color:#ccc}.star.half span{background:linear-gradient(90deg,#444 50%,#ccc 50%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tile .r{font-size:12px;color:#444}
+.album{display:flex;gap:16px;margin:0 0 4px}
+.album .cover{width:88px;height:88px;background:#bbb;border-radius:4px;flex:none}
+.album .t{font-size:20px;font-weight:600}.album .a{color:#444}.album .y{color:#666;font-size:13px}
+.section{font-size:13px;font-weight:600;color:#444;margin:16px 0 8px}
+.note{background:#eee;border-radius:8px;padding:12px;font-size:14px;margin:0 0 16px}
+.bottom{padding:12px 16px 20px;border-top:1px solid #ddd;display:flex;gap:12px;justify-content:flex-end}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:24px}
+.dialog{background:#fff;border-radius:24px;padding:24px;width:100%}
+.dialog h2{font-size:20px;margin:0 0 12px;font-weight:500}
+.dialog .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.menu{position:absolute;right:8px;top:88px;background:#fff;border:1px solid #999;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.2);width:180px}
+.menu div{height:48px;display:flex;align-items:center;padding:0 16px}
+.spinner{width:40px;height:40px;border:4px solid #ccc;border-top-color:#444;border-radius:50%}
+.progress{height:4px;background:#ccc;margin:-16px -16px 16px}
+.small{font-size:13px;color:#555}
+
+.sel .cover{outline:3px solid #222;outline-offset:-3px}
+.check{position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:12px;border:2px solid #fff;background:rgba(0,0,0,.25)}
+.check.on{background:#222;border-color:#222;color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center}
+.actions-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid #ddd}
+.actions-row .btn{flex:1;padding:0 8px}
+.navbar{height:64px;display:flex;border-top:1px solid #ddd}.navbar div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:#555}.navbar .on{font-weight:700;color:#222}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:16px 16px 0 0;border-top:1px solid #999;padding:16px;max-height:88%;overflow:hidden;display:flex;flex-direction:column}.sheet .scroll{flex:1;overflow:hidden;min-height:0}.sheet .pinned{display:flex;gap:12px;padding-top:12px;border-top:1px solid #ddd}
+.sheet h2{font-size:18px;margin:0 0 4px}
+.trow{display:flex;align-items:center;gap:12px;min-height:48px;border-bottom:1px solid #eee}
+.box{width:24px;height:24px;border:2px solid #444;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.box.all{background:#444;color:#fff}
+.trow .n{flex:1}.trow .c{font-size:12px;color:#666}
+.sub{padding-left:24px}
+.snack{bottom:148px}
+
+.dest{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 0 4px}
+.dest .g{font-weight:700}.dest .g small{display:block;font-weight:400;color:#666;font-size:12px}
+.pick{height:40px;border:1px solid #777;border-radius:8px;padding:0 10px;display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap}
+.trow .m{font-size:11px;border:1px solid #888;border-radius:4px;padding:1px 5px;color:#444}
+.trow .m.on{background:#444;color:#fff;border-color:#444}
+.box.path{background:#bbb;border-color:#bbb;color:#fff}
+.remember{font-size:12px;color:#555;margin:2px 0 0}
+
+.grp{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid #eee}
+.grp .n{flex:1;font-weight:600}.grp .c{font-size:12px;color:#666}.grp .chev{width:24px;text-align:center;color:#444}
+.grp.open{border-bottom:none}
+.inner{padding-left:16px;border-left:2px solid #ccc;margin:0 0 8px 11px}
+.inner .trow{min-height:44px}
+.search{height:44px;border:1px solid #888;border-radius:22px;padding:11px 16px;color:#888;margin:8px 0}
+.label{font-size:12px;font-weight:600;color:#666;margin:12px 0 2px;text-transform:uppercase;letter-spacing:.04em}
+.row2{display:flex;flex-direction:column;flex:1;min-width:0}
+.row2 small{font-size:12px;color:#666}
+.to{font-size:12px;text-decoration:underline;color:#444}
+.tree{padding-left:28px;position:relative}
+.tree:before{content:"";position:absolute;left:11px;top:0;height:24px;width:12px;border-left:1px solid #999;border-bottom:1px solid #999}
+.ghost .n{color:#888}.ghost .box{border-color:#bbb}
+.radio{width:20px;height:20px;border:2px solid #444;border-radius:10px;flex:none}.radio.on{background:#444;box-shadow:inset 0 0 0 3px #fff}
+.hl{background:#f1f1f1}
+</style></head><body><h1>Copy a friend's tags, v2</h1><p class="intro">Revision of the built copy screen (2026-11-27, after v1.0.32). Two changes: <b>sub-tags</b> show under their parent tag with a connector; a sub-tag whose parent isn't on the album still shows, with its parent greyed above it, and ticking it brings the parent along (grey tick). <b>The target picker no longer lists every tag</b>: likely targets first (the current one, same-name tags anywhere, a new tag in the suggested group, a new group), then all my groups folded; a group opens in place (one at a time), sub-groups open under their tag, and a search finds a tag or group by name. A sub-tag's picker starts under its parent's target. Everything else stays: nothing ticked, Tick the N that match, remembered groups per friend, Skip and the link on the entry.</p><nav class="files"><a href="sign-in.html">Sign in</a> <a href="shelf.html">My shelf</a> <a href="search.html">Search</a> <a href="album-entry.html">Album entry</a> <a href="tags.html">Tags</a> <a href="filters.html">Filters</a> <a href="import-tags.html">Import tags (M2)</a> <a href="friends.html">Friends (M2)</a> <a href="friend-shelf.html">Friend's shelf (M2)</a> <a href="feed.html">Feed (M2)</a> <a href="select.html">Select several</a> <a href="copy-tags.html">Copy a friend's tags (v1)</a> <a href="copy-tags-2.html">Copy a friend's tags (v2)</a></nav><div class="row"><figure><figcaption>Anna's tags: sub-tags sit under their parent</figcaption><div class="phone"><div class="status">9:41</div><div class="bar"><div class="icon" aria-label="Back">←</div><div class="title">Anna's tags</div></div><div class="body"><div class="help">Tick the tags you want. Tap → to choose where one goes.</div><div class="btn block" style="margin-bottom:8px">Tick the 3 that match</div><div class="trow "><span class="box all">✓</span><div class="row2"><span class="n">Own</span><small>Anna's Collection</small><span class="to">→ Collection: Own ▾</span></div></div><div class="tree"><div class="trow "><span class="box all">✓</span><div class="row2"><span class="n">Vinyl</span><small>Anna's Format, under Own</small><span class="to">→ Format: Vinyl ▾</span></div></div></div><div class="trow "><span class="box"></span><div class="row2"><span class="n">Art pop</span><small>Anna's Style</small><span class="to">→ Genre: new ▾</span></div></div><div class="trow "><span class="box all">✓</span><div class="row2"><span class="n">Electronic</span><small>Anna's Style</small><span class="to">→ Genre: Electronic ▾</span></div></div><div class="trow ghost"><span class="box path">✓</span><div class="row2"><span class="n">Parlophone</span><small>Anna's Label · not on this album</small><span class="to">→ new group Label ▾</span></div></div><div class="tree"><div class="trow "><span class="box all">✓</span><div class="row2"><span class="n">First</span><small>Anna's Pressing, under Parlophone</small><span class="to">→ new group Pressing under Parlophone ▾</span></div></div></div></div><div class="bottom"><div class="btn">Skip</div><div class="btn primary">Use 3 tags</div></div></div></figure><figure><figcaption>Where it goes: suggestions first, my groups folded</figcaption><div class="phone"><div class="status">9:41</div><div class="bar"><div class="icon" aria-label="Back">←</div><div class="title">Anna's tags</div></div><div class="body"><div class="trow "><span class="box all">✓</span><div class="row2"><span class="n">Electronic</span><small>Anna's Style</small><span class="to">→ Genre: Electronic ▾</span></div></div></div><div class="scrim" style="align-items:flex-end;padding:0"></div><div class="sheet"><h2>Electronic goes to</h2><div class="search">Find a tag or group</div><div class="label">Suggested</div><div class="trow "><span class="radio on"></span><span class="n">Genre: Electronic</span><span class="c">same name</span></div><div class="trow "><span class="radio"></span><span class="n">New “Electronic” in Genre</span><span class="c"></span></div><div class="trow "><span class="radio"></span><span class="n">New group “Style”</span><span class="c"></span></div><div class="label">All my groups</div><div class="scroll"><div class="grp  "><span class="chev">▸</span><span class="n">Collection</span><span class="c">2 tags · built-in</span></div><div class="grp  "><span class="chev">▸</span><span class="n">Listening</span><span class="c">2 tags · built-in</span></div><div class="grp  "><span class="chev">▸</span><span class="n">Genre</span><span class="c">9 tags</span></div><div class="grp  "><span class="chev">▸</span><span class="n">Mood</span><span class="c">5 tags</span></div><div class="grp  "><span class="chev">▸</span><span class="n">Heard it on</span><span class="c">3 tags</span></div></div></div></div></figure><figure><figcaption>A group opens in place; only one at a time</figcaption><div class="phone"><div class="status">9:41</div><div class="bar"><div class="icon" aria-label="Back">←</div><div class="title">Anna's tags</div></div><div class="body"></div><div class="scrim" style="align-items:flex-end;padding:0"></div><div class="sheet"><h2>Electronic goes to</h2><div class="search">Find a tag or group</div><div class="label">All my groups</div><div class="scroll"><div class="grp  "><span class="chev">▸</span><span class="n">Collection</span><span class="c">2 tags · built-in</span></div><div class="grp  "><span class="chev">▸</span><span class="n">Listening</span><span class="c">2 tags · built-in</span></div><div class="grp open "><span class="chev">▾</span><span class="n">Genre</span><span class="c">9 tags</span></div><div class="inner"><div class="trow "><span class="radio"></span><span class="n">Ambient</span><span class="c"></span></div><div class="trow "><span class="radio"></span><span class="n">Art rock</span><span class="c"></span></div><div class="trow "><span class="radio on"></span><span class="n">Electronic</span><span class="c"></span></div><div class="trow "><span class="radio"></span><span class="n">Folk</span><span class="c"></span></div><div class="trow "><span class="radio"></span><span class="n">Jazz</span><span class="c"></span></div><div class="small" style="padding:8px 0">4 more…</div><div class="trow "><span class="radio"></span><span class="n">New “Electronic” here</span><span class="c">+</span></div></div><div class="grp  "><span class="chev">▸</span><span class="n">Mood</span><span class="c">5 tags</span></div><div class="grp  "><span class="chev">▸</span><span class="n">Heard it on</span><span class="c">3 tags</span></div></div></div></div></figure><figure><figcaption>Sub-groups open under their tag, as deep as they go</figcaption><div class="phone"><div class="status">9:41</div><div class="bar"><div class="icon" aria-label="Back">←</div><div class="title">Anna's tags</div></div><div class="body"></div><div class="scrim" style="align-items:flex-end;padding:0"></div><div class="sheet"><h2>Shellac goes to</h2><div class="search">Find a tag or group</div><div class="label">All my groups</div><div class="scroll"><div class="grp open "><span class="chev">▾</span><span class="n">Collection</span><span class="c">2 tags · built-in</span></div><div class="inner"><div class="trow "><span class="radio"></span><span class="n">Want</span><span class="c"></span></div><div class="grp open "><span class="chev">▾</span><span class="n">Own</span><span class="c">1 sub-group</span></div><div class="inner"><div class="grp open "><span class="chev">▾</span><span class="n">Format</span><span class="c">4 tags</span></div><div class="inner"><div class="trow "><span class="radio"></span><span class="n">Vinyl</span><span class="c"></span></div><div class="trow "><span class="radio"></span><span class="n">CD</span><span class="c"></span></div><div class="trow "><span class="radio"></span><span class="n">Tape</span><span class="c"></span></div><div class="trow "><span class="radio"></span><span class="n">File</span><span class="c"></span></div><div class="trow "><span class="radio on"></span><span class="n">New “Shellac” here</span><span class="c">+</span></div></div></div></div><div class="grp  "><span class="chev">▸</span><span class="n">Listening</span><span class="c">2 tags · built-in</span></div><div class="grp  "><span class="chev">▸</span><span class="n">Genre</span><span class="c">9 tags</span></div></div></div></div></figure><figure><figcaption>A sub-tag: first under its parent's target</figcaption><div class="phone"><div class="status">9:41</div><div class="bar"><div class="icon" aria-label="Back">←</div><div class="title">Anna's tags</div></div><div class="body"></div><div class="scrim" style="align-items:flex-end;padding:0"></div><div class="sheet"><h2>First goes to</h2><div class="help">Under Parlophone, where its parent goes.</div><div class="label">Under Parlophone</div><div class="trow "><span class="radio on"></span><span class="n">New group “Pressing” under Parlophone</span><span class="c"></span></div><div class="label">Elsewhere</div><div class="scroll"><div class="grp  "><span class="chev">▸</span><span class="n">All my groups</span><span class="c">moves First away from Parlophone</span></div></div><div class="note" style="margin-top:12px">Parlophone comes along with First (grey tick): a sub-tag needs its parent. Choose another place for First and Parlophone stays unticked.</div></div></div></figure><figure><figcaption>Search: tags and groups by name, wherever they sit</figcaption><div class="phone"><div class="status">9:41</div><div class="bar"><div class="icon" aria-label="Back">←</div><div class="title">Anna's tags</div></div><div class="body"></div><div class="scrim" style="align-items:flex-end;padding:0"></div><div class="sheet"><h2>Electronic goes to</h2><div class="search" style="color:#222">elec</div><div class="scroll"><div class="trow "><span class="radio on"></span><span class="n">Genre: Electronic</span><span class="c"></span></div><div class="trow "><span class="radio"></span><span class="n">Mood: Electric</span><span class="c"></span></div><div class="trow "><span class="radio"></span><span class="n">New “Electronic” in…</span><span class="c">pick a group ▸</span></div></div></div></div></figure></div></body></html>

@@ -505,24 +505,72 @@ class SupabaseShelfRepository implements ShelfRepository {
   }
 
   @override
-  Future<Map<String, String>> destinations(List<String> friendGroupIds) async {
-    final rows = await _db
-        .from('tag_group_destinations')
-        .select('friend_group_id, group_id')
-        .eq('user_id', _me)
-        .inFilter('friend_group_id', friendGroupIds)
-        // Rows from before copying became opt-in could say "nowhere".
-        .not('group_id', 'is', null);
-    return {
-      for (final r in rows)
-        r['friend_group_id'] as String: r['group_id'] as String,
-    };
+  Future<CopyMemory> copyMemory({
+    required List<String> friendGroupIds,
+    required List<String> friendTagIds,
+  }) async {
+    final (groups, tags) = await (
+      _db
+          .from('tag_group_destinations')
+          .select('friend_group_id, group_id, parent_tag_id')
+          .eq('user_id', _me)
+          .inFilter('friend_group_id', friendGroupIds),
+      _db
+          .from('tag_destinations')
+          .select('friend_tag_id, tag_id, group_id, taken')
+          .eq('user_id', _me)
+          .inFilter('friend_tag_id', friendTagIds),
+    ).wait;
+    return (
+      targets: <String, CopyTarget>{
+        // Rows from TASK-48 can say "nowhere" (no target): left out.
+        for (final r in groups)
+          r['friend_group_id'] as String: ?switch (r) {
+            {'group_id': final String id} => IntoGroup(id),
+            {'parent_tag_id': final String id} => UnderTag(id),
+            _ => null,
+          },
+        for (final r in tags)
+          r['friend_tag_id'] as String: ?switch (r) {
+            {'tag_id': final String id} => OntoTag(id),
+            {'group_id': final String id} => IntoGroup(id),
+            _ => null,
+          },
+      },
+      taken: {
+        for (final r in tags)
+          if (r['taken'] == true) r['friend_tag_id'] as String,
+      },
+    );
   }
 
   @override
-  Future<void> saveDestination(String friendGroupId, String groupId) => _db
-      .from('tag_group_destinations')
-      .upsert({'friend_group_id': friendGroupId, 'group_id': groupId});
+  Future<void> rememberCopy({
+    required Map<String, CopyTarget> groups,
+    required Map<String, CopyTarget?> tags,
+  }) async {
+    await [
+      if (groups.isNotEmpty)
+        _db.from('tag_group_destinations').upsert([
+          for (final MapEntry(:key, :value) in groups.entries)
+            {
+              'friend_group_id': key,
+              'group_id': value is IntoGroup ? value.groupId : null,
+              'parent_tag_id': value is UnderTag ? value.tagId : null,
+            },
+        ]),
+      if (tags.isNotEmpty)
+        _db.from('tag_destinations').upsert([
+          for (final MapEntry(:key, :value) in tags.entries)
+            {
+              'friend_tag_id': key,
+              'tag_id': value is OntoTag ? value.tagId : null,
+              'group_id': value is IntoGroup ? value.groupId : null,
+              'taken': true,
+            },
+        ]),
+    ].wait;
+  }
 
   @override
   Future<void> hide(List<String> entryIds, bool hidden) async {

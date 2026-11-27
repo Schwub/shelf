@@ -56,14 +56,18 @@ class FriendAlbumPage extends StatelessWidget {
       // The user's shelf as it is now (a cancelled add may have copied
       // tags), and where this friend's groups went before.
       final Shelf current;
-      final Map<String, String> destinations;
+      final CopyMemory memory;
       try {
-        (current, destinations) = await (
+        (current, memory) = await (
           shelf.load(),
-          shelf.destinations([
-            for (final g in theirs.allGroups)
-              if (g.parentTagId == null) g.id,
-          ]),
+          shelf.copyMemory(
+            friendGroupIds: [for (final g in theirs.allGroups) g.id],
+            // Parent tags of the album's come along when copying.
+            friendTagIds: [
+              for (final g in theirs.allGroups)
+                for (final t in g.tags) t.id,
+            ],
+          ),
         ).wait;
       } catch (e, stack) {
         reportError(e, stack);
@@ -77,7 +81,7 @@ class FriendAlbumPage extends StatelessWidget {
         theirs: theirs,
         tagIds: entry.tagIds,
         mine: current,
-        destinations: destinations,
+        memory: memory,
       );
       // Their track list, without their favorites.
       final tracks = [

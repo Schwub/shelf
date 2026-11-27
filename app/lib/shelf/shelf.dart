@@ -434,3 +434,78 @@ class ShelfSort {
   @override
   int get hashCode => Object.hash(by, reversed);
 }
+
+/// Where one of a friend's groups or tags goes when the user copies it
+/// (TASK-49, docs/features/tags.md).
+sealed class CopyTarget {
+  const CopyTarget();
+}
+
+/// Keeps the friend's structure: reuses what the user has along the same
+/// path and creates the rest.
+class CopyAsIs extends CopyTarget {
+  const CopyAsIs();
+
+  @override
+  bool operator ==(Object other) => other is CopyAsIs;
+
+  @override
+  int get hashCode => 0;
+}
+
+/// Into one of the user's groups: a tag of the same name there, or a new one.
+class IntoGroup extends CopyTarget {
+  const IntoGroup(this.groupId);
+
+  final String groupId;
+
+  @override
+  bool operator ==(Object other) =>
+      other is IntoGroup && other.groupId == groupId;
+
+  @override
+  int get hashCode => groupId.hashCode;
+}
+
+/// A friend's tag onto one of the user's tags.
+class OntoTag extends CopyTarget {
+  const OntoTag(this.tagId);
+
+  final String tagId;
+
+  @override
+  bool operator ==(Object other) => other is OntoTag && other.tagId == tagId;
+
+  @override
+  int get hashCode => tagId.hashCode;
+}
+
+/// A friend's group under one of the user's tags: its sub-group of the same
+/// name, or a new one.
+class UnderTag extends CopyTarget {
+  const UnderTag(this.tagId);
+
+  final String tagId;
+
+  @override
+  bool operator ==(Object other) => other is UnderTag && other.tagId == tagId;
+
+  @override
+  int get hashCode => tagId.hashCode;
+}
+
+/// A friend's group as a top-level group of the user's: theirs of the same
+/// name, or a new one.
+class AtRoot extends CopyTarget {
+  const AtRoot();
+
+  @override
+  bool operator ==(Object other) => other is AtRoot;
+
+  @override
+  int get hashCode => 1;
+}
+
+/// What the user chose before for a friend's groups and tags (by the
+/// friend's IDs), and which of the friend's tags they took.
+typedef CopyMemory = ({Map<String, CopyTarget> targets, Set<String> taken});

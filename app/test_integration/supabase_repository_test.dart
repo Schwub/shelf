@@ -450,7 +450,7 @@ void main() {
     expect((await s.repo.load()).entries, isEmpty);
   });
 
-  test("where a friend's groups go is remembered", () async {
+  test("where a friend's groups and tags go is remembered", () async {
     final alice = await signIn();
     final bob = await signIn();
     await SupabaseFriendsRepository(alice.db).saveName('Alice');
@@ -461,13 +461,45 @@ void main() {
     final mine = await alice.repo.load();
     String group(Shelf s, String name) =>
         s.allGroups.firstWhere((g) => g.name == name).id;
-    final ids = [group(bobs, 'Genre'), group(bobs, 'Listening')];
+    String tag(Shelf s, String name) =>
+        s.allGroups.expand((g) => g.tags).firstWhere((t) => t.name == name).id;
+    final groups = [group(bobs, 'Genre'), group(bobs, 'Format')];
+    final tags = [tag(bobs, 'Vinyl'), tag(bobs, 'CD'), tag(bobs, 'Tape')];
 
-    expect(await alice.repo.destinations(ids), isEmpty);
-    await alice.repo.saveDestination(ids[0], group(mine, 'Listening'));
-    await alice.repo.saveDestination(ids[0], group(mine, 'Genre'));
-    expect(await alice.repo.destinations(ids), {ids[0]: group(mine, 'Genre')});
-    expect(await bob.repo.destinations(ids), isEmpty, reason: "Alice's own");
+    var memory = await alice.repo.copyMemory(
+      friendGroupIds: groups,
+      friendTagIds: tags,
+    );
+    expect(memory.targets, isEmpty);
+    expect(memory.taken, isEmpty);
+
+    await alice.repo.rememberCopy(
+      groups: {
+        groups[0]: IntoGroup(group(mine, 'Listening')),
+        groups[1]: UnderTag(tag(mine, 'Want')),
+      },
+      tags: {tags[0]: OntoTag(tag(mine, 'CD')), tags[1]: null},
+    );
+    await alice.repo.rememberCopy(
+      groups: {groups[0]: IntoGroup(group(mine, 'Genre'))},
+      tags: {tags[2]: IntoGroup(group(mine, 'Genre'))},
+    );
+    memory = await alice.repo.copyMemory(
+      friendGroupIds: groups,
+      friendTagIds: tags,
+    );
+    expect(memory.targets, {
+      groups[0]: IntoGroup(group(mine, 'Genre')),
+      groups[1]: UnderTag(tag(mine, 'Want')),
+      tags[0]: OntoTag(tag(mine, 'CD')),
+      tags[2]: IntoGroup(group(mine, 'Genre')),
+    });
+    expect(memory.taken, tags.toSet());
+    final bobsMemory = await bob.repo.copyMemory(
+      friendGroupIds: groups,
+      friendTagIds: tags,
+    );
+    expect(bobsMemory.targets, isEmpty, reason: "Alice's own");
   });
 
   test('a new group comes back with its ID', () async {
