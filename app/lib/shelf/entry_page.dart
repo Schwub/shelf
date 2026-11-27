@@ -15,9 +15,8 @@ import '../widgets/help_line.dart';
 import '../widgets/rating_keys.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
-import '../widgets/text_link.dart';
 import 'shelf.dart';
-import 'copy_tags_page.dart';
+import 'friend_tags.dart';
 import 'shelf_repository.dart';
 import 'tag_import.dart';
 import 'tag_section.dart';
@@ -108,6 +107,9 @@ class _EntryPageState extends State<EntryPage> {
   late final Set<String> _initialTags = widget.entry?.tagIds ?? const {};
   late TagChoice _tags = TagChoice(widget.groups, _initialTags);
   bool _saving = false;
+
+  /// A friend's tag is being created: saving waits for it.
+  bool _addingTag = false;
   bool _saveFailed = false;
 
   late final List<Track> _initialTracks = widget.entry?.tracks ?? widget.tracks;
@@ -130,48 +132,6 @@ class _EntryPageState extends State<EntryPage> {
     if (widget.adding && _tracks.isEmpty && _musicbrainzId != null) {
       _lookUpTracks();
     }
-    if (widget.fromFriend?.rows.isNotEmpty ?? false) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _importTags());
-    }
-  }
-
-  /// The friend's tags as last planned, with the groups chosen so far.
-  late TagImport? _plan = widget.fromFriend;
-
-  /// The targets picked on "Anna's tags" so far.
-  Map<String, CopyTarget> _picked = const {};
-
-  /// The tags last set from the friend's, which come off when they're
-  /// chosen again.
-  Set<String> _fromPlan = const {};
-
-  /// The friend's tags on the album, to pick from (TASK-49).
-  Future<void> _importTags() async {
-    if (!mounted) return;
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute<CopyTagsResult>(
-        builder: (_) =>
-            CopyTagsPage(plan: _plan!, picked: _picked, shelf: widget.shelf),
-      ),
-    );
-    if (result == null || !mounted) return;
-    final (:plan, :picked, :tagIds) = result;
-    setState(() {
-      _plan = plan;
-      _picked = picked;
-      if (tagIds == null) return;
-      // The new tags go on by the usual rules, so a tag in a one-per-album
-      // group replaces the other.
-      var tags = TagChoice(
-        plan.mine.groups,
-        _tags.chosen.difference(_fromPlan),
-      );
-      for (final id in tagIds) {
-        if (!tags.chosen.contains(id)) tags = tags.toggle(id);
-      }
-      _fromPlan = tagIds;
-      _tags = tags;
-    });
   }
 
   Future<void> _lookUpTracks() async {
@@ -336,14 +296,17 @@ class _EntryPageState extends State<EntryPage> {
                             const SizedBox(height: 4),
                             HelpLine("Added from $addedFrom's shelf"),
                           ],
-                          if (widget.fromFriend case final from?)
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextLink(
-                                label: "See ${from.from.name}'s tags",
-                                onPressed: _importTags,
-                              ),
+                          if (widget.fromFriend case final plan?
+                              when plan.tags.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            FriendTags(
+                              plan: plan,
+                              shelf: widget.shelf,
+                              choice: _tags,
+                              onChanged: (t) => setState(() => _tags = t),
+                              onBusy: (b) => setState(() => _addingTag = b),
                             ),
+                          ],
                           const SizedBox(height: 16),
                           TagSection(
                             choice: _tags,
@@ -486,7 +449,7 @@ class _EntryPageState extends State<EntryPage> {
                 Expanded(
                   child: ShelfKey(
                     primary: true,
-                    onPressed: _saving ? null : _save,
+                    onPressed: _saving || _addingTag ? null : _save,
                     child: Text(
                       widget.adding
                           ? (_saving ? 'Adding…' : 'Add to shelf')

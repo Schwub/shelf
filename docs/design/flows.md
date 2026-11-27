@@ -179,34 +179,31 @@ flowchart TD
 
 ## Add from a friend (M2)
 
-Done: the album is on the user's shelf with the friend's tags they chose to
-copy; copies are ordinary, editable tags.
+Done: the album is on the user's shelf with the friend's tags they tapped;
+new ones are ordinary, editable tags.
 
 ```mermaid
 flowchart TD
-  friend([Friend's shelf: album]) -- Add to my shelf --> entry[Album entry: add, no tags set]
-  entry --> any{Friend has tags on it?}
-  any -- no --> entry
-  any -- yes --> sheet[Anna's tags: the album's tags in her tree, none ticked, each with where it goes]
-  sheet -- where it goes --> pick[Copy, or anywhere in my tree, folded, with search] --> sheet
-  sheet -- Tick the N you have --> sheet
-  sheet -- Use N tags --> entry2[Album entry with the tags; new groups and tags created; choices remembered]
-  sheet -- Skip --> entry
-  entry -- See Anna's tags --> sheet
-  entry2 -- Add to shelf --> done([My shelf + snackbar: Added to your shelf])
-  sheet -- error --> err[Couldn't copy the tags. Try again.] --> sheet
+  friend([Friend's shelf: album]) -- Add to my shelf --> entry[Album entry: add, no tags set; Anna's tags as keys in a box]
+  entry -- tap a tag I have --> entry
+  entry -- tap a new tag, group known --> entry
+  entry -- tap a new tag, group unknown --> ask[Where does it go? My most similar group / new group like Anna's / somewhere else: my groups]
+  ask -- answer, remembered for Anna's group --> entry
+  entry -- long press --> ask
+  entry -- Add to shelf --> done([My shelf + snackbar: Added to your shelf])
+  entry -- error --> err[Couldn't add the tag. Try again.] --> entry
 ```
 
 Notes:
-- Built-in tags match by their key; like all tags, they are set only when ticked.
-- Other tags match by group and tag name, ignoring case.
+- Built-in tags match by their key; like all tags, they are set only when tapped.
+- Other tags match by name, ignoring case: in the matching group first,
+  else anywhere in the user's tags.
 - If your group of the same name is "several" while the friend's is "one",
   your group's type wins.
-- A tag in a sub-group whose parent tag you don't have brings the parent
-  along, ticked together.
-- A match in a hidden built-in group is applied and stays hidden.
-- A copied new group takes the friend's type (one or several per album).
-- Copies stay even if the user then cancels adding the album.
+- A tag in a sub-group brings its parent tag along, created if needed.
+- Tags in or under a built-in group you hide are not offered.
+- A new group takes the friend's type (one or several per album).
+- New tags and groups stay even if the user then cancels adding the album.
 - The album remembers whose shelf it came from: "Added from Anna's shelf"
   under the artist, kept even if Anna's account is deleted.
 
