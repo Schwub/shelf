@@ -426,6 +426,7 @@ void main() {
       await addFromAnna(tester, 'Kid A');
 
       expect(find.text("Anna's tags · tap to add"), findsOneWidget);
+      expect(find.text('Collection › Own › Format › '), findsOneWidget);
       expect(find.text("Added from Anna's shelf"), findsOneWidget);
       await tapText(tester, 'Add the 3 you have');
       expect(find.text('Add the 3 you have'), findsNothing);

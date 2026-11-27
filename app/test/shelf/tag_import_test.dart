@@ -113,6 +113,13 @@ void main() {
     expect([for (final t in p.tags) t.name], ['Have', 'vinyl', 'jazz']);
   });
 
+  test("a tag's path is the friend's structure above it", () {
+    final p = plan({'vinyl', 'jazz'});
+
+    expect(p.pathOf(their(p, 'vinyl')), ['Records', 'Have', 'format']);
+    expect(p.pathOf(their(p, 'jazz')), ['GENRE']);
+  });
+
   test('a built-in group I hide is left out, with what is under it', () {
     final mine = [
       for (final g in suggestedGroups)

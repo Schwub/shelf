@@ -247,16 +247,26 @@ class _FriendTagsState extends State<FriendTags> {
                   child: ShelfKey(
                     light: true,
                     selected: _on(t),
-                    semanticLabel: _place(t).isNew ? '${t.name}, new' : null,
+                    semanticLabel: [
+                      ..._plan.pathOf(t),
+                      _place(t).isNew ? '${t.name}, new' : t.name,
+                    ].join(', '),
                     onPressed: _busy ? null : () => _tap(t),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // A new one reads "…, new" instead.
-                        ExcludeSemantics(
-                          excluding: _place(t).isNew,
-                          child: Text(t.name),
+                        // Where it sits in the friend's tags, then its
+                        // name; the key's label reads both.
+                        Flexible(
+                          child: ExcludeSemantics(
+                            child: Text(
+                              '${_plan.pathOf(t).join(' › ')} › ',
+                              overflow: TextOverflow.ellipsis,
+                              style: text.labelSmall!.copyWith(color: c.muted),
+                            ),
+                          ),
                         ),
+                        ExcludeSemantics(child: Text(t.name)),
                         if (_place(t).isNew) ...[
                           const SizedBox(width: 6),
                           Icon(Icons.add, size: 16, color: c.muted),

@@ -80,7 +80,9 @@ no separate screen any more.
 
 - `app/lib/shelf/friend_tags.dart`: `FriendTags`, a box on the album entry
   ("Anna's tags · tap to add") with the friend's tags on the album as
-  keys, sub-tags too; a + marks the ones the user doesn't have. Nothing is
+  keys, sub-tags too, each with its full path in the friend's structure
+  ("Collection › Own › Format › Vinyl"); a + marks the ones the user
+  doesn't have. Nothing is
   set at first. A tap sets the user's tag of that name (built-in ones by
   key) with the parent tags it needs; another tap takes it off. "Add the
   N you have" sets all the matching ones.

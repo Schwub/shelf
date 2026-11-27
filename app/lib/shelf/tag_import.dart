@@ -84,6 +84,19 @@ class TagImport {
   /// The friend's group of their tag [tagId].
   TagGroup groupOf(String tagId) => _theirGroupOfTag[tagId]!;
 
+  /// The names above the friend's tag [t] in their structure, from the top:
+  /// "Collection", "Own", "Format" for Vinyl.
+  List<String> pathOf(Tag t) {
+    final group = groupOf(t.id);
+    return [
+      if (_theirTags[group.parentTagId] case final parent?) ...[
+        ...pathOf(parent),
+        parent.name,
+      ],
+      group.name,
+    ];
+  }
+
   /// The friend's tags on the album, in their order. Left out: tags in
   /// groups the friend hides, and in or under built-in groups the user
   /// hides.
