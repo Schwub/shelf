@@ -73,38 +73,38 @@ menu.
   Different suggested sets per media type (books: Read / To read) come with
   the second media type.
 
-## Copy or map a friend's tags (TASK-49)
-Agreed 2026-11-27 after TASK-48 below; wireframe
-`docs/design/wireframes/copy-tags-4.html`.
+## A friend's tags on the album entry (TASK-50)
+Agreed 2026-11-27, after the copy screens of TASK-48 and TASK-49 proved too
+complicated; wireframe `docs/design/wireframes/copy-tags-5.html`. There is
+no separate screen any more.
 
-- `app/lib/shelf/copy_tags_page.dart`: "Anna's tags" shows the album's
-  tags with their paths in the friend's tree (groups, tags, sub-groups;
-  parent tags not on the album too). Every group and tag row says where it
-  goes; its picker offers Copy (keep the friend's structure) and the
-  user's whole tree, folded, with a search: into a group, onto a tag,
-  under a tag as a sub-group, or at the top level. Built-in groups and
-  tags can go anywhere. Nothing is ticked; "Tick the N you have (or took
-  before)". A ticked tag brings the friend's tags above its place
-  ("comes along"); a tag sent elsewhere goes alone; unticking a tag
-  unticks the ones that need it. In a one-per-album group the newer tick
-  wins, with a note. A summary lists what Use N tags creates.
-- `TagImport` (`tag_import.dart`) works out a `GroupPlace` or `TagPlace`
-  for each of the friend's groups and tags: an existing one of the user's
-  or a new one (name, parent). A tag's default: remembered, else Copy when
-  that lands on a tag the user has, else a tag of the same name anywhere in
-  the user's shown groups, else Copy. `apply` creates what is new (reusing
-  same-name groups and tags, so a retry creates nothing twice) and returns
-  the tags to set with their parent tags; `remember` saves the targets.
-- Remembered per friend (`ShelfRepository.copyMemory`, `rememberCopy`):
-  group targets in `tag_group_destinations` (now also `parent_tag_id`, a
-  sub-group under one of the user's tags), and in `tag_destinations` (migration
-  `20261127120000`) each friend's tag taken before, with the user's tag or
-  group it went to. Both owner-only; a row goes with either side.
-- `CopyTarget` (`shelf.dart`): `CopyAsIs`, `IntoGroup`, `OntoTag`,
-  `UnderTag`, `AtRoot`.
+- `app/lib/shelf/friend_tags.dart`: `FriendTags`, a box on the album entry
+  ("Anna's tags · tap to add") with the friend's tags on the album as
+  keys, sub-tags too; a + marks the ones the user doesn't have. Nothing is
+  set at first. A tap sets the user's tag of that name (built-in ones by
+  key) with the parent tags it needs; another tap takes it off. "Add the
+  N you have" sets all the matching ones.
+- A + tag is created on tap. When its group has no place in the user's
+  tags yet, one short sheet asks first ("Where does Art pop go?"): the
+  user's group most like the friend's (most shared tag names), a new
+  group like the friend's, or "Somewhere else…" (a list of the user's
+  groups). For a sub-tag, the topmost group the user lacks is asked about
+  and the rest follows the friend's structure. A long press on any key
+  asks the same about its group.
+- The answer holds for all tags of that group of the friend's and is
+  remembered (`tag_group_destinations`: the friend's group, the user's
+  group; `ShelfRepository.copyTargets`, `rememberCopy`).
+- `TagImport` (`tag_import.dart`): `tags`, `tagPlace`/`groupPlace` (an
+  existing tag or group of the user's, or a new one), `groupToAsk`,
+  `suggestion`, and `add` (creates what is new, reusing same-name groups
+  and tags, so a retry creates nothing twice).
+- Left from TASK-49 and unused: the `tag_destinations` table and
+  `tag_group_destinations.parent_tag_id` (rows with only a parent tag are
+  ignored). Mapping a tag onto a differently named one, or a group under
+  one of the user's tags, is done in the tag editor.
 
 ## Copy a friend's tags (TASK-48)
-Agreed 2026-11-27; replaces TASK-19's sheet (below); replaced by TASK-49 (above). Wireframes
+Agreed 2026-11-27; replaces TASK-19's sheet (below); replaced by TASK-50 (above). Wireframes
 `docs/design/wireframes/copy-tags.html`.
 
 Reworked the same day: only the album's tags, none ticked, each to any
