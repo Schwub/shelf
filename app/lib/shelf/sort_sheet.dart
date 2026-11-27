@@ -1,10 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../theme/shelf_colors.dart';
 import '../widgets/help_line.dart';
 import '../widgets/shelf_key.dart';
 import 'shelf.dart';
 import 'tag_sheet.dart';
+import '../widgets/shelf_sheet.dart';
 
 /// "Date added", "Title" …
 String sortName(SortBy by) => switch (by) {
@@ -28,17 +28,9 @@ String sortDirection(ShelfSort sort) => switch ((sort.by, sort.reversed)) {
 /// The orders to pick from; the chosen one tapped again turns round. Null
 /// when dismissed.
 Future<ShelfSort?> showSortSheet(BuildContext context, ShelfSort current) {
-  final c = context.shelf;
   final text = Theme.of(context).textTheme;
-  return showModalBottomSheet<ShelfSort>(
+  return showShelfSheet<ShelfSort>(
     context: context,
-    useRootNavigator: true,
-    backgroundColor: c.bg,
-    barrierColor: const Color(0x73000000),
-    shape: RoundedRectangleBorder(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-      side: BorderSide(color: c.line),
-    ),
     builder: (context) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),

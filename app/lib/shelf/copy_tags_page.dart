@@ -9,6 +9,7 @@ import 'shelf.dart';
 import 'shelf_repository.dart';
 import 'tag_import.dart';
 import 'tag_sheet.dart';
+import '../widgets/shelf_sheet.dart';
 
 /// What "Anna's tags" ends with: the plan as it is now, and the tags to set
 /// on the album, or null to leave them (Skip, Back).
@@ -126,16 +127,8 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
       ...mine.groups.where((g) => g.id != current.group?.id && has(g)),
       ...mine.groups.where((g) => g.id != current.group?.id && !has(g)),
     ];
-    return showModalBottomSheet<TagTarget>(
+    return showShelfSheet<TagTarget>(
       context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: c.bg,
-      barrierColor: const Color(0x73000000),
-      shape: RoundedRectangleBorder(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-        side: BorderSide(color: c.line),
-      ),
       builder: (context) {
         void pick(TagTarget t) => Navigator.of(context).pop(t);
         return ConstrainedBox(

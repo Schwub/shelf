@@ -6,6 +6,7 @@ import '../widgets/help_line.dart';
 import '../widgets/list_row.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
+import '../widgets/shelf_sheet.dart';
 
 /// What the tag's sheet ends with; renaming happens in the sheet.
 enum TagAction { subGroup, delete }
@@ -19,18 +20,8 @@ Future<TagAction?> showTagActions(
   required bool canHaveSubGroup,
   required Future<String?> Function(String name) onRename,
 }) {
-  final c = context.shelf;
-  return showModalBottomSheet<TagAction>(
+  return showShelfSheet<TagAction>(
     context: context,
-    // Over the navigation bar, like a dialog.
-    useRootNavigator: true,
-    isScrollControlled: true,
-    backgroundColor: c.bg,
-    barrierColor: const Color(0x73000000),
-    shape: RoundedRectangleBorder(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-      side: BorderSide(color: c.line),
-    ),
     builder: (_) => _TagActions(
       tag: tag,
       subGroup: subGroup,

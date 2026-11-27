@@ -3,21 +3,12 @@ import 'package:material_ui/material_ui.dart';
 import '../settings/settings.dart';
 import '../widgets/shelf_key.dart';
 import 'shelf_colors.dart';
+import '../widgets/shelf_sheet.dart';
 
 /// Pick a theme; it changes at once and is remembered.
 Future<void> showThemeSheet(BuildContext context, Settings settings) {
-  final c = context.shelf;
-  return showModalBottomSheet<void>(
+  return showShelfSheet<void>(
     context: context,
-    // Over the navigation bar, like a dialog.
-    useRootNavigator: true,
-    isScrollControlled: true,
-    backgroundColor: c.bg,
-    barrierColor: const Color(0x73000000),
-    shape: RoundedRectangleBorder(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-      side: BorderSide(color: c.line),
-    ),
     // Rebuilt with the new theme's colours as soon as one is picked.
     builder: (_) => ValueListenableBuilder(
       valueListenable: settings.theme,
