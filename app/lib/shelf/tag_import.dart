@@ -43,11 +43,16 @@ class TagPlace {
     required this.name,
     required this.group,
     this.match = Match.path,
+    this.from,
   });
 
   final Tag? existing;
   final String name;
   final GroupPlace group;
+
+  /// The friend's tag this place stands for; null for a tag of the user's
+  /// that is only on the way to it.
+  final Tag? from;
 
   /// How [existing] was found.
   final Match match;
@@ -222,7 +227,7 @@ class TagImport {
     final GroupPlace group;
     switch (target(t.id)) {
       case OntoTag(:final tagId):
-        return _existingTag(tagId, match: Match.remembered);
+        return _existingTag(tagId, match: Match.remembered, from: t);
       case IntoGroup(:final groupId):
         group = _existingGroup(_myGroups[groupId]!);
       default:
@@ -238,7 +243,7 @@ class TagImport {
             if (_sameTag(m, t)) m,
       ].firstOrNull;
       if (elsewhere != null) {
-        return _existingTag(elsewhere.id, match: Match.name);
+        return _existingTag(elsewhere.id, match: Match.name, from: t);
       }
     }
     return TagPlace._(
@@ -246,7 +251,44 @@ class TagImport {
       name: there?.name ?? t.name,
       group: group,
       match: mapped ? Match.remembered : Match.path,
+      from: t,
     );
+  }
+
+  /// The path of [t]'s place in the user's tags, from the top: each part
+  /// with whether it is new, and the friend's group or tag to change to
+  /// send that part elsewhere (for a part of the user's own on the way,
+  /// the next one below it that stands for one of the friend's).
+  List<({String name, bool isNew, Start start})> toPath(Tag t) {
+    final parts = <({String name, bool isNew, Start? start})>[];
+    late void Function(TagPlace) tag;
+    void group(GroupPlace g) {
+      if (g.parent case final p?) tag(p);
+      parts.add((
+        name: g.name,
+        isNew: g.isNew,
+        start: g.from == null ? null : (group: g.from, tag: null),
+      ));
+    }
+
+    tag = (p) {
+      group(p.group);
+      parts.add((
+        name: p.name,
+        isNew: p.isNew,
+        start: p.from == null ? null : (group: null, tag: p.from),
+      ));
+    };
+    tag(tagPlace(t));
+    Start below = (group: null, tag: t);
+    return [
+      for (final part in parts.reversed)
+        (
+          name: part.name,
+          isNew: part.isNew,
+          start: below = part.start ?? below,
+        ),
+    ].reversed.toList();
   }
 
   /// The user's tag for the nearest tag above [t] in the friend's
@@ -279,7 +321,7 @@ class TagImport {
   TagPlace? myTag(String id) =>
       _myGroupOfTag.containsKey(id) ? _existingTag(id) : null;
 
-  TagPlace _existingTag(String id, {Match match = Match.path}) {
+  TagPlace _existingTag(String id, {Match match = Match.path, Tag? from}) {
     final g = _myGroupOfTag[id]!;
     final t = g.tags.firstWhere((t) => t.id == id);
     return TagPlace._(
@@ -287,6 +329,7 @@ class TagImport {
       name: t.name,
       group: _existingGroup(g),
       match: match,
+      from: from,
     );
   }
 

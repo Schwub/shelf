@@ -309,6 +309,27 @@ void main() {
       ]);
     });
 
+    test('the parts of where a tag lands, and what each stands for', () {
+      final p = plan({'Black metal'}, theirs: nested);
+      String part(({String name, bool isNew, Start start}) x) =>
+          '${x.isNew ? '+' : ''}${x.name}'
+          '=${x.start.group?.name ?? x.start.tag?.name}';
+
+      expect(p.toPath(their(p, 'Black metal')).map(part), [
+        'Genre=Genre',
+        '+Metal=Metal',
+        '+Subgenre=Subgenre',
+        '+Black metal=Black metal',
+      ]);
+      final q = p.withTarget('their-Black metal', const IntoGroup('format'));
+      expect(q.toPath(their(q, 'Black metal')).map(part), [
+        'Collection=Black metal',
+        'Own=Black metal',
+        'Format=Black metal',
+        '+Black metal=Black metal',
+      ], reason: 'my own parts on the way stand for the tag');
+    });
+
     test('the preview lists what is created and what merges', () {
       final p = plan({
         'Black metal',

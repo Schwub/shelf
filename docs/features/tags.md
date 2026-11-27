@@ -73,71 +73,53 @@ menu.
   Different suggested sets per media type (books: Read / To read) come with
   the second media type.
 
-## A friend's tags, line by line (TASK-51, TASK-52)
-Agreed 2026-11-27 after testing the chips of TASK-50 (not flexible
-enough) and the copy screens before them (too much at once); wireframe
-`docs/design/wireframes/copy-tags-6.html`. One decision per screen.
+## A friend's tags: From and To paths (TASK-51, TASK-52, TASK-53)
+Agreed 2026-11-27 over several rounds of testing (chips: not flexible
+enough; a line-by-line list with a three-step Map: flexible but too much
+text and too many steps); wireframe
+`docs/design/wireframes/copy-tags-8.html`. The rule: show where a tag
+comes from and where it lands, and let the user change it by touching it.
 Background: tag synonyms (Stack Overflow, Discourse), walking up a genre
 tree to the nearest known parent (beets `lastgenre`), import wizards
-(auto-match, show every pairing, remember, review) and mobile "move to"
-pickers (one level at a time, breadcrumb).
+(auto-match, show every pairing, remember) and mobile "move to" pickers
+(one level at a time, breadcrumb).
 
-Step one (TASK-51, built):
 - The album entry has a row "Anna's tags · N on this album · M added"
   with Choose, which opens `FriendTagsPage`
-  (`app/lib/shelf/friend_tags_page.dart`).
-- The page lists the friend's tags on the album, one per line with its
-  full path in the friend's structure, and where it goes in the user's
-  tags with the reason: "same place", "same name" (a tag of that name
-  elsewhere) or "remembered" (the friend's group goes into a group chosen
-  before). Nothing is added until tapped.
-- **Add** (the user has it) sets the user's tag with the parent tags it
-  needs. **Copy** (they don't) creates the friend's path in the user's
-  tags as it is, reusing the parts they have, and sets it. **Use my X**
-  (they lack the tag but have a tag above it on the friend's path) sets
-  that one instead. "Add the N you have" adds all matches. An added line
-  says where it went and has Undo, which takes the tag off the album and
-  keeps what was created.
-- `TagImport` (`tag_import.dart`): `tags`, `pathOf`, `tagPlace` (with
-  `match` and `path`), `nearestAbove`, `add`.
-
-Step two (TASK-52, built): **Map…** on every line opens `MapTagsPage`
-(`app/lib/shelf/map_tags_page.dart`), three steps:
-1. *What to bring:* the friend's path as a ladder; the starting point is
-   one of their groups or tags on it, preselected at the first part the
-   user has no place for.
-2. *Where it goes:* the user's tags one level per screen (groups, their
-   tags, their sub-groups), with a breadcrumb and a search; it opens at
-   the user's group most like the friend's. Each level has one action: a
-   friend's group joins a group of the user's (its tags go in flat), hangs
-   under a tag as a sub-group, or becomes a group of its own at the top; a
-   friend's tag goes into a group, or one of the user's tags is used
-   instead of it.
-3. *Check:* what the mapping does, what it creates, which of the friend's
-   tags land on the same tag of the user's, and a switch to bring
-   everything below the starting point along (created, not set on the
-   album).
-
-- Mapping covers both directions of nesting: a nested tag or sub-group of
-  the friend's into a flat group of the user's, and a flat tag into a
-  sub-group of theirs.
-- `CopyTarget` (`shelf.dart`): `IntoGroup`, `OntoTag`, `UnderTag`,
-  `AtTop`. `TagImport.targets` holds them by the friend's group or tag ID;
-  a place is worked out from the tag's own target, then targets above it,
-  then a tag of the same name, then the friend's structure as it is.
-  `chainOf`, `below`, `preview`, `withTarget`; `add` takes several tags.
-- Remembered per friend (`ShelfRepository.copyTargets`, `rememberCopy`):
-  group targets in `tag_group_destinations` (`group_id` or
+  (`app/lib/shelf/friend_tags_page.dart`). Nothing is added until tapped.
+- Each of the friend's tags on the album is a line of path bars
+  (`TagPaths`, `PathBar`): FROM, the friend's full path, and TO, the full
+  path in the user's tags, each part a chip; parts that would be created
+  are dashed with a plus. When the paths are the same and nothing is new,
+  one bar marked "= mine". One key per line: **Add** (everything exists)
+  or **Copy** (parts are new; creates them and sets the tag with its
+  parents). "Add N = mine" adds all that exist. An added line fills in and
+  has Undo (takes off the tag and the parents it brought; keeps what was
+  created).
+- **Tapping a part of TO** opens a sheet for that part
+  (`tag_target_sheet.dart`) with both bars on top, following the choice:
+  like the friend's (also the way back from a mapping); for a tag, the
+  user's nearest tag above it, any tag of the group it lands in, or
+  another place; for a group, straight into the group above (no
+  sub-group), any top-level group of the user's, or another place; and a
+  switch to bring the other tags below that part along. "Another place"
+  is `PlacePickerPage`: the user's tags one level per screen with a
+  breadcrumb and a search, one action per level.
+- When other tags come along, the key reads "Copy N tags" and opens
+  `TagsCheckPage` first: every tag as From and To.
+- Mappings are saved once a tag on their path is added
+  (`ShelfRepository.rememberCopy`, `forgetCopy`; `copyTargets` loads
+  them): group targets in `tag_group_destinations` (`group_id` or
   `parent_tag_id`), tag targets in `tag_destinations` (`tag_id` or
-  `group_id`). A group of its own is remembered as that group once it
-  exists. "Use my X" is remembered as a tag target. Lines that were on and
-  go elsewhere after a mapping come off.
-- A new mapping replaces what was mapped below its starting point on the
-  way to the tag. A tag mapped on its own has **Forget** on its line
-  (`forgetCopy`). When a mapping puts a tag into a one-per-album group,
-  the list names the tag that came off.
-- Not built: a list of all mappings with a friend, to review and remove
-  them in one place.
+  `group_id`). A new mapping replaces what was mapped below it on the way
+  to the tag. Lines that were on and land elsewhere after a change come
+  off; a tag pushed out of a one-per-album group is named.
+- `CopyTarget` (`shelf.dart`): `IntoGroup`, `OntoTag`, `UnderTag`,
+  `AtTop`. `TagImport` (`tag_import.dart`) works out a place from the
+  tag's own target, then targets above it, then a tag of the same name,
+  then the friend's structure as it is: `chainOf`, `toPath`, `tagPlace`,
+  `groupPlace`, `nearestAbove`, `below`, `remap`, `add`.
+- Not built: a list of all mappings with a friend.
 
 ## Copy a friend's tags (TASK-48)
 Agreed 2026-11-27; replaces TASK-19's sheet (below); replaced by TASK-51 (above). Wireframes
