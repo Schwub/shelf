@@ -23,14 +23,38 @@ class GroupPlace {
   bool get isNew => existing == null;
 }
 
+/// How a tag of the friend's found its place among the user's.
+enum Match {
+  /// The user has it in the same place as the friend.
+  path,
+
+  /// The user has a tag of that name somewhere else.
+  name,
+
+  /// The friend's group goes into a group the user chose before.
+  remembered,
+}
+
 /// A place in the user's tags for one of the friend's tags: one of the
 /// user's tags ([existing]), or a new tag [name] in [group].
 class TagPlace {
-  TagPlace._({this.existing, required this.name, required this.group});
+  TagPlace._({
+    this.existing,
+    required this.name,
+    required this.group,
+    this.match = Match.path,
+  });
 
   final Tag? existing;
   final String name;
   final GroupPlace group;
+
+  /// How [existing] was found.
+  final Match match;
+
+  /// The names from the top of the user's tags down to this one:
+  /// "Collection", "Own", "Format", "Vinyl".
+  List<String> get path => [...?group.parent?.path, group.name, name];
 
   bool get isNew => existing == null;
 
@@ -172,13 +196,31 @@ class TagImport {
           for (final m in g.tags)
             if (_sameTag(m, t)) m,
       ].firstOrNull;
-      if (elsewhere != null) return _existingTag(elsewhere.id);
+      if (elsewhere != null) {
+        return _existingTag(elsewhere.id, match: Match.name);
+      }
     }
     return TagPlace._(
       existing: there,
       name: there?.name ?? t.name,
       group: group,
+      match: _chosenAbove(t, picked) ? Match.remembered : Match.path,
     );
+  }
+
+  /// The user's tag for the nearest tag above [t] in the friend's
+  /// structure that the user has: their Metal for the friend's Metal ›
+  /// Subgenre › Black metal. Null when [t] is top-level or none matches.
+  TagPlace? nearestAbove(Tag t, [Map<String, CopyTarget> picked = const {}]) {
+    for (
+      var parent = _theirTags[groupOf(t.id).parentTagId];
+      parent != null;
+      parent = _theirTags[groupOf(parent.id).parentTagId]
+    ) {
+      final place = tagPlace(parent, picked);
+      if (!place.isNew) return place;
+    }
+    return null;
   }
 
   bool _chosenAbove(Tag t, Map<String, CopyTarget> picked) {
@@ -200,10 +242,19 @@ class TagImport {
     from: from,
   );
 
-  TagPlace _existingTag(String id) {
+  /// The user's tag [id] as a place; null when it isn't in a shown group.
+  TagPlace? myTag(String id) =>
+      _myGroupOfTag.containsKey(id) ? _existingTag(id) : null;
+
+  TagPlace _existingTag(String id, {Match match = Match.path}) {
     final g = _myGroupOfTag[id]!;
     final t = g.tags.firstWhere((t) => t.id == id);
-    return TagPlace._(existing: t, name: t.name, group: _existingGroup(g));
+    return TagPlace._(
+      existing: t,
+      name: t.name,
+      group: _existingGroup(g),
+      match: match,
+    );
   }
 
   static bool _sameGroup(TagGroup mine, TagGroup theirs) =>
@@ -215,19 +266,6 @@ class TagImport {
       (theirs.builtin != null && mine.builtin == theirs.builtin) ||
       mine.name.toLowerCase() == theirs.name.toLowerCase();
 
-  /// The friend's group to ask about before the new tag [t] is added: the
-  /// topmost group on its way that the user has no place for yet. Null when
-  /// [t] can be added without asking.
-  TagGroup? groupToAsk(Tag t, [Map<String, CopyTarget> picked = const {}]) {
-    final place = tagPlace(t, picked);
-    if (!place.isNew) return null;
-    TagGroup? top;
-    for (GroupPlace? g = place.group; g != null; g = g.parent?.group) {
-      if (g.isNew) top = g.from;
-    }
-    return top == null || _chosen(top.id, picked) != null ? null : top;
-  }
-
   /// The user's group that looks most like the friend's group [g]: the one
   /// that has most of its tags by name. Null when none has any.
   TagGroup? suggestion(TagGroup g) {
@@ -238,6 +276,23 @@ class TagImport {
       (best, m) => best == null || shared(m) > shared(best) ? m : best,
     );
     return best != null && shared(best) > 0 ? best : null;
+  }
+
+  /// This plan with the user's shown groups as they are now ([shown]):
+  /// tags made on the album entry since count as theirs.
+  TagImport withMyGroups(List<TagGroup> shown) {
+    if (identical(shown, mine.groups)) return this;
+    final ids = {for (final g in shown) g.id};
+    return withMine(
+      Shelf(
+        entries: const [],
+        allGroups: [
+          ...shown,
+          for (final g in mine.allGroups)
+            if (!ids.contains(g.id)) g,
+        ],
+      ),
+    );
   }
 
   TagImport withMine(Shelf mine) => TagImport(

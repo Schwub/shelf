@@ -73,40 +73,45 @@ menu.
   Different suggested sets per media type (books: Read / To read) come with
   the second media type.
 
-## A friend's tags on the album entry (TASK-50)
-Agreed 2026-11-27, after the copy screens of TASK-48 and TASK-49 proved too
-complicated; wireframe `docs/design/wireframes/copy-tags-5.html`. There is
-no separate screen any more.
+## A friend's tags, line by line (TASK-51, TASK-52)
+Agreed 2026-11-27 after testing the chips of TASK-50 (not flexible
+enough) and the copy screens before them (too much at once); wireframe
+`docs/design/wireframes/copy-tags-6.html`. One decision per screen.
+Background: tag synonyms (Stack Overflow, Discourse), walking up a genre
+tree to the nearest known parent (beets `lastgenre`), import wizards
+(auto-match, show every pairing, remember, review) and mobile "move to"
+pickers (one level at a time, breadcrumb).
 
-- `app/lib/shelf/friend_tags.dart`: `FriendTags`, a box on the album entry
-  ("Anna's tags · tap to add") with the friend's tags on the album as
-  keys, sub-tags too, each with its full path in the friend's structure
-  ("Collection › Own › Format › Vinyl"); a + marks the ones the user
-  doesn't have. Nothing is
-  set at first. A tap sets the user's tag of that name (built-in ones by
-  key) with the parent tags it needs; another tap takes it off. "Add the
-  N you have" sets all the matching ones.
-- A + tag is created on tap. When its group has no place in the user's
-  tags yet, one short sheet asks first ("Where does Art pop go?"): the
-  user's group most like the friend's (most shared tag names), a new
-  group like the friend's, or "Somewhere else…" (a list of the user's
-  groups). For a sub-tag, the topmost group the user lacks is asked about
-  and the rest follows the friend's structure. A long press on any key
-  asks the same about its group.
-- The answer holds for all tags of that group of the friend's and is
-  remembered (`tag_group_destinations`: the friend's group, the user's
-  group; `ShelfRepository.copyTargets`, `rememberCopy`).
-- `TagImport` (`tag_import.dart`): `tags`, `tagPlace`/`groupPlace` (an
-  existing tag or group of the user's, or a new one), `groupToAsk`,
-  `suggestion`, and `add` (creates what is new, reusing same-name groups
-  and tags, so a retry creates nothing twice).
-- Left from TASK-49 and unused: the `tag_destinations` table and
-  `tag_group_destinations.parent_tag_id` (rows with only a parent tag are
-  ignored). Mapping a tag onto a differently named one, or a group under
-  one of the user's tags, is done in the tag editor.
+Step one (TASK-51, built):
+- The album entry has a row "Anna's tags · N on this album · M added"
+  with Choose, which opens `FriendTagsPage`
+  (`app/lib/shelf/friend_tags_page.dart`).
+- The page lists the friend's tags on the album, one per line with its
+  full path in the friend's structure, and where it goes in the user's
+  tags with the reason: "same place", "same name" (a tag of that name
+  elsewhere) or "remembered" (the friend's group goes into a group chosen
+  before). Nothing is added until tapped.
+- **Add** (the user has it) sets the user's tag with the parent tags it
+  needs. **Copy** (they don't) creates the friend's path in the user's
+  tags as it is, reusing the parts they have, and sets it. **Use my X**
+  (they lack the tag but have a tag above it on the friend's path) sets
+  that one instead. "Add the N you have" adds all matches. An added line
+  says where it went and has Undo, which takes the tag off the album and
+  keeps what was created.
+- `TagImport` (`tag_import.dart`): `tags`, `pathOf`, `tagPlace` (with
+  `match` and `path`), `nearestAbove`, `add`.
+
+Step two (TASK-52, to build): **Map…** on every line, three screens: the
+starting point in the friend's path, the place in the user's tags (one
+level per screen, with search and "new group here"; a tag of the user's
+can be used instead), and a check that lists what is created and merged
+and can bring everything below the starting point along. Mappings are
+remembered per friend in `tag_group_destinations` and `tag_destinations`
+(tag-to-tag links first, then rules for part of the friend's tree, then
+names, then Copy); "Use my X" is remembered then too.
 
 ## Copy a friend's tags (TASK-48)
-Agreed 2026-11-27; replaces TASK-19's sheet (below); replaced by TASK-50 (above). Wireframes
+Agreed 2026-11-27; replaces TASK-19's sheet (below); replaced by TASK-51 (above). Wireframes
 `docs/design/wireframes/copy-tags.html`.
 
 Reworked the same day: only the album's tags, none ticked, each to any

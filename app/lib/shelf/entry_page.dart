@@ -16,7 +16,7 @@ import '../widgets/rating_keys.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
 import 'shelf.dart';
-import 'friend_tags.dart';
+import 'friend_tags_page.dart';
 import 'shelf_repository.dart';
 import 'tag_import.dart';
 import 'tag_section.dart';
@@ -108,8 +108,74 @@ class _EntryPageState extends State<EntryPage> {
   late TagChoice _tags = TagChoice(widget.groups, _initialTags);
   bool _saving = false;
 
-  /// A friend's tag is being created: saving waits for it.
-  bool _addingTag = false;
+  /// The friend's tags, with the user's shelf as "Anna's tags" left it,
+  /// and the user's tag each of them went onto there.
+  late TagImport? _plan = widget.fromFriend;
+  Map<String, String> _landed = const {};
+
+  /// [_plan] with the tags made on this page since.
+  TagImport? get _friendPlan => _plan?.withMyGroups(_tags.groups);
+
+  Future<void> _chooseFriendTags() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute<FriendTagsResult>(
+        builder: (_) => FriendTagsPage(
+          plan: _friendPlan!,
+          shelf: widget.shelf,
+          choice: _tags,
+          landed: _landed,
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _tags = result.choice;
+      _plan = result.plan;
+      _landed = result.landed;
+    });
+  }
+
+  /// "Anna's tags": how many are on her album and added, and the way in.
+  Widget _friendTagsRow(TagImport plan) {
+    final c = context.shelf;
+    final text = Theme.of(context).textTheme;
+    final added = plan.tags.where((t) {
+      final id = _landed[t.id] ?? plan.tagPlace(t).existing?.id;
+      return _tags.chosen.contains(id);
+    }).length;
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: c.line),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("${plan.from.name}'s tags", style: text.titleMedium),
+                Text(
+                  '${plan.tags.length} on this album · '
+                  '${added == 0 ? 'none added yet' : '$added added'}',
+                  style: text.bodySmall!.copyWith(color: c.muted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ShelfKey(
+            semanticLabel: "Choose from ${plan.from.name}'s tags",
+            onPressed: _saving ? null : _chooseFriendTags,
+            child: const Text('Choose'),
+          ),
+        ],
+      ),
+    );
+  }
+
   bool _saveFailed = false;
 
   late final List<Track> _initialTracks = widget.entry?.tracks ?? widget.tracks;
@@ -296,17 +362,9 @@ class _EntryPageState extends State<EntryPage> {
                             const SizedBox(height: 4),
                             HelpLine("Added from $addedFrom's shelf"),
                           ],
-                          if (widget.fromFriend case final plan?
-                              when plan.tags.isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            FriendTags(
-                              plan: plan,
-                              shelf: widget.shelf,
-                              choice: _tags,
-                              onChanged: (t) => setState(() => _tags = t),
-                              onBusy: (b) => setState(() => _addingTag = b),
-                            ),
-                          ],
+                          if (_friendPlan case final plan?
+                              when plan.tags.isNotEmpty)
+                            _friendTagsRow(plan),
                           const SizedBox(height: 16),
                           TagSection(
                             choice: _tags,
@@ -449,7 +507,7 @@ class _EntryPageState extends State<EntryPage> {
                 Expanded(
                   child: ShelfKey(
                     primary: true,
-                    onPressed: _saving || _addingTag ? null : _save,
+                    onPressed: _saving ? null : _save,
                     child: Text(
                       widget.adding
                           ? (_saving ? 'Adding…' : 'Add to shelf')

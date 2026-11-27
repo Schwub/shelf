@@ -60,7 +60,7 @@
   groups Collection and Listening shared in meaning across users; suggested
   groups created for each new user. `tag_group_destinations` remembers,
   per user, which of their groups a friend's group goes into when adding
-  that friend's tags (TASK-50; `tag_destinations` is unused since). Details: `docs/features/tags.md`.
+  that friend's tags (`tag_destinations` is unused until Map, TASK-52). Details: `docs/features/tags.md`.
 - `shelf_filters` and `shelf_filter_tags`: the filter bar's filters, one tag
   or combined conditions (tags any/all, minimum rating or unrated, favorite
   tracks, added in the last N days or between two dates). The owner writes;
