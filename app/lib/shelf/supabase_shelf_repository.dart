@@ -329,7 +329,7 @@ class SupabaseShelfRepository implements ShelfRepository {
   }
 
   @override
-  Future<void> createGroup(
+  Future<String> createGroup(
     String name, {
     required bool exclusive,
     bool pickFromList = false,
@@ -359,6 +359,7 @@ class SupabaseShelfRepository implements ShelfRepository {
       );
     }
     _changes.value++;
+    return group['id'] as String;
   }
 
   @override
@@ -504,37 +505,24 @@ class SupabaseShelfRepository implements ShelfRepository {
   }
 
   @override
-  Future<Map<String, Destination>> destinations(
-    List<String> friendGroupIds,
-  ) async {
+  Future<Map<String, String>> destinations(List<String> friendGroupIds) async {
     final rows = await _db
         .from('tag_group_destinations')
         .select('friend_group_id, group_id')
         .eq('user_id', _me)
-        .inFilter('friend_group_id', friendGroupIds);
+        .inFilter('friend_group_id', friendGroupIds)
+        // Rows from before copying became opt-in could say "nowhere".
+        .not('group_id', 'is', null);
     return {
       for (final r in rows)
-        r['friend_group_id'] as String: switch (r['group_id']) {
-          final String id => Destination.into(id),
-          _ => const Destination.nowhere(),
-        },
+        r['friend_group_id'] as String: r['group_id'] as String,
     };
   }
 
   @override
-  Future<void> saveDestination(
-    String friendGroupId,
-    Destination? destination,
-  ) => destination == null
-      ? _db
-            .from('tag_group_destinations')
-            .delete()
-            .eq('user_id', _me)
-            .eq('friend_group_id', friendGroupId)
-      : _db.from('tag_group_destinations').upsert({
-          'friend_group_id': friendGroupId,
-          'group_id': destination.groupId,
-        });
+  Future<void> saveDestination(String friendGroupId, String groupId) => _db
+      .from('tag_group_destinations')
+      .upsert({'friend_group_id': friendGroupId, 'group_id': groupId});
 
   @override
   Future<void> hide(List<String> entryIds, bool hidden) async {

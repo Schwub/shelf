@@ -3,29 +3,32 @@ import 'package:flutter/foundation.dart';
 import 'shelf.dart';
 import 'shelf_repository.dart';
 
-/// A friend's tag the user doesn't have, and where its copy goes.
+/// Where one of the friend's tags would go on the user's side: an existing
+/// tag of theirs ([tag]), or a new tag of the same name in [group], or in a
+/// new group like the friend's when [group] is null.
 @immutable
-class MissingTag {
-  const MissingTag(this.tag, this.group, {this.into, this.parentTagId});
+class TagTarget {
+  const TagTarget({this.group, this.tag});
 
-  /// The friend's tag and group.
-  final Tag tag;
-  final TagGroup group;
+  final TagGroup? group;
+  final Tag? tag;
 
-  /// The user's group the copy goes into; null for a new group like [group].
-  final TagGroup? into;
+  /// The user has this tag already.
+  bool get matches => tag != null;
 
-  /// For a new sub-group: the user's tag it goes under.
-  final String? parentTagId;
+  @override
+  bool operator ==(Object other) =>
+      other is TagTarget &&
+      other.group?.id == group?.id &&
+      other.tag?.id == tag?.id;
 
-  /// False while the tag it hangs under is missing too.
-  bool get ready =>
-      into != null || group.parentTagId == null || parentTagId != null;
+  @override
+  int get hashCode => Object.hash(group?.id, tag?.id);
 }
 
-/// Adding a friend's album: which of their tags the user has, which are
-/// missing, and where copies go (docs/features/tags.md, "Copy a friend's
-/// tags").
+/// Adding a friend's album: their tags on it, each with a suggested target
+/// among the user's groups (docs/features/tags.md, "Copy a friend's tags").
+/// Nothing is set or copied until the user ticks it.
 class TagImport {
   TagImport({
     required this.from,
@@ -33,11 +36,7 @@ class TagImport {
     required this.tagIds,
     required this.mine,
     this.destinations = const {},
-  }) {
-    final album = _plan(tagIds, album: true);
-    _matched.addAll(album.matched);
-    missing.addAll(album.missing);
-  }
+  });
 
   final AddedFrom from;
 
@@ -45,198 +44,179 @@ class TagImport {
   final Shelf theirs;
   final Set<String> tagIds;
 
-  /// The user's shelf the plan was made for.
+  /// The user's shelf the suggestions are made for.
   final Shelf mine;
 
-  /// By the friend's top-level group ID.
-  final Map<String, Destination> destinations;
+  /// The user's group for each of the friend's top-level groups, as chosen
+  /// before (remembered per friend).
+  final Map<String, String> destinations;
 
-  /// The friend's tag IDs on the album to the user's matching ones.
-  final _matched = <String, String>{};
+  late final _groupOfTag = {
+    for (final g in theirs.allGroups)
+      for (final t in g.tags) t.id: g,
+  };
 
-  /// The album's tags the user doesn't have, in the friend's group order,
-  /// parent tags before their sub-tags.
-  final missing = <MissingTag>[];
+  /// The friend's group of their tag [tagId].
+  TagGroup groupOf(String tagId) => _groupOfTag[tagId]!;
 
-  /// The user's tags to set on the album.
-  Set<String> get preset => _matched.values.toSet();
-
-  /// Whether the friend's tag [tagId] goes on the album as one of the
-  /// user's (not when its group allows one tag and another got there
-  /// first, or the user's group is hidden).
-  bool setOnAlbum(String tagId) => _matched.containsKey(tagId);
-
-  /// The user's built-in tags among [preset], for the "set like" note.
-  List<Tag> get builtins => [
-    for (final g in mine.groups)
-      for (final t in g.tags)
-        if (t.builtin != null && preset.contains(t.id)) t,
-  ];
-
-  /// Every tag the friend shows, planned like the album's but without the
-  /// one-per-album rule: for the copy screen's marks.
-  late final _all = _plan({
-    for (final g in theirs.groups)
-      for (final t in g.tags) t.id,
-  }, album: false);
-
-  /// Whether the user has the friend's tag [tagId] (where it would go).
-  bool has(String tagId) => _all.matched.containsKey(tagId);
-
-  /// Whether the friend's tag [tagId] can be copied: it isn't the user's
-  /// already and its group goes somewhere.
-  bool copyable(String tagId) => _all.missing.any((m) => m.tag.id == tagId);
-
-  /// Where the friend's top-level [group] goes: the user's group, or null
-  /// for a new one; [Destination.nowhere] when it isn't copied.
-  ({TagGroup? into, bool nowhere}) target(TagGroup group) {
-    final into = _groupFor(group, null);
-    return (into: into, nowhere: _nowhere(group));
-  }
-
-  bool _nowhere(TagGroup group) =>
-      group.builtin == null &&
-      group.parentTagId == null &&
-      destinations[group.id] == const Destination.nowhere();
-
-  /// [destination] null: as without a choice (same name, or a new group).
-  TagImport withDestination(TagGroup group, Destination? destination) =>
-      _replan(mine, {
-        for (final MapEntry(:key, :value) in destinations.entries)
-          if (key != group.id) key: value,
-        group.id: ?destination,
-      });
-
-  ({Map<String, String> matched, List<MissingTag> missing}) _plan(
-    Set<String> ids, {
-    required bool album,
-  }) {
-    final matched = <String, String>{};
-    final missing = <MissingTag>[];
-    final groupOfTag = {
-      for (final g in theirs.allGroups)
-        for (final t in g.tags) t.id: g,
-    };
-    int depth(TagGroup g) => switch (groupOfTag[g.parentTagId]) {
+  /// The album's tags in the friend's shown groups, in their order, each
+  /// parent tag before the tags of its sub-groups. Left out: tags in a
+  /// built-in group the user hides, and sub-tags whose parent tag isn't a
+  /// row.
+  late final List<Tag> rows = () {
+    int depth(TagGroup g) => switch (_groupOfTag[g.parentTagId]) {
       final parent? => depth(parent) + 1,
       null => 0,
     };
-    // Top-level groups, then sub-groups, each in the friend's order (a
-    // stable sort); groups hidden by the friend are left out of
-    // theirs.groups.
+    // A stable sort by depth: top-level groups first, each in order.
     final levels = <int, List<TagGroup>>{};
     for (final g in theirs.groups) {
       (levels[depth(g)] ??= []).add(g);
     }
-    final groups = [
-      for (final d in levels.keys.toList()..sort()) ...levels[d]!,
-    ];
-    final shown = {for (final g in mine.groups) g.id};
-    final filled = <String>{};
-    final skipped = <String>{};
-    for (final group in groups) {
-      if (_nowhere(group) || skipped.contains(group.parentTagId)) {
-        skipped.addAll(group.tags.map((t) => t.id));
-        continue;
-      }
-      for (final tag in group.tags) {
-        if (!ids.contains(tag.id)) continue;
-        String? parent;
-        if (group.parentTagId case final theirParent?) {
-          parent = matched[theirParent];
-          final offered = missing.any((m) => m.tag.id == theirParent);
-          if (parent == null && !offered) continue;
+    final rows = <Tag>[];
+    final ids = <String>{};
+    for (final d in levels.keys.toList()..sort()) {
+      for (final g in levels[d]!) {
+        if (g.builtin case final key?
+            when !mine.groups.any((m) => m.builtin == key)) {
+          continue;
         }
-        final into = _groupFor(group, parent);
-        if (into != null) {
-          if (!shown.contains(into.id)) continue;
-          // One per album only matters on the album; copies may share.
-          if (album && into.exclusive && !filled.add(into.id)) continue;
-        }
-        final match = into?.tags.where((t) => _same(t, tag)).firstOrNull;
-        if (match != null) {
-          matched[tag.id] = match.id;
-        } else {
-          missing.add(MissingTag(tag, group, into: into, parentTagId: parent));
+        if (g.parentTagId case final p? when !ids.contains(p)) continue;
+        for (final t in g.tags) {
+          if (tagIds.contains(t.id) && ids.add(t.id)) rows.add(t);
         }
       }
     }
-    return (matched: matched, missing: missing);
+    return rows;
+  }();
+
+  /// The suggested target for the friend's tag [tag], given the targets the
+  /// user picked for other rows ([picked], by the friend's tag ID): a
+  /// sub-tag follows its parent tag's.
+  TagTarget suggest(Tag tag, [Map<String, TagTarget> picked = const {}]) {
+    final group = _groupFor(groupOf(tag.id), picked);
+    return TagTarget(
+      group: group,
+      tag: group?.tags.where((t) => _same(t, tag)).firstOrNull,
+    );
   }
 
-  /// The user's group for the friend's [group]: by built-in key, by the
-  /// chosen destination, else by name (under the user's [parent] tag for a
-  /// sub-group); null for a new group.
-  TagGroup? _groupFor(TagGroup group, String? parent) {
+  /// The user's group for the friend's [group]: as chosen before, by
+  /// built-in key, else by name (under the target of the parent tag for a
+  /// sub-group); null for a new group. Only the user's shown groups: tags
+  /// set in hidden ones wouldn't show on the album.
+  TagGroup? _groupFor(TagGroup group, Map<String, TagTarget> picked) {
+    if (group.parentTagId case final parent?) {
+      final parentTag =
+          (picked[parent] ??
+                  suggest(
+                    groupOf(parent).tags.firstWhere((t) => t.id == parent),
+                    picked,
+                  ))
+              .tag;
+      if (parentTag == null) return null;
+      return mine.groups
+          .where((g) => g.parentTagId == parentTag.id && _sameName(g, group))
+          .firstOrNull;
+    }
+    final chosen = destinations[group.id];
+    if (mine.groups.where((g) => g.id == chosen).firstOrNull case final g?) {
+      return g;
+    }
     if (group.builtin case final key?) {
-      return mine.allGroups.where((g) => g.builtin == key).firstOrNull;
+      return mine.groups.where((g) => g.builtin == key).firstOrNull;
     }
-    if (group.parentTagId != null && parent == null) return null;
-    if (group.parentTagId == null) {
-      if (destinations[group.id]?.groupId case final id?) {
-        if (mine.allGroups.where((g) => g.id == id).firstOrNull
-            case final chosen?) {
-          return chosen;
-        }
-      }
-    }
-    return mine.allGroups
-        .where(
-          (g) =>
-              g.parentTagId == parent &&
-              g.name.toLowerCase() == group.name.toLowerCase(),
-        )
+    return mine.groups
+        .where((g) => g.parentTagId == null && _sameName(g, group))
         .firstOrNull;
   }
 
-  static bool _same(Tag mine, Tag theirs) => theirs.builtin != null
-      ? mine.builtin == theirs.builtin
-      : mine.name.toLowerCase() == theirs.name.toLowerCase();
+  static bool _sameName(TagGroup a, TagGroup b) =>
+      a.name.toLowerCase() == b.name.toLowerCase();
 
-  TagImport _replan(Shelf mine, [Map<String, Destination>? destinations]) =>
-      TagImport(
-        from: from,
-        theirs: theirs,
-        tagIds: tagIds,
-        mine: mine,
-        destinations: destinations ?? this.destinations,
-      );
+  static bool _same(Tag mine, Tag theirs) =>
+      (theirs.builtin != null && mine.builtin == theirs.builtin) ||
+      mine.name.toLowerCase() == theirs.name.toLowerCase();
 
-  /// Copies the friend's tags [picked] (their IDs, from anywhere in their
-  /// tree) to their destinations and returns the plan for the user's shelf
-  /// after, which matches the copies. Goes in rounds, parents first; each
-  /// starts from the shelf as it is, so trying again after a failure copies
-  /// only what is still missing.
-  Future<TagImport> copy(ShelfRepository shelf, Set<String> picked) async {
-    var plan = _replan(await shelf.load());
-    var left = picked;
-    while (true) {
-      final ready = [
-        // All of them, so tags copied in earlier rounds count as parents.
-        for (final m in plan._plan(picked, album: false).missing)
-          if (left.contains(m.tag.id) && m.ready) m,
-      ];
-      if (ready.isEmpty) return plan;
-      final newGroups = <String, List<MissingTag>>{};
-      for (final m in ready) {
-        if (m.into case final into?) {
-          await shelf.createTag(into.id, m.tag.name);
-        } else {
-          (newGroups[m.group.id] ??= []).add(m);
-        }
+  TagImport withDestination(String friendGroupId, String groupId) => TagImport(
+    from: from,
+    theirs: theirs,
+    tagIds: tagIds,
+    mine: mine,
+    destinations: {...destinations, friendGroupId: groupId},
+  );
+
+  TagImport withMine(Shelf mine) => TagImport(
+    from: from,
+    theirs: theirs,
+    tagIds: tagIds,
+    mine: mine,
+    destinations: destinations,
+  );
+
+  /// Puts the friend's ticked tags ([targets], by their tag ID) where their
+  /// targets say, creating what is new, and returns the user's shelf after
+  /// with the tags to set on the album (parent tags of sub-groups too).
+  /// Starts from the shelf as it is, and reuses what an earlier, failed try
+  /// created, so trying again creates nothing twice.
+  Future<({Shelf mine, Set<String> tagIds})> apply(
+    ShelfRepository shelf,
+    Map<String, TagTarget> targets,
+  ) async {
+    var current = await shelf.load();
+    final made = <String, String>{}; // the friend's tag ID → the user's
+    for (final tag in rows) {
+      final target = targets[tag.id];
+      if (target == null) continue;
+      if (target.tag case final existing?) {
+        made[tag.id] = existing.id;
+        continue;
       }
-      for (final tags in newGroups.values) {
-        final group = tags.first.group;
-        await shelf.createGroup(
-          group.name,
-          exclusive: group.exclusive,
-          pickFromList: group.pickFromList,
-          parentTagId: tags.first.parentTagId,
-          tags: [for (final m in tags) m.tag.name],
-        );
+      final theirGroup = groupOf(tag.id);
+      var groupId = target.group?.id;
+      if (groupId == null) {
+        // A new group like the friend's, under the parent tag's copy.
+        final parent = switch (theirGroup.parentTagId) {
+          final p? => made[p],
+          null => null,
+        };
+        if (theirGroup.parentTagId != null && parent == null) continue;
+        groupId =
+            current.allGroups
+                .where(
+                  (g) => g.parentTagId == parent && _sameName(g, theirGroup),
+                )
+                .firstOrNull
+                ?.id ??
+            await shelf.createGroup(
+              theirGroup.name,
+              exclusive: theirGroup.exclusive,
+              pickFromList: theirGroup.pickFromList,
+              parentTagId: parent,
+            );
+        current = await shelf.load();
       }
-      left = left.difference({for (final m in ready) m.tag.id});
-      plan = _replan(await shelf.load());
+      final group = current.allGroups.firstWhere((g) => g.id == groupId);
+      final there = group.tags
+          .where((t) => t.name.toLowerCase() == tag.name.toLowerCase())
+          .firstOrNull;
+      made[tag.id] =
+          there?.id ?? (await shelf.createTag(group.id, tag.name)).id;
+      current = await shelf.load();
     }
+    // A tag in a sub-group needs its parent tag on the album too.
+    final groupOfMine = {
+      for (final g in current.allGroups)
+        for (final t in g.tags) t.id: g,
+    };
+    final set = <String>{};
+    for (final id in made.values) {
+      for (
+        String? t = id;
+        t != null && set.add(t);
+        t = groupOfMine[t]?.parentTagId
+      ) {}
+    }
+    return (mine: current, tagIds: set);
   }
 }

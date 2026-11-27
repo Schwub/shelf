@@ -56,7 +56,7 @@ class FriendAlbumPage extends StatelessWidget {
       // The user's shelf as it is now (a cancelled add may have copied
       // tags), and where this friend's groups went before.
       final Shelf current;
-      final Map<String, Destination> destinations;
+      final Map<String, String> destinations;
       try {
         (current, destinations) = await (
           shelf.load(),

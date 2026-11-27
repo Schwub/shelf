@@ -10,11 +10,14 @@ import 'shelf_repository.dart';
 import 'tag_import.dart';
 import 'tag_sheet.dart';
 
+/// What "Anna's tags" ends with: the plan as it is now, and the tags to set
+/// on the album, or null to leave them (Skip, Back).
+typedef CopyTagsResult = ({TagImport plan, Set<String>? tagIds});
+
 /// "Anna's tags" (TASK-48, docs/design/wireframes/copy-tags.html): the
-/// friend's whole tag tree. Their groups go where the user says, tags are
-/// ticked to copy (the album's new ones are already), and a sub-tag brings
-/// its parent. Returns the plan as it ends: after copying, or with only the
-/// destinations changed after Skip.
+/// friend's tags on the album, none ticked. Each goes where its target says,
+/// into any of the user's groups or tags; a group the user picks for a
+/// friend's group is remembered for that friend.
 class CopyTagsPage extends StatefulWidget {
   const CopyTagsPage({super.key, required this.plan, required this.shelf});
 
@@ -27,89 +30,103 @@ class CopyTagsPage extends StatefulWidget {
 
 class _CopyTagsPageState extends State<CopyTagsPage> {
   late TagImport _plan = widget.plan;
-  late final Set<String> _picked = {
-    for (final m in widget.plan.missing)
-      if (widget.plan.copyable(m.tag.id)) m.tag.id,
-  };
-  bool _copying = false, _failed = false;
 
-  Shelf get _theirs => _plan.theirs;
+  /// Targets picked for one tag, for this album only.
+  final _overrides = <String, TagTarget>{};
+  final _ticked = <String>{};
+  bool _applying = false, _failed = false;
 
-  late final _groupOfTag = {
-    for (final g in _theirs.allGroups)
-      for (final t in g.tags) t.id: g,
-  };
+  TagTarget _target(Tag t) => _overrides[t.id] ?? _plan.suggest(t, _overrides);
 
-  /// The friend's ticked tags under [tagId], at any depth.
-  Set<String> _under(String tagId) => {
-    for (final g in _theirs.groups)
-      if (g.parentTagId == tagId)
-        for (final t in g.tags) ...{t.id, ..._under(t.id)},
-  };
+  /// The parent tag of the friend's [tagId] (a row too).
+  String? _parent(String tagId) => _plan.groupOf(tagId).parentTagId;
 
-  /// A sub-tag can't be copied without its parent: they go together.
+  /// A sub-tag goes with its parent: ticking it ticks the parent, unticking
+  /// the parent unticks it.
   void _toggle(String tagId) => setState(() {
-    if (_picked.remove(tagId)) {
-      _picked.removeAll(_under(tagId));
+    if (_ticked.remove(tagId)) {
+      for (final t in _plan.rows) {
+        for (String? p = _parent(t.id); p != null; p = _parent(p)) {
+          if (p == tagId) _ticked.remove(t.id);
+        }
+      }
       return;
     }
-    _picked.add(tagId);
-    for (
-      var parent = _groupOfTag[tagId]?.parentTagId;
-      parent != null && _plan.copyable(parent);
-      parent = _groupOfTag[parent]?.parentTagId
-    ) {
-      _picked.add(parent);
+    for (String? t = tagId; t != null; t = _parent(t)) {
+      _ticked.add(t);
     }
   });
 
-  Future<void> _choose(TagGroup group) async {
-    final choice = await _pickDestination(group);
-    if (choice == null || !mounted) return;
-    final (:destination) = choice;
-    setState(() {
-      _plan = _plan.withDestination(group, destination);
-      _picked
-        ..removeWhere((id) => !_plan.copyable(id))
-        // The album's new tags are ticked again when their group is back.
-        ..addAll([
-          for (final m in _plan.missing)
-            if (_plan.copyable(m.tag.id)) m.tag.id,
-        ]);
-    });
-    try {
-      await widget.shelf.saveDestination(group.id, destination);
-    } catch (e, stack) {
-      // Still used for this album; only remembering it failed.
-      reportError(e, stack);
+  List<Tag> get _matching => [
+    for (final t in _plan.rows)
+      if (!_ticked.contains(t.id) && _target(t).matches) t,
+  ];
+
+  void _tickMatching() => setState(() {
+    for (final t in _matching) {
+      for (String? id = t.id; id != null; id = _parent(id)) {
+        _ticked.add(id);
+      }
     }
+  });
+
+  Future<void> _choose(Tag tag) async {
+    final picked = await _pickTarget(tag);
+    if (picked == null || !mounted) return;
+    final theirGroup = _plan.groupOf(tag.id);
+    final group = picked.group;
+    // Another of the user's groups for a top-level group of the friend's:
+    // the default for all its tags, from now on.
+    if (theirGroup.parentTagId == null &&
+        group != null &&
+        group.id != _plan.suggest(tag, _overrides).group?.id) {
+      setState(() => _plan = _plan.withDestination(theirGroup.id, group.id));
+      try {
+        await widget.shelf.saveDestination(theirGroup.id, group.id);
+      } catch (e, stack) {
+        // Still used for this album; only remembering it failed.
+        reportError(e, stack);
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      // Its sub-tags follow it again.
+      for (final t in _plan.rows) {
+        for (String? p = _parent(t.id); p != null; p = _parent(p)) {
+          if (p == tag.id) _overrides.remove(t.id);
+        }
+      }
+      _overrides.remove(tag.id);
+      if (picked != _plan.suggest(tag, _overrides)) _overrides[tag.id] = picked;
+    });
   }
 
-  /// The choice, or null when dismissed; its destination is null for a new
-  /// group (no remembered choice).
-  Future<({Destination? destination})?> _pickDestination(TagGroup group) {
+  /// Any of the user's groups, and in each its tags or a new one; null when
+  /// dismissed.
+  Future<TagTarget?> _pickTarget(Tag tag) {
     final c = context.shelf;
     final text = Theme.of(context).textTheme;
-    // Built-in groups are statuses (Collection, Listening), not places to
-    // copy to; they match the friend's by key anyway.
-    final mine = [
-      for (final g in _plan.mine.groups)
-        if (g.parentTagId == null && g.builtin == null) g,
+    final current = _target(tag);
+    final theirGroup = _plan.groupOf(tag.id);
+    final mine = _plan.mine;
+    final tagNames = {
+      for (final g in mine.allGroups)
+        for (final t in g.tags) t.id: t.name,
+    };
+    String title(TagGroup g) => switch (g.parentTagId) {
+      final p? => '${g.name} · under ${tagNames[p]}',
+      null => g.name,
+    };
+    bool has(TagGroup g) =>
+        g.tags.any((t) => t.name.toLowerCase() == tag.name.toLowerCase());
+    // The likely places first: where it goes now, then groups that have a
+    // tag of that name.
+    final groups = [
+      ...mine.groups.where((g) => g.id == current.group?.id),
+      ...mine.groups.where((g) => g.id != current.group?.id && has(g)),
+      ...mine.groups.where((g) => g.id != current.group?.id && !has(g)),
     ];
-    final current = _plan.target(group);
-    // Hidden groups too: a group of that name catches the copies anyway.
-    final sameName = _plan.mine.allGroups.any(
-      (g) =>
-          g.parentTagId == null &&
-          g.name.toLowerCase() == group.name.toLowerCase(),
-    );
-    String have(TagGroup g) {
-      final names = {for (final t in g.tags) t.name.toLowerCase()};
-      final n = group.tags.where((t) => names.contains(t.name.toLowerCase()));
-      return 'has ${n.length} of ${group.tags.length}';
-    }
-
-    return showModalBottomSheet<({Destination? destination})>(
+    return showModalBottomSheet<TagTarget>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
@@ -119,95 +136,118 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
         side: BorderSide(color: c.line),
       ),
-      builder: (context) => ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                "Copy ${_plan.from.name}'s ${group.name} into",
-                style: text.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              const HelpLine(
-                'Tags with the same name are matched; the others are '
-                'added. Remembered for this friend.',
-              ),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (final g in mine)
+      builder: (context) {
+        void pick(TagTarget t) => Navigator.of(context).pop(t);
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('${tag.name} goes to', style: text.titleLarge),
+                if (theirGroup.parentTagId == null) ...[
+                  const SizedBox(height: 4),
+                  HelpLine(
+                    "Another group becomes the default for "
+                    "${_plan.from.name}'s ${theirGroup.name}.",
+                  ),
+                ],
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final g in groups) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16, bottom: 4),
+                          child: Text(
+                            title(g),
+                            style: text.labelSmall!.copyWith(color: c.muted),
+                          ),
+                        ),
+                        for (final t in g.tags)
+                          TagRow(
+                            title: t.name,
+                            chosen: current.tag?.id == t.id,
+                            onTap: () => pick(TagTarget(group: g, tag: t)),
+                          ),
+                        if (!has(g))
+                          TagRow(
+                            title: 'New “${tag.name}” here',
+                            create: true,
+                            onTap: () => pick(TagTarget(group: g)),
+                          ),
+                      ],
+                      const SizedBox(height: 16),
                       TagRow(
-                        title: 'My ${g.name}',
-                        subtitle: have(g),
-                        chosen: !current.nowhere && current.into?.id == g.id,
-                        onTap: () =>
-                            Navigator.of(context)
-                                .pop((destination: Destination.into(g.id))),
-                      ),
-                    if (!sameName)
-                      TagRow(
-                        title: 'A new group “${group.name}”',
-                        subtitle: group.exclusive
+                        title: 'New group “${theirGroup.name}”',
+                        subtitle: theirGroup.exclusive
                             ? 'one per album'
                             : 'several per album',
-                        chosen: !current.nowhere && current.into == null,
-                        onTap: () =>
-                            Navigator.of(context).pop((destination: null)),
+                        create: true,
+                        onTap: () => pick(const TagTarget()),
                       ),
-                    TagRow(
-                      title: "Don't copy this group",
-                      chosen: current.nowhere,
-                      onTap: () =>
-                          Navigator.of(context)
-                              .pop((destination: const Destination.nowhere())),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Future<void> _copy() async {
+  Future<void> _apply() async {
     setState(() {
-      _copying = true;
+      _applying = true;
       _failed = false;
     });
     try {
-      final after = await _plan.copy(widget.shelf, _picked);
-      if (mounted) Navigator.of(context).pop(after);
+      final (:mine, :tagIds) = await _plan.apply(widget.shelf, {
+        for (final t in _plan.rows)
+          if (_ticked.contains(t.id)) t.id: _target(t),
+      });
+      if (mounted) {
+        Navigator.of(context)
+            .pop<CopyTagsResult>((plan: _plan.withMine(mine), tagIds: tagIds));
+      }
     } catch (e, stack) {
       reportError(e, stack);
       if (mounted) {
         setState(() {
-          _copying = false;
+          _applying = false;
           _failed = true;
         });
       }
     }
   }
 
+  void _leave() =>
+      Navigator.of(context).pop<CopyTagsResult>((plan: _plan, tagIds: null));
+
+  /// Where a tag goes, in a few words.
+  String _describe(Tag tag, TagTarget t) => switch (t) {
+    TagTarget(:final tag?, :final group?) => '${group.name}: ${tag.name}',
+    TagTarget(:final group?) => '${group.name}: new',
+    _ => 'New group ${_plan.groupOf(tag.id).name}',
+  };
+
   @override
   Widget build(BuildContext context) {
     final c = context.shelf;
     final text = Theme.of(context).textTheme;
     final name = _plan.from.name;
-    final count = _picked.length;
+    final count = _ticked.length;
+    final matching = _matching.length;
     return PopScope(
-      // Back, like Skip, keeps the destinations chosen here.
+      // Back, like Skip, keeps the groups chosen here.
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && !_copying) Navigator.of(context).pop(_plan);
+        if (!didPop && !_applying) _leave();
       },
       child: Scaffold(
         body: SafeArea(
@@ -221,9 +261,7 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
                     ShelfKey(
                       semanticLabel: 'Back',
                       padding: EdgeInsets.zero,
-                      onPressed: _copying
-                          ? null
-                          : () => Navigator.of(context).pop(_plan),
+                      onPressed: _applying ? null : _leave,
                       child: const Icon(Icons.chevron_left),
                     ),
                     const SizedBox(width: 12),
@@ -238,11 +276,43 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                   children: [
                     HelpLine(
-                      "Tick $name's tags to copy. Tags on this album are "
-                      'ticked already.',
+                      "Tick the tags you want on your album. Tap where one "
+                      'goes to put it in any of your groups.',
                     ),
-                    for (final g in _theirs.groups)
-                      if (g.parentTagId == null) ..._group(g),
+                    if (matching > 0) ...[
+                      const SizedBox(height: 12),
+                      ShelfKey(
+                        onPressed: _applying ? null : _tickMatching,
+                        child: Text(
+                          matching == 1
+                              ? 'Tick the one that matches'
+                              : 'Tick the $matching that match',
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    for (final t in _plan.rows)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          left: _parent(t.id) == null ? 0 : 24,
+                        ),
+                        child: TagRow(
+                          title: t.name,
+                          subtitle: "$name's ${_plan.groupOf(t.id).name}",
+                          chosen: _ticked.contains(t.id),
+                          onTap: _applying ? null : () => _toggle(t.id),
+                          below: TextLink(
+                            label: _describe(t, _target(t)),
+                            icon: Icons.arrow_drop_down,
+                            semanticLabel:
+                                'Where ${t.name} goes: '
+                                '${_describe(t, _target(t))}',
+                            onPressed: () {
+                              if (!_applying) _choose(t);
+                            },
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -268,9 +338,7 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
                         children: [
                           Expanded(
                             child: ShelfKey(
-                              onPressed: _copying
-                                  ? null
-                                  : () => Navigator.of(context).pop(_plan),
+                              onPressed: _applying ? null : _leave,
                               child: const Text('Skip'),
                             ),
                           ),
@@ -278,13 +346,15 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
                           Expanded(
                             child: ShelfKey(
                               primary: true,
-                              onPressed: _copying || count == 0 ? null : _copy,
+                              onPressed: _applying || count == 0
+                                  ? null
+                                  : _apply,
                               child: Text(
-                                _copying
+                                _applying
                                     ? 'Copying…'
                                     : _failed
                                     ? 'Try again'
-                                    : 'Copy $count '
+                                    : 'Use $count '
                                           '${count == 1 ? 'tag' : 'tags'}',
                               ),
                             ),
@@ -300,90 +370,5 @@ class _CopyTagsPageState extends State<CopyTagsPage> {
         ),
       ),
     );
-  }
-
-  /// A top-level group: its name, kind and destination, then its tags with
-  /// the sub-groups under each.
-  List<Widget> _group(TagGroup g) {
-    final text = Theme.of(context).textTheme;
-    final c = context.shelf;
-    final target = _plan.target(g);
-    final where = switch ((g.builtin, target)) {
-      (_?, _) => null,
-      (_, (nowhere: true, into: _)) => "Don't copy",
-      (_, (nowhere: false, into: final into?)) => 'Into my ${into.name}',
-      _ => 'New group',
-    };
-    return [
-      Padding(
-        padding: const EdgeInsets.only(top: 20, bottom: 4),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(g.name, style: text.titleMedium),
-                  Text(
-                    [
-                      if (g.builtin != null) 'built-in',
-                      g.exclusive ? 'one per album' : 'several per album',
-                    ].join(' · '),
-                    style: text.bodySmall!.copyWith(color: c.muted),
-                  ),
-                ],
-              ),
-            ),
-            if (where == null || _copying)
-              Text(
-                where ?? 'Matches yours',
-                style: text.bodySmall!.copyWith(color: c.muted),
-              )
-            else
-              TextLink(
-                label: where,
-                icon: Icons.arrow_drop_down,
-                semanticLabel: 'Where ${g.name} goes: $where',
-                onPressed: () => _choose(g),
-              ),
-          ],
-        ),
-      ),
-      if (!target.nowhere)
-        for (final t in g.tags) ..._tag(t, depth: 0),
-    ];
-  }
-
-  List<Widget> _tag(Tag t, {required int depth}) {
-    final text = Theme.of(context).textTheme;
-    final c = context.shelf;
-    final onAlbum = _plan.tagIds.contains(t.id);
-    final has = _plan.has(t.id);
-    final marks = [
-      if (onAlbum) 'on this album',
-      if (has) 'you have it' else 'new',
-    ].join(' · ');
-    return [
-      Padding(
-        padding: EdgeInsets.only(left: depth * 24.0),
-        child: TagRow(
-          title: t.name,
-          subtitle: marks,
-          chosen: _picked.contains(t.id) || _plan.setOnAlbum(t.id),
-          onTap: _plan.copyable(t.id) && !_copying ? () => _toggle(t.id) : null,
-        ),
-      ),
-      for (final sub in _theirs.groups)
-        if (sub.parentTagId == t.id) ...[
-          Padding(
-            padding: EdgeInsets.only(left: (depth + 1) * 24.0, top: 12),
-            child: Text(
-              '${sub.name} · under ${t.name}',
-              style: text.labelSmall!.copyWith(color: c.muted),
-            ),
-          ),
-          for (final s in sub.tags) ..._tag(s, depth: depth + 1),
-        ],
-    ];
   }
 }

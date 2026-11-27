@@ -12,7 +12,6 @@ import '../widgets/album_stage.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/dates.dart';
 import '../widgets/help_line.dart';
-import '../widgets/note.dart';
 import '../widgets/rating_keys.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
@@ -106,8 +105,7 @@ class _EntryPageState extends State<EntryPage> {
   late int? _rating = widget.entry?.rating;
   late bool _hidden = widget.entry?.hidden ?? false;
   late final _comment = TextEditingController(text: widget.entry?.comment);
-  late final Set<String> _initialTags =
-      widget.entry?.tagIds ?? widget.fromFriend?.preset ?? const {};
+  late final Set<String> _initialTags = widget.entry?.tagIds ?? const {};
   late TagChoice _tags = TagChoice(widget.groups, _initialTags);
   bool _saving = false;
   bool _saveFailed = false;
@@ -132,35 +130,41 @@ class _EntryPageState extends State<EntryPage> {
     if (widget.adding && _tracks.isEmpty && _musicbrainzId != null) {
       _lookUpTracks();
     }
-    if (widget.fromFriend?.missing.isNotEmpty ?? false) {
+    if (widget.fromFriend?.rows.isNotEmpty ?? false) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _importTags());
     }
   }
 
-  /// The friend's tags as last planned: after copying, or with the
-  /// destinations chosen so far.
+  /// The friend's tags as last planned, with the groups chosen so far.
   late TagImport? _plan = widget.fromFriend;
 
-  /// The friend's whole tag tree, to copy from (TASK-48).
+  /// The tags last set from the friend's, which come off when they're
+  /// chosen again.
+  Set<String> _fromPlan = const {};
+
+  /// The friend's tags on the album, to pick from (TASK-48).
   Future<void> _importTags() async {
     if (!mounted) return;
-    final plan = await Navigator.of(context).push(
-      MaterialPageRoute<TagImport>(
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute<CopyTagsResult>(
         builder: (_) => CopyTagsPage(plan: _plan!, shelf: widget.shelf),
       ),
     );
-    if (plan == null || !mounted) return;
+    if (result == null || !mounted) return;
+    final (:plan, :tagIds) = result;
     setState(() {
-      // What the last plan set comes off; the new plan's tags go on by the
-      // usual rules, so a tag in a one-per-album group replaces the other.
+      _plan = plan;
+      if (tagIds == null) return;
+      // The new tags go on by the usual rules, so a tag in a one-per-album
+      // group replaces the other.
       var tags = TagChoice(
         plan.mine.groups,
-        _tags.chosen.difference(_plan!.preset),
+        _tags.chosen.difference(_fromPlan),
       );
-      for (final id in plan.preset) {
+      for (final id in tagIds) {
         if (!tags.chosen.contains(id)) tags = tags.toggle(id);
       }
-      _plan = plan;
+      _fromPlan = tagIds;
       _tags = tags;
     });
   }
@@ -282,7 +286,6 @@ class _EntryPageState extends State<EntryPage> {
     final label = text.labelSmall!.copyWith(color: c.muted);
     final addedFrom =
         widget.entry?.addedFromName ?? widget.fromFriend?.from.name;
-    final setLike = widget.fromFriend?.builtins ?? const [];
     return PopScope(
       canPop: !_changed,
       onPopInvokedWithResult: (didPop, _) {
@@ -311,17 +314,6 @@ class _EntryPageState extends State<EntryPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (setLike.isNotEmpty) ...[
-                            Note(
-                              icon: Icons.info_outline,
-                              child: Text(
-                                '${[for (final t in setLike) t.name].join(' and ')} '
-                                "${setLike.length == 1 ? 'is' : 'are'} set "
-                                "like ${widget.fromFriend!.from.name}'s.",
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
                           Text(album.title, style: text.headlineSmall),
                           const SizedBox(height: 4),
                           Text(

@@ -15,7 +15,7 @@ Flows are in [flows.md](flows.md), wireframes in [wireframes/](wireframes/).
 | Tags | The user's tag groups; open the editor for one | Tag editor | loading, list, error |
 | Tag group | Edit a group: name, one or several per album, its tags, sub-groups, hide or delete | Tag editor | new, existing, built-in, delete confirmation, can't make exclusive, duplicate name, save error |
 | Filters | Choose and order the filters of the shelf's filter bar | Filters | loading, list, empty (only All), add picker, error |
-| Anna's tags (M2, TASK-48) | After adding an album from a friend: their whole tag tree, where each of their groups goes, tags to copy (wireframe [copy-tags](wireframes/copy-tags.html)) | Add from a friend | album's new tags ticked, destination picker, sub-tag with its path, copying, nothing new (skipped; link on the entry), copy error |
+| Anna's tags (M2, TASK-48) | After adding an album from a friend: their tags on the album, none ticked, each going to any of the user's groups or tags (wireframe [copy-tags](wireframes/copy-tags.html) shows the first version) | Add from a friend | none ticked, Tick the N that match, target picker, sub-tag with its parent, copying, no tags (skipped; link on the entry), copy error |
 | Your name (M2) | Set the name friends see; asked once after the first sign-in, changeable from Friends | Your name, Accept an invite | first time, change, too long or empty, save error |
 | Feed (M2, tab) | What friends added and rated, newest first | Feed | loading, no friends, nothing yet, filled, loading more, error, error loading more (no automatic retry) |
 | Friends (M2, tab) | Friends and waiting invites; invite, enter a code, remove | Invite, Accept, Friends | loading, no friends, filled, invites waiting, error |
