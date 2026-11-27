@@ -61,14 +61,15 @@ void main() {
 
   testWidgets('friends\' adds and ratings, newest first', (tester) async {
     feed.items.addAll([
-      item(2, at: DateTime.now().subtract(const Duration(hours: 2))),
+      // Minutes, not hours: two hours ago is yesterday just after midnight.
+      item(2, at: DateTime.now().subtract(const Duration(minutes: 5))),
       item(3, kind: FeedKind.rated, friend: 'Ben', rating: 9),
     ]);
     await pumpFeed(tester);
 
     expect(find.text('Anna added Album 2', findRichText: true), findsOneWidget);
     expect(find.text('Ben rated Album 3', findRichText: true), findsOneWidget);
-    expect(find.text('2 h'), findsOneWidget);
+    expect(find.text('5 min'), findsOneWidget);
     expect(
       tester.getTopLeft(find.text('Artist 2')).dy,
       lessThan(tester.getTopLeft(find.text('Artist 3')).dy),

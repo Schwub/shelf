@@ -113,8 +113,13 @@ class TagImport {
       group.parentTagId == null &&
       destinations[group.id] == const Destination.nowhere();
 
-  TagImport withDestination(TagGroup group, Destination destination) =>
-      _replan(mine, {...destinations, group.id: destination});
+  /// [destination] null: as without a choice (same name, or a new group).
+  TagImport withDestination(TagGroup group, Destination? destination) =>
+      _replan(mine, {
+        for (final MapEntry(:key, :value) in destinations.entries)
+          if (key != group.id) key: value,
+        group.id: ?destination,
+      });
 
   ({Map<String, String> matched, List<MissingTag> missing}) _plan(
     Set<String> ids, {

@@ -1,9 +1,10 @@
 ---
 id: TASK-48
 title: Copy a friend's tags from their whole tag tree
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-27T00:10:00Z'
+updated_date: '2026-11-27T00:27:00Z'
 labels: []
 dependencies: []
 ordinal: 49000

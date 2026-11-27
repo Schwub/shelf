@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(8);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'alice@example.com'),
@@ -37,6 +37,11 @@ select lives_ok(
   $$update public.tag_group_destinations set group_id = null
     where friend_group_id = pg_temp.group_of('22222222-2222-2222-2222-222222222222', 'Listening')$$,
   'and changes it');
+
+select lives_ok(
+  $$delete from public.tag_group_destinations
+    where friend_group_id = pg_temp.group_of('22222222-2222-2222-2222-222222222222', 'Collection')$$,
+  'and forgets it');
 
 -- Bob sees none of it.
 reset role;

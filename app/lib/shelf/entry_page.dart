@@ -16,8 +16,9 @@ import '../widgets/note.dart';
 import '../widgets/rating_keys.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
+import '../widgets/text_link.dart';
 import 'shelf.dart';
-import 'import_tags_sheet.dart';
+import 'copy_tags_page.dart';
 import 'shelf_repository.dart';
 import 'tag_import.dart';
 import 'tag_section.dart';
@@ -136,20 +137,23 @@ class _EntryPageState extends State<EntryPage> {
     }
   }
 
+  /// The friend's tags as last planned: after copying, or with the
+  /// destinations chosen so far.
+  late TagImport? _plan = widget.fromFriend;
+
+  /// The friend's whole tag tree, to copy from (TASK-48).
   Future<void> _importTags() async {
     if (!mounted) return;
-    final copied = await showImportTagsSheet(
-      context,
-      plan: widget.fromFriend!,
-      shelf: widget.shelf,
+    final plan = await Navigator.of(context).push(
+      MaterialPageRoute<TagImport>(
+        builder: (_) => CopyTagsPage(plan: _plan!, shelf: widget.shelf),
+      ),
     );
-    if (copied == null || !mounted) return;
-    setState(
-      () => _tags = TagChoice(copied.mine.groups, {
-        ..._tags.chosen,
-        ...copied.preset,
-      }),
-    );
+    if (plan == null || !mounted) return;
+    setState(() {
+      _plan = plan;
+      _tags = TagChoice(plan.mine.groups, {..._tags.chosen, ...plan.preset});
+    });
   }
 
   Future<void> _lookUpTracks() async {
@@ -326,6 +330,14 @@ class _EntryPageState extends State<EntryPage> {
                             const SizedBox(height: 4),
                             HelpLine("Added from $addedFrom's shelf"),
                           ],
+                          if (widget.fromFriend case final from?)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextLink(
+                                label: "See ${from.from.name}'s tags",
+                                onPressed: _importTags,
+                              ),
+                            ),
                           const SizedBox(height: 16),
                           TagSection(
                             choice: _tags,

@@ -73,6 +73,28 @@ menu.
   Different suggested sets per media type (books: Read / To read) come with
   the second media type.
 
+## Copy a friend's tags (TASK-48)
+Agreed 2026-11-27; replaces TASK-19's sheet (below). Wireframes
+`docs/design/wireframes/copy-tags.html`.
+
+- `app/lib/shelf/copy_tags_page.dart`: "Anna's tags", the friend's whole
+  tree with marks (on this album, you have it, new); the album's new tags
+  are ticked, any other can be. Ticking a sub-tag ticks its parent;
+  unticking a parent unticks its sub-tags. Each of the friend's top-level
+  groups shows where it goes; the picker offers the user's top-level
+  groups, a new group (when none has its name) and "Don't copy". Copy, or
+  Skip, returns the plan, so destinations apply to the album either way;
+  the entry's "See Anna's tags" link opens it again.
+- `TagImport` takes `destinations` (by the friend's top-level group ID):
+  `Destination.into(group)` or `.nowhere()`; without one, a group goes
+  into the user's group of the same name or a new one. It plans the whole
+  tree (`has`, `copyable`) besides the album (`preset`, `missing`); the
+  one-per-album rule applies only on the album, not to copies.
+- `tag_group_destinations` (migration `20261127090000`): user, friend's
+  group, the user's group or null for nowhere; owner-only; a row goes with
+  either group. `ShelfRepository.destinations` and `saveDestination` (null
+  forgets the choice). A failed save still applies to this album.
+
 ## Import from a friend (TASK-19)
 Agreed 2026-11-26. All in the app; considered: one database function for
 the copying (atomic, but the sheet needs the matching in Dart anyway, and
@@ -92,8 +114,8 @@ copies stay on cancel, so atomicity buys little).
   `createTag` and `createGroup` in rounds (parents first), reloading the
   user's shelf after each, so a retry after a failure only copies what is
   still missing.
-- `app/lib/shelf/import_tags_sheet.dart`: the sheet (all ticked; Skip,
-  Add N tags; the copy error with Try again).
+- The sheet (all ticked; Skip, Add N tags; the copy error with Try
+  again), replaced by TASK-48's page.
 - `EntryPage.add`/`.manual` take `fromFriend` (a `TagImport`): tags
   pre-set, the "set like Anna's" note, "Added from Anna's shelf", and the
   sheet once after the first frame when tags are missing.
