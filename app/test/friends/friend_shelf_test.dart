@@ -629,7 +629,7 @@ void main() {
         await tapText(tester, 'Copy 2 tags');
 
         expect(find.text('Check'), findsOneWidget);
-        expect(find.text('+ 1 MORE TAG, NOT ON THIS ALBUM'), findsOneWidget);
+        expect(find.text('+ 1 MORE TAG, COPIED ONLY'), findsOneWidget);
         await tapText(tester, 'Copy 2 tags');
 
         expect(tagsIn('genre'), containsAll(['Free jazz', 'Bebop']));
@@ -663,6 +663,36 @@ void main() {
         await tapText(tester, 'Done');
         await tapText(tester, 'Add to shelf');
         expect(shelf.addedTags, unorderedEquals(['ambient', 'free jazz']));
+      });
+
+      testWidgets('a change is still saved when added on a later visit', (
+        tester,
+      ) async {
+        await freeJazz(tester);
+        await tapPart(tester, 'Change Free jazz, new for Free jazz');
+        await tapText(tester, 'Genre › Jazz');
+        await tapText(tester, 'Done');
+        await tapText(tester, 'Done'); // Leave the list without adding.
+
+        await tapText(tester, 'Choose');
+        await tapKey(tester, 'Add Free jazz');
+
+        expect(shelf.copyTargetsSaved, {'a-free': const OntoTag('jazz')});
+      });
+
+      testWidgets('bringing the rest survives a change to another part', (
+        tester,
+      ) async {
+        await freeJazz(tester);
+        await tapPart(tester, 'Change Subgenre, new for Free jazz');
+        await tapText(tester, '+ 1 more tag from Subgenre');
+        await tapText(tester, 'Done');
+        expect(find.text('Copy 2 tags'), findsOneWidget);
+
+        await tapPart(tester, 'Change Free jazz, new for Free jazz');
+        await tapText(tester, 'Done');
+
+        expect(find.text('Copy 2 tags'), findsOneWidget);
       });
 
       testWidgets('a remembered place is used, and can go back to hers', (

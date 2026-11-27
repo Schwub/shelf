@@ -56,7 +56,7 @@ class _TargetSheetState extends State<_TargetSheet> {
     for (final s in widget.plan.mappedBelow(widget.start, widget.tag))
       (s.group?.id ?? s.tag?.id)!,
   ]);
-  late CopyTarget? _target = widget.plan.target(_id);
+  late CopyTarget? _target = _needed(widget.plan.target(_id));
   late bool _bring = widget.bring;
 
   TagImport get _planned => switch (_target) {
@@ -64,13 +64,35 @@ class _TargetSheetState extends State<_TargetSheet> {
     null => _asIs,
   };
 
+  /// The names of where this part lands in [plan], new or not.
+  String _lands(TagImport plan) => switch (widget.start) {
+    (group: _, tag: final t?) => switch (plan.tagPlace(t)) {
+      final p => '${p.isNew}${p.path.join('\u0000')}',
+    },
+    (group: final g?, tag: _) => switch (plan.groupPlace(g)) {
+      final p => '${p.isNew}${[...?p.parent?.path, p.name].join('\u0000')}',
+    },
+    _ => '',
+  };
+
+  /// [target], or null when it lands where the friend's structure does
+  /// anyway: nothing to remember then.
+  CopyTarget? _needed(CopyTarget? target) =>
+      target == null ||
+          _lands(widget.plan.remap(widget.start, target, widget.tag)) ==
+              _lands(_asIs)
+      ? null
+      : target;
+
   Future<void> _elsewhere() async {
     final target = await Navigator.of(context).push(
       MaterialPageRoute<CopyTarget>(
         builder: (_) => PlacePickerPage(plan: _asIs, start: widget.start),
       ),
     );
-    if (target != null && mounted) setState(() => _target = target);
+    if (target != null && mounted) {
+      setState(() => _target = _needed(target));
+    }
   }
 
   @override

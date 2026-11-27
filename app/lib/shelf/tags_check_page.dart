@@ -55,8 +55,8 @@ class TagsCheckPage extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 20, bottom: 4),
                     child: Text(
                       others.length == 1
-                          ? '+ 1 MORE TAG, NOT ON THIS ALBUM'
-                          : '+ ${others.length} MORE TAGS, NOT ON THIS ALBUM',
+                          ? '+ 1 MORE TAG, COPIED ONLY'
+                          : '+ ${others.length} MORE TAGS, COPIED ONLY',
                       style: text.labelSmall!.copyWith(color: c.muted),
                     ),
                   ),

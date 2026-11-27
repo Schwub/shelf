@@ -20,6 +20,8 @@ typedef FriendTagsResult = ({
   TagChoice choice,
   TagImport plan,
   Map<String, String> landed,
+  Set<String> changed,
+  Set<String> reset,
 });
 
 /// "Anna's tags" (docs/design/wireframes/copy-tags-8.html): the friend's
@@ -34,12 +36,18 @@ class FriendTagsPage extends StatefulWidget {
     required this.shelf,
     required this.choice,
     this.landed = const {},
+    this.changed = const {},
+    this.reset = const {},
   });
 
   final TagImport plan;
   final ShelfRepository shelf;
   final TagChoice choice;
   final Map<String, String> landed;
+
+  /// What an earlier visit changed in [plan] and hasn't saved yet (the
+  /// friend's group and tag IDs sent elsewhere, and put back).
+  final Set<String> changed, reset;
 
   @override
   State<FriendTagsPage> createState() => _FriendTagsPageState();
@@ -57,7 +65,7 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
   /// The friend's groups and tags sent elsewhere here, and the ones put
   /// back as they are: remembered, or forgotten, once a tag below them is
   /// added.
-  final _changed = <String>{}, _reset = <String>{};
+  late final _changed = {...widget.changed}, _reset = {...widget.reset};
 
   /// For a friend's tag (by ID), the group or tag above it whose other tags
   /// come along when it is added.
@@ -166,7 +174,7 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
       for (final s in _plan.chainOf(t)) {
         final id = (s.group?.id ?? s.tag?.id)!;
         final group = s.group != null;
-        if (_changed.remove(id)) {
+        if (_changed.contains(id)) {
           // A group of its own exists now: remembered as that group.
           final target = switch (_plan.targets[id]) {
             AtTop() => switch (_plan.groupPlace(s.group!).existing) {
@@ -178,8 +186,10 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
           if (target != null) {
             await widget.shelf.rememberCopy(id, target, group: group);
           }
-        } else if (_reset.remove(id)) {
+          _changed.remove(id);
+        } else if (_reset.contains(id)) {
           await widget.shelf.forgetCopy(id, group: group);
+          _reset.remove(id);
         }
       }
     } catch (e, stack) {
@@ -200,13 +210,24 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
     );
     if (choice == null || !mounted) return;
     final id = (start.group?.id ?? start.tag?.id)!;
-    final before = {for (final u in _plan.tags) u: _on(u)};
+    // Only what was added here moves with a change, not tags the user set
+    // themselves.
+    final before = {
+      for (final u in _plan.tags)
+        if (_landed.containsKey(u.id)) u: _on(u),
+    };
     // What was mapped below it on the way to this tag is replaced.
     final below = [
       for (final s in _plan.mappedBelow(start, t)) (s.group?.id ?? s.tag?.id)!,
     ];
     setState(() {
       _note = null;
+      if (choice.bring) {
+        _bring[t.id] = start;
+      } else if (_bring[t.id] == start) {
+        _bring.remove(t.id);
+      }
+      if (choice.target == _plan.target(id) && below.isEmpty) return;
       _changed.removeAll(below);
       _reset.addAll(below);
       if (choice.target case final target?) {
@@ -217,11 +238,6 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
         _plan = _plan.withoutTargets([id, ...below]);
         _changed.remove(id);
         _reset.add(id);
-      }
-      if (choice.bring) {
-        _bring[t.id] = start;
-      } else {
-        _bring.remove(t.id);
       }
       for (final MapEntry(key: u, value: was) in before.entries) {
         if (was != null && _plan.tagPlace(u).existing?.id != was) {
@@ -257,8 +273,13 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
     }
   }
 
-  void _leave() => Navigator.of(context)
-      .pop<FriendTagsResult>((choice: _choice, plan: _plan, landed: _landed));
+  void _leave() => Navigator.of(context).pop<FriendTagsResult>((
+    choice: _choice,
+    plan: _plan,
+    landed: _landed,
+    changed: _changed,
+    reset: _reset,
+  ));
 
   @override
   Widget build(BuildContext context) {

@@ -57,9 +57,10 @@ class TagPaths extends StatelessWidget {
             isNew: part.isNew,
             on: part.start == marked,
             onTap: onChange == null ? null : () => onChange!(part.start),
-            semanticLabel:
-                'Change ${part.name}${part.isNew ? ', new' : ''} for '
-                '${tag.name}',
+            semanticLabel: onChange == null
+                ? null
+                : 'Change ${part.name}${part.isNew ? ', new' : ''} for '
+                      '${tag.name}',
           ),
       ];
     }
