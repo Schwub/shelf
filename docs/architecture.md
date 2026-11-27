@@ -53,15 +53,19 @@
 - `shelf_entries`: one per user and album. Optional `rating` 1–10 (half
   stars), `comment`, `updated_at` set by a trigger; for albums added from a
   friend's shelf (M2), `added_from_user_id` (cleared if that account is
-  deleted) and `added_from_name` (kept). RLS: only the owner
-  reads and writes; friends' read access comes with M2.
+  deleted) and `added_from_name` (kept). RLS: only the owner writes;
+  friends read (below).
 - Tags (`tag_groups`, `tags`, `entry_tags`): user-defined
   groups, exclusive or multiple choice, sub-groups under a tag, built-in
   groups Collection and Listening shared in meaning across users; suggested
-  groups created for each new user. Details: `docs/features/tags.md`.
+  groups created for each new user. `tag_group_destinations` remembers,
+  per user, which of their groups a friend's group goes into when copying
+  that friend's tags (TASK-48). Details: `docs/features/tags.md`.
 - `shelf_filters` and `shelf_filter_tags`: the filter bar's filters, one tag
   or combined conditions (tags any/all, minimum rating or unrated, favorite
-  tracks). Owner-only. Details: `docs/features/filters.md`.
+  tracks, added in the last N days or between two dates). The owner writes;
+  friends read them, to filter a friend's shelf. Details:
+  `docs/features/filters.md`.
 - `entry_tracks`: the user's own track list of a shelf entry, with a
   `favorite` flag per track; replaced as a whole by `set_entry_tracks` (one
   transaction). Owner-only. Details: `docs/features/tracks.md`.
@@ -78,7 +82,8 @@
   `create_invite`, checked by `invite_preview`); friends read each other's
   `profiles` through `is_friend()` ([features/friends.md](features/friends.md)).
 - Friends read each other's shelves (TASK-37): `shelf_entries`,
-  `entry_tags`, `entry_tracks`, `tags`, `tag_groups` and manual `albums`,
+  `entry_tags`, `entry_tracks`, `tags`, `tag_groups`, `shelf_filters`,
+  `shelf_filter_tags` and manual `albums`,
   except entries with `hidden` set. The app filters its own data by
   `user_id` (`SupabaseShelfRepository._load`); `loadFriend` reads a
   friend's, with one filter per built-in tag.
