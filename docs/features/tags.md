@@ -101,14 +101,43 @@ Step one (TASK-51, built):
 - `TagImport` (`tag_import.dart`): `tags`, `pathOf`, `tagPlace` (with
   `match` and `path`), `nearestAbove`, `add`.
 
-Step two (TASK-52, to build): **Map…** on every line, three screens: the
-starting point in the friend's path, the place in the user's tags (one
-level per screen, with search and "new group here"; a tag of the user's
-can be used instead), and a check that lists what is created and merged
-and can bring everything below the starting point along. Mappings are
-remembered per friend in `tag_group_destinations` and `tag_destinations`
-(tag-to-tag links first, then rules for part of the friend's tree, then
-names, then Copy); "Use my X" is remembered then too.
+Step two (TASK-52, built): **Map…** on every line opens `MapTagsPage`
+(`app/lib/shelf/map_tags_page.dart`), three steps:
+1. *What to bring:* the friend's path as a ladder; the starting point is
+   one of their groups or tags on it, preselected at the first part the
+   user has no place for.
+2. *Where it goes:* the user's tags one level per screen (groups, their
+   tags, their sub-groups), with a breadcrumb and a search; it opens at
+   the user's group most like the friend's. Each level has one action: a
+   friend's group joins a group of the user's (its tags go in flat), hangs
+   under a tag as a sub-group, or becomes a group of its own at the top; a
+   friend's tag goes into a group, or one of the user's tags is used
+   instead of it.
+3. *Check:* what the mapping does, what it creates, which of the friend's
+   tags land on the same tag of the user's, and a switch to bring
+   everything below the starting point along (created, not set on the
+   album).
+
+- Mapping covers both directions of nesting: a nested tag or sub-group of
+  the friend's into a flat group of the user's, and a flat tag into a
+  sub-group of theirs.
+- `CopyTarget` (`shelf.dart`): `IntoGroup`, `OntoTag`, `UnderTag`,
+  `AtTop`. `TagImport.targets` holds them by the friend's group or tag ID;
+  a place is worked out from the tag's own target, then targets above it,
+  then a tag of the same name, then the friend's structure as it is.
+  `chainOf`, `below`, `preview`, `withTarget`; `add` takes several tags.
+- Remembered per friend (`ShelfRepository.copyTargets`, `rememberCopy`):
+  group targets in `tag_group_destinations` (`group_id` or
+  `parent_tag_id`), tag targets in `tag_destinations` (`tag_id` or
+  `group_id`). A group of its own is remembered as that group once it
+  exists. "Use my X" is remembered as a tag target. Lines that were on and
+  go elsewhere after a mapping come off.
+- A new mapping replaces what was mapped below its starting point on the
+  way to the tag. A tag mapped on its own has **Forget** on its line
+  (`forgetCopy`). When a mapping puts a tag into a one-per-album group,
+  the list names the tag that came off.
+- Not built: a list of all mappings with a friend, to review and remove
+  them in one place.
 
 ## Copy a friend's tags (TASK-48)
 Agreed 2026-11-27; replaces TASK-19's sheet (below); replaced by TASK-51 (above). Wireframes

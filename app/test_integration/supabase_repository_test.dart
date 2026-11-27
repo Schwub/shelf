@@ -450,7 +450,7 @@ void main() {
     expect((await s.repo.load()).entries, isEmpty);
   });
 
-  test("where a friend's groups go is remembered", () async {
+  test("where a friend's groups and tags go is remembered", () async {
     final alice = await signIn();
     final bob = await signIn();
     await SupabaseFriendsRepository(alice.db).saveName('Alice');
@@ -461,13 +461,51 @@ void main() {
     final mine = await alice.repo.load();
     String group(Shelf s, String name) =>
         s.allGroups.firstWhere((g) => g.name == name).id;
-    final ids = [group(bobs, 'Genre'), group(bobs, 'Listening')];
+    String tag(Shelf s, String name) =>
+        s.allGroups.expand((g) => g.tags).firstWhere((t) => t.name == name).id;
+    final groups = [group(bobs, 'Genre'), group(bobs, 'Format')];
+    final tags = [tag(bobs, 'Vinyl'), tag(bobs, 'CD')];
+    Future<Map<String, CopyTarget>> saved(SupabaseShelfRepository repo) =>
+        repo.copyTargets(friendGroupIds: groups, friendTagIds: tags);
 
-    expect(await alice.repo.copyTargets(ids), isEmpty);
-    await alice.repo.rememberCopy(ids[0], group(mine, 'Listening'));
-    await alice.repo.rememberCopy(ids[0], group(mine, 'Genre'));
-    expect(await alice.repo.copyTargets(ids), {ids[0]: group(mine, 'Genre')});
-    expect(await bob.repo.copyTargets(ids), isEmpty, reason: "Alice's own");
+    expect(await saved(alice.repo), isEmpty);
+    await alice.repo.rememberCopy(
+      groups[0],
+      IntoGroup(group(mine, 'Listening')),
+      group: true,
+    );
+    await alice.repo.rememberCopy(
+      groups[0],
+      IntoGroup(group(mine, 'Genre')),
+      group: true,
+    );
+    await alice.repo.rememberCopy(
+      groups[1],
+      UnderTag(tag(mine, 'Want')),
+      group: true,
+    );
+    await alice.repo.rememberCopy(
+      tags[0],
+      OntoTag(tag(mine, 'CD')),
+      group: false,
+    );
+    await alice.repo.rememberCopy(
+      tags[1],
+      IntoGroup(group(mine, 'Genre')),
+      group: false,
+    );
+
+    expect(await saved(alice.repo), {
+      groups[0]: IntoGroup(group(mine, 'Genre')),
+      groups[1]: UnderTag(tag(mine, 'Want')),
+      tags[0]: OntoTag(tag(mine, 'CD')),
+      tags[1]: IntoGroup(group(mine, 'Genre')),
+    });
+    expect(await saved(bob.repo), isEmpty, reason: "Alice's own");
+
+    await alice.repo.forgetCopy(groups[1], group: true);
+    await alice.repo.forgetCopy(tags[0], group: false);
+    expect((await saved(alice.repo)).keys, {groups[0], tags[1]});
   });
 
   test('a new group comes back with its ID', () async {

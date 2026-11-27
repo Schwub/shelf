@@ -10,6 +10,7 @@ import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
 import 'package:shelf_app/shelf/friend_tags_page.dart';
+import 'package:shelf_app/shelf/map_tags_page.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/widgets/filter_bar.dart';
@@ -590,6 +591,7 @@ void main() {
       await tapKey(tester, 'Use my Jazz for Free jazz');
 
       expect(find.text('On the album as Genre › Jazz'), findsOneWidget);
+      expect(shelf.copyTargetsSaved['a-black'], const OntoTag('jazz'));
       await tapText(tester, 'Done');
       expect(find.text('1 on this album · 1 added'), findsOneWidget);
       await tapText(tester, 'Add to shelf');
@@ -620,7 +622,10 @@ void main() {
             name: 'Subgenre',
             exclusive: false,
             parentTagId: 'jazz',
-            tags: [Tag(id: 'a-free', groupId: 'a-sub', name: 'Free jazz')],
+            tags: [
+              Tag(id: 'a-free', groupId: 'a-sub', name: 'Free jazz'),
+              Tag(id: 'a-bebop', groupId: 'a-sub', name: 'Bebop'),
+            ],
           ),
           const TagGroup(
             id: 'a-pressing',
@@ -658,6 +663,183 @@ void main() {
       await tapText(tester, 'Add to shelf');
 
       expect(shelf.addedTags, ['jazz']);
+    });
+
+    group('Map', () {
+      /// Opens Map for Anna's Free jazz (Genre › Jazz › Subgenre › Free
+      /// jazz; I have Genre › Jazz and no Subgenre).
+      Future<void> mapFreeJazz(WidgetTester tester) async {
+        annaNests(const {'a-free'});
+        await annasTags(tester, 'OK Computer');
+        await tapKey(tester, 'Map Free jazz');
+      }
+
+      testWidgets('starts at the first part I lack; back cancels', (
+        tester,
+      ) async {
+        await mapFreeJazz(tester);
+
+        expect(find.text('Step 1 of 3'), findsOneWidget);
+        expect(find.text('What do you want to bring?'), findsOneWidget);
+        expect(find.text('from this sub-group'), findsOneWidget);
+        await tapText(tester, 'Next');
+        expect(find.text('Where does Subgenre go?'), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.text('Step 1 of 3'), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        expect(find.byType(FriendTagsPage), findsOneWidget);
+        expect(find.byType(MapTagsPage), findsNothing);
+        expect(shelf.copyTargetsSaved, isEmpty);
+      });
+
+      testWidgets('only the tag, onto a tag of mine found by search', (
+        tester,
+      ) async {
+        await mapFreeJazz(tester);
+
+        await tapText(tester, 'only this tag');
+        await tapText(tester, 'Next');
+        await tester.enterText(find.byType(TextField), 'amb');
+        await tester.pumpAndSettle();
+        expect(find.text('in Genre'), findsOneWidget);
+        await tapText(tester, 'Ambient');
+        await tapText(tester, 'Use Ambient instead of Free jazz');
+
+        expect(
+          find.text("Anna's Free jazz becomes my Ambient."),
+          findsOneWidget,
+        );
+        expect(find.text('Nothing new.'), findsOneWidget);
+        await tapText(tester, 'Map');
+
+        expect(find.text('On the album as Genre › Ambient'), findsOneWidget);
+        expect(shelf.copyTargetsSaved['a-free'], const OntoTag('ambient'));
+        await tapText(tester, 'Done');
+        await tapText(tester, 'Add to shelf');
+        expect(shelf.addedTags, ['ambient']);
+      });
+
+      testWidgets('her sub-group joins my group, the rest comes along', (
+        tester,
+      ) async {
+        await mapFreeJazz(tester);
+
+        await tapText(tester, 'Next');
+        await tapText(tester, 'Genre');
+        await tapText(tester, 'Put its tags into Genre');
+        expect(find.text('tag Free jazz in Genre'), findsOneWidget);
+        await tapText(tester, 'Also bring the other tag below Subgenre');
+        expect(find.text('tag Bebop in Genre'), findsOneWidget);
+        await tapText(tester, 'Map 2 tags');
+
+        expect(tagsIn('genre'), containsAll(['Free jazz', 'Bebop']));
+        expect(shelf.groups.any((g) => g.name == 'Subgenre'), isFalse);
+        expect(shelf.copyTargetsSaved['a-sub'], const IntoGroup('genre'));
+        await tapText(tester, 'Done');
+        await tapText(tester, 'Add to shelf');
+        expect(shelf.addedTags, ['free jazz'], reason: 'Bebop only copied');
+      });
+
+      testWidgets('her sub-group hangs under one of my tags', (tester) async {
+        await mapFreeJazz(tester);
+
+        await tapText(tester, 'Next');
+        await tapText(tester, 'Genre');
+        await tapText(tester, 'Ambient');
+        expect(find.text('No sub-groups under Ambient.'), findsOneWidget);
+        await tapText(tester, 'Hang Subgenre here, under Ambient');
+        expect(find.text('sub-group Subgenre under Ambient'), findsOneWidget);
+        await tapText(tester, 'Map');
+
+        expect(
+          shelf.groups.firstWhere((g) => g.name == 'Subgenre').parentTagId,
+          'ambient',
+        );
+        expect(shelf.copyTargetsSaved['a-sub'], const UnderTag('ambient'));
+        await tapText(tester, 'Done');
+        await tapText(tester, 'Add to shelf');
+        expect(shelf.addedTags, unorderedEquals(['ambient', 'free jazz']));
+      });
+
+      testWidgets('a mapping is remembered on her next album', (tester) async {
+        shelf.copyTargetsSaved['a-free'] = const OntoTag('ambient');
+        annaNests(const {'a-free'});
+        await annasTags(tester, 'OK Computer');
+
+        expect(find.text('→ my Genre › Ambient · remembered'), findsOneWidget);
+      });
+
+      testWidgets('a mapping of the tag itself can be forgotten', (
+        tester,
+      ) async {
+        shelf.copyTargetsSaved['a-free'] = const OntoTag('ambient');
+        annaNests(const {'a-free'});
+        await annasTags(tester, 'OK Computer');
+
+        await tapKey(tester, 'Forget where Free jazz goes');
+
+        expect(
+          find.text('→ new: Genre › Jazz › Subgenre › Free jazz'),
+          findsOneWidget,
+        );
+        expect(shelf.copyTargetsSaved, isEmpty);
+      });
+
+      testWidgets('a mapping above replaces what was mapped below it', (
+        tester,
+      ) async {
+        shelf.copyTargetsSaved['a-free'] = const OntoTag('ambient');
+        await mapFreeJazz(tester);
+
+        await tapText(tester, 'from this sub-group');
+        await tapText(tester, 'Next');
+        await tapText(tester, 'Genre');
+        await tapText(tester, 'Put its tags into Genre');
+        expect(find.text('tag Free jazz in Genre'), findsOneWidget);
+        await tapText(tester, 'Map');
+
+        expect(find.text('On the album as Genre › Free jazz'), findsOneWidget);
+        expect(shelf.copyTargetsSaved, {'a-sub': const IntoGroup('genre')});
+      });
+
+      testWidgets('a tag pushed out of a one-per-album group is named', (
+        tester,
+      ) async {
+        await annasTags(tester, 'OK Computer');
+        await tapKey(tester, 'Add Own');
+
+        await tapKey(tester, 'Map Listened');
+        await tapText(tester, 'Next');
+        await tapText(tester, 'My tags');
+        await tapText(tester, 'Collection');
+        await tapText(tester, 'Put Listened here, in Collection');
+        await tapText(tester, 'Map');
+
+        expect(
+          find.text('Own came off: only one tag per album fits there.'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('the steps meet the accessibility guidelines', (
+        tester,
+      ) async {
+        final semantics = tester.ensureSemantics();
+        await mapFreeJazz(tester);
+        for (final next in ['Next', 'Genre', 'Put its tags into Genre']) {
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(textContrastGuideline));
+          await tapText(tester, next);
+        }
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(textContrastGuideline));
+        semantics.dispose();
+      });
     });
 
     testWidgets("a failed copy says so and can be tried again", (tester) async {

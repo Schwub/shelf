@@ -505,27 +505,71 @@ class SupabaseShelfRepository implements ShelfRepository {
   }
 
   @override
-  Future<Map<String, String>> copyTargets(List<String> friendGroupIds) async {
-    final rows = await _db
-        .from('tag_group_destinations')
-        .select('friend_group_id, group_id')
-        .eq('user_id', _me)
-        .inFilter('friend_group_id', friendGroupIds)
-        // Earlier versions also stored other kinds of target.
-        .not('group_id', 'is', null);
+  Future<Map<String, CopyTarget>> copyTargets({
+    required List<String> friendGroupIds,
+    required List<String> friendTagIds,
+  }) async {
+    final (groups, tags) = await (
+      _db
+          .from('tag_group_destinations')
+          .select('friend_group_id, group_id, parent_tag_id')
+          .eq('user_id', _me),
+      _db
+          .from('tag_destinations')
+          .select('friend_tag_id, tag_id, group_id')
+          .eq('user_id', _me),
+    ).wait;
+    // All of the user's rows, picked here: a friend's IDs can be too many
+    // for a request's address.
+    final groupIds = friendGroupIds.toSet(), tagIds = friendTagIds.toSet();
     return {
-      for (final r in rows)
-        r['friend_group_id'] as String: r['group_id'] as String,
+      // Rows without a target (from earlier versions) are left out.
+      for (final r in groups)
+        if (groupIds.contains(r['friend_group_id']))
+          r['friend_group_id'] as String: ?switch (r) {
+            {'group_id': final String id} => IntoGroup(id),
+            {'parent_tag_id': final String id} => UnderTag(id),
+            _ => null,
+          },
+      for (final r in tags)
+        if (tagIds.contains(r['friend_tag_id']))
+          r['friend_tag_id'] as String: ?switch (r) {
+            {'tag_id': final String id} => OntoTag(id),
+            {'group_id': final String id} => IntoGroup(id),
+            _ => null,
+          },
     };
   }
 
   @override
-  Future<void> rememberCopy(String friendGroupId, String groupId) =>
-      _db.from('tag_group_destinations').upsert({
-        'friend_group_id': friendGroupId,
-        'group_id': groupId,
-        'parent_tag_id': null,
-      });
+  Future<void> rememberCopy(
+    String friendId,
+    CopyTarget target, {
+    required bool group,
+  }) => group
+      ? _db.from('tag_group_destinations').upsert({
+          'friend_group_id': friendId,
+          'group_id': target is IntoGroup ? target.groupId : null,
+          'parent_tag_id': target is UnderTag ? target.tagId : null,
+        })
+      : _db.from('tag_destinations').upsert({
+          'friend_tag_id': friendId,
+          'tag_id': target is OntoTag ? target.tagId : null,
+          'group_id': target is IntoGroup ? target.groupId : null,
+        });
+
+  @override
+  Future<void> forgetCopy(String friendId, {required bool group}) => group
+      ? _db
+            .from('tag_group_destinations')
+            .delete()
+            .eq('user_id', _me)
+            .eq('friend_group_id', friendId)
+      : _db
+            .from('tag_destinations')
+            .delete()
+            .eq('user_id', _me)
+            .eq('friend_tag_id', friendId);
 
   @override
   Future<void> hide(List<String> entryIds, bool hidden) async {

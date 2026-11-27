@@ -64,13 +64,13 @@ TagImport plan(
   Set<String> tags, {
   List<TagGroup>? theirs,
   List<TagGroup>? mine,
-  Map<String, String> remembered = const {},
+  Map<String, CopyTarget> targets = const {},
 }) => TagImport(
   from: anna,
   theirs: Shelf(entries: const [], allGroups: theirs ?? annasGroups),
   tagIds: {for (final t in tags) 'their-$t'},
   mine: Shelf(entries: const [], allGroups: mine ?? suggestedGroups),
-  remembered: remembered,
+  targets: targets,
 );
 
 Tag their(TagImport p, String name) =>
@@ -78,12 +78,8 @@ Tag their(TagImport p, String name) =>
 
 /// Where the friend's tag [name] goes: my tag's ID when I have it, else
 /// "+group/name" for a new tag ("+?/name" in a group that is new too).
-String place(
-  TagImport p,
-  String name, [
-  Map<String, CopyTarget> picked = const {},
-]) {
-  final t = p.tagPlace(their(p, name), picked);
+String place(TagImport p, String name) {
+  final t = p.tagPlace(their(p, name));
   return t.existing?.id ?? '+${t.group.existing?.id ?? '?'}/${t.name}';
 }
 
@@ -150,11 +146,11 @@ void main() {
 
   test('an answer for a group moves all its tags', () {
     final p = plan({'Jazz', 'Dream pop'}, theirs: [...annasGroups, style]);
-    const picked = {'a-style': IntoGroup('listening')};
+    final q = p.withTarget('a-style', const IntoGroup('listening'));
 
-    expect(place(p, 'Dream pop', picked), '+listening/Dream pop');
-    expect(place(p, 'Jazz', picked), '+listening/Jazz', reason: 'follows');
-    expect(p.tagPlace(their(p, 'Dream pop'), picked).match, Match.remembered);
+    expect(place(q, 'Dream pop'), '+listening/Dream pop');
+    expect(place(q, 'Jazz'), '+listening/Jazz', reason: 'follows');
+    expect(q.tagPlace(their(q, 'Dream pop')).match, Match.remembered);
   });
 
   test('a remembered answer is used, unless the group is gone', () {
@@ -162,14 +158,18 @@ void main() {
 
     expect(
       place(
-        plan({}, theirs: theirs, remembered: {'a-style': 'genre'}),
+        plan(
+          {},
+          theirs: theirs,
+          targets: {'a-style': const IntoGroup('genre')},
+        ),
         'Dream pop',
       ),
       '+genre/Dream pop',
     );
     expect(
       place(
-        plan({}, theirs: theirs, remembered: {'a-style': 'gone'}),
+        plan({}, theirs: theirs, targets: {'a-style': const IntoGroup('gone')}),
         'Dream pop',
       ),
       '+?/Dream pop',
@@ -209,6 +209,148 @@ void main() {
     expect(place(p.withMyGroups(now), 'Shoegaze'), 'shoegaze');
   });
 
+  group('mapping', () {
+    /// Anna nests: Genre › Metal › Subgenre › Black metal, Doom.
+    final nested = [
+      TagGroup(
+        id: 'a-genre',
+        name: 'Genre',
+        exclusive: false,
+        tags: [theirTag('a-genre', 'Metal'), theirTag('a-genre', 'Jazz')],
+      ),
+      TagGroup(
+        id: 'a-sub',
+        name: 'Subgenre',
+        exclusive: false,
+        parentTagId: 'their-Metal',
+        tags: [theirTag('a-sub', 'Black metal'), theirTag('a-sub', 'Doom')],
+      ),
+    ];
+
+    test('the chain of a tag, and what is below a starting point', () {
+      final p = plan({'Black metal'}, theirs: nested);
+      final chain = p.chainOf(their(p, 'Black metal'));
+
+      expect(
+        [for (final s in chain) s.group?.name ?? s.tag?.name],
+        ['Genre', 'Metal', 'Subgenre', 'Black metal'],
+      );
+      expect(
+        [for (final t in p.below(chain[0])) t.name],
+        ['Metal', 'Black metal', 'Doom', 'Jazz'],
+      );
+      expect(
+        [for (final t in p.below(chain[1])) t.name],
+        ['Black metal', 'Doom'],
+      );
+      expect(p.below(chain[3]), isEmpty);
+    });
+
+    test('nested to flat: her sub-group joins my group', () {
+      final p = plan({
+        'Black metal',
+      }, theirs: nested).withTarget('a-sub', const IntoGroup('genre'));
+
+      expect(place(p, 'Black metal'), '+genre/Black metal');
+      expect(place(p, 'Doom'), '+genre/Doom');
+    });
+
+    test('nested to flat: her sub-tag becomes my tag', () {
+      final p = plan({
+        'Black metal',
+      }, theirs: nested).withTarget('their-Black metal', const OntoTag('jazz'));
+
+      expect(place(p, 'Black metal'), 'jazz');
+      expect(p.tagPlace(their(p, 'Black metal')).match, Match.remembered);
+    });
+
+    test('flat to nested: her tag goes into my sub-group', () {
+      final p = plan({'Shoegaze'})
+          .withTarget('their-Shoegaze', const IntoGroup('format'));
+
+      expect(p.tagPlace(their(p, 'Shoegaze')).path, [
+        'Collection',
+        'Own',
+        'Format',
+        'Shoegaze',
+      ]);
+    });
+
+    test('her group hangs under one of my tags, or at the top', () {
+      final under = plan({
+        'Black metal',
+      }, theirs: nested).withTarget('a-sub', const UnderTag('jazz'));
+      final top = plan({
+        'Black metal',
+      }, theirs: nested).withTarget('a-sub', const AtTop());
+
+      expect(under.tagPlace(their(under, 'Black metal')).path, [
+        'Genre',
+        'Jazz',
+        'Subgenre',
+        'Black metal',
+      ]);
+      expect(top.tagPlace(their(top, 'Black metal')).path, [
+        'Subgenre',
+        'Black metal',
+      ]);
+    });
+
+    test('a mapped parent tag takes what is below it along', () {
+      final p = plan({
+        'Black metal',
+      }, theirs: nested).withTarget('their-Metal', const OntoTag('pop'));
+
+      expect(p.tagPlace(their(p, 'Black metal')).path, [
+        'Genre',
+        'Pop',
+        'Subgenre',
+        'Black metal',
+      ]);
+    });
+
+    test('the preview lists what is created and what merges', () {
+      final p = plan({
+        'Black metal',
+      }, theirs: nested).withTarget('a-sub', const UnderTag('jazz'));
+      final merged = plan({'Black metal'}, theirs: nested)
+          .withTarget('their-Black metal', const OntoTag('jazz'))
+          .withTarget('their-Doom', const OntoTag('jazz'));
+
+      expect(p.preview(p.below(p.chainOf(their(p, 'Doom'))[2])).creates, [
+        'sub-group Subgenre under Jazz',
+        'tag Black metal in Subgenre',
+        'tag Doom in Subgenre',
+      ]);
+      final both = merged.preview([
+        their(merged, 'Black metal'),
+        their(merged, 'Doom'),
+      ]);
+      expect(both.creates, isEmpty);
+      expect(both.merges, {'Genre › Jazz': 2});
+    });
+
+    test('several tags are created in one go, sharing new parents', () async {
+      final shelf = FakeShelf([]);
+      final p = plan({'Black metal'}, theirs: nested);
+
+      final after = await p.add(shelf, [
+        their(p, 'Doom'),
+        their(p, 'Black metal'),
+      ]);
+
+      expect(after.tagIds, ['metal', 'black metal']);
+      expect(shelf.groups.where((g) => g.name == 'Subgenre'), hasLength(1));
+      expect(
+        shelf.groups
+            .firstWhere((g) => g.name == 'Subgenre')
+            .tags
+            .map((t) => t.name),
+        ['Doom', 'Black metal'],
+      );
+    });
+  });
+
   group('add', () {
     late FakeShelf shelf;
     setUp(() => shelf = FakeShelf([]));
@@ -216,18 +358,19 @@ void main() {
     test('sets my tag with its parents, creating nothing', () async {
       final p = plan({'vinyl'});
 
-      final after = await p.add(shelf, their(p, 'vinyl'));
+      final after = await p.add(shelf, [their(p, 'vinyl')]);
 
       expect(after.tagIds, ['own', 'vinyl']);
       expect(shelf.groups, hasLength(suggestedGroups.length));
     });
 
     test('creates a tag in the answered group', () async {
-      final p = plan({'Rainy day'});
+      final p = plan(
+        {'Rainy day'},
+        targets: {'a-mood': const IntoGroup('genre')},
+      );
 
-      final after = await p.add(shelf, their(p, 'Rainy day'), {
-        'a-mood': const IntoGroup('genre'),
-      });
+      final after = await p.add(shelf, [their(p, 'Rainy day')]);
 
       expect(after.tagIds, ['rainy day']);
       expect(
@@ -240,9 +383,7 @@ void main() {
     test("creates the friend's structure down to a sub-tag", () async {
       final p = plan({'First'}, theirs: [...annasGroups, pressing]);
 
-      final after = await p.add(shelf, their(p, 'First'), {
-        'a-label': const CopyAsIs(),
-      });
+      final after = await p.add(shelf, [their(p, 'First')]);
 
       expect(after.tagIds, ['parlophone', 'first']);
       final label = shelf.groups.firstWhere((g) => g.name == 'Label');
@@ -255,15 +396,11 @@ void main() {
 
     test('trying again after a failure creates nothing twice', () async {
       final p = plan({'First'}, theirs: [...annasGroups, pressing]);
-      const picked = {'a-label': CopyAsIs()};
       await shelf.createGroup('Label', exclusive: false);
       shelf.failEdit = true;
 
-      await expectLater(
-        p.add(shelf, their(p, 'First'), picked),
-        throwsException,
-      );
-      final after = await p.add(shelf, their(p, 'First'), picked);
+      await expectLater(p.add(shelf, [their(p, 'First')]), throwsException);
+      final after = await p.add(shelf, [their(p, 'First')]);
 
       expect(after.tagIds, ['parlophone', 'first']);
       expect(shelf.groups.where((g) => g.name == 'Label'), hasLength(1));

@@ -5,6 +5,7 @@ import '../theme/shelf_colors.dart';
 import '../widgets/help_line.dart';
 import '../widgets/shelf_key.dart';
 import '../widgets/text_link.dart';
+import 'map_tags_page.dart';
 import 'shelf.dart';
 import 'shelf_repository.dart';
 import 'tag_import.dart';
@@ -48,6 +49,9 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
   late final _landed = {...widget.landed};
   bool _busy = false, _failed = false;
 
+  /// What the last change took off the album, for the user to see.
+  String? _note;
+
   /// The user's tag that the friend's tag [t] is on the album as, if it is.
   String? _on(Tag t) {
     final id = _landed[t.id] ?? _plan.tagPlace(t).existing?.id;
@@ -72,6 +76,18 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
   void _set(Tag t, TagChoice base, List<String> ids) {
     final before = _choice.chosen;
     _choice = _with(base, ids);
+    // In a one-per-album group, the tag set before comes off: say so.
+    final names = {
+      for (final g in _choice.groups)
+        for (final m in g.tags) m.id: m.name,
+    };
+    final off = [
+      for (final id in base.chosen)
+        if (!_choice.chosen.contains(id)) ?names[id],
+    ];
+    _note = off.isEmpty
+        ? null
+        : '${off.join(', ')} came off: only one tag per album fits there.';
     _landed[t.id] = ids.last;
     _brought[t.id] = [
       for (final id in ids)
@@ -95,7 +111,7 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
       _failed = false;
     });
     try {
-      final (:mine, :tagIds) = await _plan.add(widget.shelf, t);
+      final (:mine, :tagIds) = await _plan.add(widget.shelf, [t]);
       if (!mounted) return;
       setState(() {
         _plan = _plan.withMine(mine);
@@ -109,10 +125,108 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
     }
   }
 
+  /// Remembers [target] for the friend's group or tag [id].
+  Future<void> _remember(
+    String id,
+    CopyTarget target, {
+    required bool group,
+  }) async {
+    try {
+      await widget.shelf.rememberCopy(id, target, group: group);
+    } catch (e, stack) {
+      // Still used for this album; only remembering it failed.
+      reportError(e, stack);
+    }
+  }
+
+  /// Uses the user's tag at [place] instead of the friend's [t], from now
+  /// on.
+  void _useInstead(Tag t, TagPlace place) {
+    final target = OntoTag(place.existing!.id);
+    setState(() => _plan = _plan.withTarget(t.id, target));
+    _use(t, place);
+    _remember(t.id, target, group: false);
+  }
+
+  /// Maps the friend's [t], or a group or tag above it, into the user's
+  /// tags (three steps on their own page), creates what that needs and sets
+  /// [t]. Lines that were on and go elsewhere now come off.
+  Future<void> _map(Tag t) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute<MapResult>(
+        builder: (_) => MapTagsPage(plan: _plan, tag: t),
+      ),
+    );
+    if (result == null || !mounted) return;
+    final (:start, :target, :bring) = result;
+    final id = (start.group?.id ?? start.tag?.id)!;
+    final before = {
+      for (final u in _plan.tags)
+        if (u.id != t.id) u: _on(u),
+    };
+    // The new mapping holds for everything below its start: what was
+    // mapped there on the way to this tag before is forgotten.
+    final stale = _plan.mappedBelow(start, t);
+    final planned = _plan.remap(start, target, t);
+    setState(() {
+      _busy = true;
+      _failed = false;
+    });
+    try {
+      final (:mine, :tagIds) = await planned.add(widget.shelf, [
+        if (bring)
+          for (final u in planned.below(start))
+            if (u.id != t.id) u,
+        t,
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _plan = planned.withMine(mine);
+        _choice = TagChoice(mine.groups, _choice.chosen);
+        for (final MapEntry(key: u, value: was) in before.entries) {
+          if (was == null || !_choice.chosen.contains(was)) continue;
+          if (_plan.tagPlace(u).existing?.id != was) _takeOff(u, was);
+        }
+        _set(t, _choice, tagIds);
+      });
+      await [
+        _forget([
+          for (final s in stale)
+            if (s.group case final g?) g.id,
+        ], group: true),
+        _forget([
+          for (final s in stale)
+            if (s.tag case final tag?) tag.id,
+        ], group: false),
+      ].wait;
+      // A group of its own exists now: remembered as that group.
+      final made = start.group == null
+          ? null
+          : _plan.groupPlace(start.group!).existing;
+      final resolved = switch (target) {
+        AtTop() => made == null ? null : IntoGroup(made.id),
+        _ => target,
+      };
+      if (resolved != null) {
+        await _remember(id, resolved, group: start.group != null);
+      }
+    } catch (e, stack) {
+      reportError(e, stack);
+      if (mounted) setState(() => _failed = true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   /// Takes the friend's [t] off the album again: the user's tag [id],
   /// unless another line has it on too, and the parents this line set that
   /// nothing else needs.
   void _undo(Tag t, String id) => setState(() {
+    _note = null;
+    _takeOff(t, id);
+  });
+
+  void _takeOff(Tag t, String id) {
     _landed.remove(t.id);
     final brought = _brought.remove(t.id) ?? const <String>[];
     final shared = _plan.tags.any((u) => u.id != t.id && _on(u) == id);
@@ -128,7 +242,22 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
         _choice = _choice.toggle(parent);
       }
     }
-  });
+  }
+
+  /// Forgets what was mapped for the friend's tag [t] itself.
+  void _reset(Tag t) {
+    setState(() => _plan = _plan.withoutTargets([t.id]));
+    _forget([t.id], group: false);
+  }
+
+  Future<void> _forget(List<String> ids, {required bool group}) async {
+    try {
+      await [for (final id in ids) widget.shelf.forgetCopy(id, group: group)]
+          .wait;
+    } catch (e, stack) {
+      reportError(e, stack);
+    }
+  }
 
   void _leave() => Navigator.of(context)
       .pop<FriendTagsResult>((choice: _choice, plan: _plan, landed: _landed));
@@ -198,7 +327,8 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
                   children: [
                     HelpLine(
                       "$name's tags on this album. Add the ones you have, "
-                      "or copy one with $name's structure above it.",
+                      "copy one with $name's structure above it, or map it "
+                      'into your own.',
                     ),
                     if (have.isNotEmpty)
                       Align(
@@ -229,6 +359,10 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (_note case final note?) ...[
+                        HelpLine(note),
+                        const SizedBox(height: 8),
+                      ],
                       if (_failed) ...[
                         const HelpLine(
                           "Couldn't copy the tag. Check your connection and "
@@ -318,8 +452,19 @@ class _FriendTagsPageState extends State<FriendTagsPage> {
                 if (above != null)
                   ShelfKey(
                     semanticLabel: 'Use my ${above.name} for ${t.name}',
-                    onPressed: _busy ? null : () => _use(t, above),
+                    onPressed: _busy ? null : () => _useInstead(t, above),
                     child: Text('Use my ${above.name}'),
+                  ),
+                ShelfKey(
+                  semanticLabel: 'Map ${t.name}',
+                  onPressed: _busy ? null : () => _map(t),
+                  child: const Text('Map…'),
+                ),
+                if (_plan.targets.containsKey(t.id))
+                  ShelfKey(
+                    semanticLabel: 'Forget where ${t.name} goes',
+                    onPressed: _busy ? null : () => _reset(t),
+                    child: const Text('Forget'),
                   ),
               ],
             ),
