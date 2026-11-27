@@ -184,14 +184,15 @@ new ones are ordinary, editable tags.
 
 ```mermaid
 flowchart TD
-  friend([Friend's shelf: album]) -- Add to my shelf --> entry[Album entry: add, no tags set; Anna's tags as keys in a box]
-  entry -- tap a tag I have --> entry
-  entry -- tap a new tag, group known --> entry
-  entry -- tap a new tag, group unknown --> ask[Where does it go? My most similar group / new group like Anna's / somewhere else: my groups]
-  ask -- answer, remembered for Anna's group --> entry
-  entry -- long press --> ask
+  friend([Friend's shelf: album]) -- Add to my shelf --> entry[Album entry: add, no tags set; row: Anna's tags, N on this album]
+  entry -- Choose --> list[Anna's tags: one line per tag with its path and where it goes]
+  list -- Add: I have it --> list
+  list -- Copy: I don't; her path is created --> list
+  list -- Use my X: my nearest tag above --> list
+  list -- Undo --> list
+  list -- error --> err[Couldn't copy the tag. Try again.] --> list
+  list -- Done --> entry
   entry -- Add to shelf --> done([My shelf + snackbar: Added to your shelf])
-  entry -- error --> err[Couldn't add the tag. Try again.] --> entry
 ```
 
 Notes:

@@ -137,16 +137,14 @@ void main() {
     expect(place(p, 'vinyl'), 'vinyl');
     expect(place(p, 'Shellac'), '+format/Shellac');
     expect(place(p, 'Shoegaze'), '+genre/Shoegaze');
-    expect(p.groupToAsk(their(p, 'Shoegaze')), isNull, reason: 'I have Genre');
   });
 
   test('a tag of a group I lack goes onto my tag of that name elsewhere', () {
     final p = plan({'Jazz', 'Dream pop'}, theirs: [...annasGroups, style]);
 
     expect(place(p, 'Jazz'), 'jazz');
-    expect(p.groupToAsk(their(p, 'Jazz')), isNull);
+    expect(p.tagPlace(their(p, 'Jazz')).match, Match.name);
     expect(place(p, 'Dream pop'), '+?/Dream pop');
-    expect(p.groupToAsk(their(p, 'Dream pop'))?.id, 'a-style');
     expect(p.suggestion(style)?.id, 'genre', reason: 'has Jazz and Pop');
   });
 
@@ -156,7 +154,7 @@ void main() {
 
     expect(place(p, 'Dream pop', picked), '+listening/Dream pop');
     expect(place(p, 'Jazz', picked), '+listening/Jazz', reason: 'follows');
-    expect(p.groupToAsk(their(p, 'Dream pop'), picked), isNull);
+    expect(p.tagPlace(their(p, 'Dream pop'), picked).match, Match.remembered);
   });
 
   test('a remembered answer is used, unless the group is gone', () {
@@ -178,16 +176,37 @@ void main() {
     );
   });
 
-  test('for a sub-tag, the topmost group I lack is asked about', () {
-    final p = plan({'First'}, theirs: [...annasGroups, pressing]);
+  test('my path to a place, and my nearest tag above a tag I lack', () {
+    final p = plan({'Shellac', 'First'}, theirs: [...annasGroups, pressing]);
 
-    expect(p.groupToAsk(their(p, 'First'))?.id, 'a-label');
-    expect(
-      p.groupToAsk(their(p, 'First'), {'a-label': const CopyAsIs()}),
-      isNull,
-      reason: 'the rest follows the friend\'s structure',
-    );
+    expect(p.tagPlace(their(p, 'vinyl')).path, [
+      'Collection',
+      'Own',
+      'Format',
+      'Vinyl',
+    ]);
+    expect(p.tagPlace(their(p, 'vinyl')).match, Match.path);
+    expect(p.tagPlace(their(p, 'First')).path, [
+      'Label',
+      'Parlophone',
+      'Pressing',
+      'First',
+    ]);
+    expect(p.nearestAbove(their(p, 'Shellac'))?.existing?.id, 'own');
+    expect(p.nearestAbove(their(p, 'First')), isNull, reason: 'no Parlophone');
+    expect(p.nearestAbove(their(p, 'jazz')), isNull, reason: 'top-level');
     expect(p.suggestion(pressing), isNull);
+  });
+
+  test('tags I made since count as mine', () {
+    final p = plan({'Shoegaze'});
+    final now = [
+      for (final g in p.mine.groups)
+        g.id == 'genre' ? g.withTag(tag('genre', 'Shoegaze')) : g,
+    ];
+
+    expect(place(p, 'Shoegaze'), '+genre/Shoegaze');
+    expect(place(p.withMyGroups(now), 'Shoegaze'), 'shoegaze');
   });
 
   group('add', () {
