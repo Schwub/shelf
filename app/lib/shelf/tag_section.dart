@@ -61,10 +61,19 @@ class TagSection extends StatelessWidget {
     required this.choice,
     required this.onChanged,
     required this.onCreate,
+    this.suggested = const {},
+    this.extra,
   });
 
   final TagChoice choice;
   final ValueChanged<TagChoice> onChanged;
+
+  /// Tags a friend has on this album: their keys carry a dot.
+  final Set<String> suggested;
+
+  /// More to show at the end of a group, when there is any: the friend's
+  /// tags offered there.
+  final Widget? Function(TagGroup group)? extra;
 
   /// Creates a tag in a group (from the Add sheet) and returns it.
   final Future<Tag> Function(TagGroup group, String name) onCreate;
@@ -105,6 +114,22 @@ class TagSection extends StatelessWidget {
                   ExcludeSemantics(child: Text(t.name)),
                   const SizedBox(width: 6),
                   Icon(Icons.close, size: 16, color: c.muted),
+                ],
+              )
+            : suggested.contains(t.id)
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(child: Text(t.name)),
+                  const SizedBox(width: 6),
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: c.signal,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ],
               )
             : Text(t.name),
@@ -165,6 +190,7 @@ class TagSection extends StatelessWidget {
           runSpacing: 8,
           children: [for (final t in shown) key(t)],
         ),
+      ?extra?.call(group),
       for (final sub in subGroups)
         Padding(
           padding: const EdgeInsets.only(top: 8),

@@ -16,8 +16,6 @@ class TagPaths extends StatelessWidget {
     required this.tag,
     this.marked,
     this.both = false,
-    this.landed,
-    this.onChange,
   });
 
   final TagImport plan;
@@ -31,39 +29,16 @@ class TagPaths extends StatelessWidget {
   /// Always two bars, even when the paths are the same.
   final bool both;
 
-  /// The user's tag it is on the album as: its path is filled in.
-  final String? landed;
-
-  /// Tapping a part of TO: the friend's group or tag to send elsewhere.
-  final ValueChanged<Start>? onChange;
-
   @override
   Widget build(BuildContext context) {
     final c = context.shelf;
     final text = Theme.of(context).textTheme;
     final from = plan.chainOf(tag);
     final at = marked == null ? -1 : from.indexOf(marked!);
-    final List<PathPart> to;
-    if (landed case final id?) {
-      to = [
-        for (final name in plan.myTag(id)?.path ?? [tag.name])
-          PathPart(name, on: true),
-      ];
-    } else {
-      to = [
-        for (final part in plan.toPath(tag))
-          PathPart(
-            part.name,
-            isNew: part.isNew,
-            on: part.start == marked,
-            onTap: onChange == null ? null : () => onChange!(part.start),
-            semanticLabel: onChange == null
-                ? null
-                : 'Change ${part.name}${part.isNew ? ', new' : ''} for '
-                      '${tag.name}',
-          ),
-      ];
-    }
+    final to = [
+      for (final part in plan.toPath(tag))
+        PathPart(part.name, isNew: part.isNew, on: part.start == marked),
+    ];
     final names = [for (final s in from) (s.group?.name ?? s.tag?.name)!];
     final same =
         !both &&
@@ -76,15 +51,13 @@ class TagPaths extends StatelessWidget {
     if (same) {
       return PathBar(
         parts: to,
-        trailing: landed != null
-            ? null
-            : Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: Text(
-                  '= mine',
-                  style: text.bodySmall!.copyWith(color: c.muted),
-                ),
-              ),
+        trailing: Padding(
+          padding: const EdgeInsets.only(left: 6),
+          child: Text(
+            '= mine',
+            style: text.bodySmall!.copyWith(color: c.muted),
+          ),
+        ),
       );
     }
     return Column(
