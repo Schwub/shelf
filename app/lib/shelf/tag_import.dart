@@ -60,7 +60,7 @@ class TagPlace {
 typedef Start = ({TagGroup? group, Tag? tag});
 
 /// Adding a friend's album: their tags on it, and where each goes in the
-/// user's tags (docs/features/tags.md, "A friend's tags, line by line").
+/// user's tags (docs/features/tags.md, "A friend's tags as suggestions").
 /// A place is worked out in this order: where the user mapped the tag,
 /// where they mapped a group or tag above it, a tag of the same name, and
 /// last the friend's structure as it is. Nothing is set or created until
@@ -299,10 +299,6 @@ class TagImport {
     },
     from: from,
   );
-
-  /// The user's tag [id] as a place; null when it isn't in a shown group.
-  TagPlace? myTag(String id) =>
-      _myGroupOfTag.containsKey(id) ? _existingTag(id) : null;
 
   TagPlace _existingTag(String id, {Tag? from}) {
     final g = _myGroupOfTag[id]!;

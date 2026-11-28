@@ -13,6 +13,7 @@ import 'package:shelf_app/shelf/friend_suggestions.dart';
 import 'package:shelf_app/shelf/place_picker_page.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf.dart';
+import 'package:shelf_app/shelf/tag_section.dart';
 import 'package:shelf_app/widgets/filter_bar.dart';
 import 'package:shelf_app/widgets/hidden_mark.dart';
 import 'package:shelf_app/widgets/shelf_key.dart';
@@ -478,6 +479,10 @@ void main() {
       expect(find.text('New from Anna'), findsOneWidget);
       expect(ghost('Label › Parlophone'), findsOneWidget);
       expect(ghost('Own'), findsNothing, reason: 'my key has a dot instead');
+      expect(tester.widget<TagSection>(find.byType(TagSection)).suggested, {
+        'own',
+        'listened',
+      });
       expect(shelf.trackLookups, ['mb-ok'], reason: 'no list of theirs');
       await tapText(tester, 'Add to shelf');
 
@@ -640,6 +645,18 @@ void main() {
         shelf.groups.firstWhere((g) => g.name == 'Subgenre').parentTagId,
         'jazz',
       );
+    });
+
+    testWidgets('a tag sent onto one of my keys can still be sent back', (
+      tester,
+    ) async {
+      shelf.copyTargetsSaved['a-shoegaze'] = const OntoTag('want');
+      await addFromAnna(tester, 'OK Computer');
+
+      expect(ghost('Want'), findsOneWidget, reason: 'faint, not just a dot');
+      await tapGhost(tester, 'Want');
+      await tapText(tester, 'Add to shelf');
+      expect(shelf.addedTags, ['want']);
     });
 
     testWidgets("a failed copy says so and can be tried again", (tester) async {

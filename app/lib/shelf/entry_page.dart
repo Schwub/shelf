@@ -67,8 +67,8 @@ class EntryPage extends StatefulWidget {
   /// The user's visible tag groups, to tag the album with.
   final List<TagGroup> groups;
 
-  /// Adding a friend's album: their tags the user has are set, and the
-  /// missing ones offered once the page shows.
+  /// Adding a friend's album: their tags on it are offered inside the tag
+  /// sections.
   final TagImport? fromFriend;
 
   /// The track list to start an added album with (a friend's); without one,
@@ -286,11 +286,7 @@ class _EntryPageState extends State<EntryPage> {
         widget.entry?.addedFromName ?? widget.fromFriend?.from.name;
     final friend = _friend;
     final open = friend?.open ?? const <Suggestion>[];
-    // The friend's tags the user has: all of them can go on in one tap.
-    final have = [
-      for (final s in open)
-        if (!s.isNew && friend!.others(s.tag).isEmpty) s,
-    ];
+    final have = friend?.have ?? const <Tag>[];
     return PopScope(
       canPop: !_changed,
       onPopInvokedWithResult: (didPop, _) {
@@ -362,9 +358,7 @@ class _EntryPageState extends State<EntryPage> {
                                         : 'Add the ${have.length} I have',
                                     onPressed: () {
                                       if (!_saving) {
-                                        friend.acceptAll(context, [
-                                          for (final s in have) s.tag,
-                                        ]);
+                                        friend.acceptAll(context, have);
                                       }
                                     },
                                   ),

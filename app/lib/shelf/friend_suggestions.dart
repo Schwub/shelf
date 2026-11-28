@@ -45,6 +45,19 @@ class FriendSuggestions extends ChangeNotifier {
   /// The plan, with the tags made on the album entry since as the user's.
   TagImport get plan => _plan = _plan.withMyGroups(choice().groups);
 
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  /// The album entry may be gone when a copy ends.
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
   /// A tag is being created: the album can't be saved meanwhile.
   bool busy = false;
   bool failed = false;
@@ -93,15 +106,56 @@ class FriendSuggestions extends ChangeNotifier {
               home: group,
               label: below.join(' › '),
               isNew: place.isNew,
+              // A tag the user sent somewhere stays a faint key, so a
+              // long press can send it back.
               onKey:
                   group != null &&
                       !group.pickFromList &&
-                      identical(home, place.group)
+                      identical(home, place.group) &&
+                      !_mapped(plan, t)
                   ? place.existing?.id
                   : null,
             );
           }(),
     ];
+  }
+
+  bool _mapped(TagImport plan, Tag t) => plan
+      .chainOf(t)
+      .any((s) => plan.targets.containsKey(s.group?.id ?? s.tag?.id));
+
+  /// The friend's tags the user has and hasn't taken, which can all go on
+  /// in one tap: in a one-per-album group only one, and none when the
+  /// group has a tag set already.
+  List<Tag> get have {
+    final plan = this.plan;
+    final chosen = choice().chosen;
+    final wanted = <String, String>{}; // my one-per-album group → its tag
+    final have = <Tag>[];
+    for (final t in plan.tags) {
+      final place = plan.tagPlace(t);
+      if (place.isNew ||
+          chosen.contains(place.existing!.id) ||
+          others(t).isNotEmpty) {
+        continue;
+      }
+      final chain = [place, ...place.ancestors];
+      final fits = chain.every((p) {
+        final group = p.group.existing!;
+        if (!group.exclusive) return true;
+        final set = group.tags.where((m) => chosen.contains(m.id)).firstOrNull;
+        return (wanted[group.id] ?? set?.id ?? p.existing!.id) ==
+            p.existing!.id;
+      });
+      if (!fits) continue;
+      for (final p in chain) {
+        if (p.group.existing!.exclusive) {
+          wanted[p.group.existing!.id] = p.existing!.id;
+        }
+      }
+      have.add(t);
+    }
+    return have;
   }
 
   /// The friend's tags that come along with [t], when the user asked.
@@ -153,9 +207,10 @@ class FriendSuggestions extends ChangeNotifier {
     failed = false;
     if (place.isNew || others.isNotEmpty) {
       busy = true;
-      notifyListeners();
+      _notify();
       try {
         final (:mine, :tagIds) = await plan.add(shelf, [...others, t]);
+        if (_disposed) return;
         _plan = plan.withMine(mine);
         onChanged(_with(TagChoice(mine.groups, choice().chosen), tagIds));
       } catch (e, stack) {
@@ -164,7 +219,7 @@ class FriendSuggestions extends ChangeNotifier {
         return;
       } finally {
         busy = false;
-        notifyListeners();
+        _notify();
       }
     } else {
       onChanged(
@@ -173,7 +228,7 @@ class FriendSuggestions extends ChangeNotifier {
           place.existing!.id,
         ]),
       );
-      notifyListeners();
+      _notify();
     }
     _bring.remove(t.id);
     await _remember(t);
@@ -235,6 +290,8 @@ class FriendSuggestions extends ChangeNotifier {
       bring: _bring[t.id] == start,
     );
     if (picked == null) return;
+    if (_disposed) return;
+    failed = false;
     final id = (start.group?.id ?? start.tag?.id)!;
     // What was mapped below it on the way to this tag is replaced.
     final below = [
@@ -259,7 +316,7 @@ class FriendSuggestions extends ChangeNotifier {
         _reset.add(id);
       }
     }
-    notifyListeners();
+    _notify();
   }
 }
 
