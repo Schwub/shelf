@@ -15,8 +15,9 @@ import '../widgets/help_line.dart';
 import '../widgets/rating_keys.dart';
 import '../widgets/shelf_field.dart';
 import '../widgets/shelf_key.dart';
+import '../widgets/text_link.dart';
 import 'shelf.dart';
-import 'friend_tags_page.dart';
+import 'friend_suggestions.dart';
 import 'shelf_repository.dart';
 import 'tag_import.dart';
 import 'tag_section.dart';
@@ -108,78 +109,38 @@ class _EntryPageState extends State<EntryPage> {
   late TagChoice _tags = TagChoice(widget.groups, _initialTags);
   bool _saving = false;
 
-  /// The friend's tags, with the user's shelf as "Anna's tags" left it,
-  /// and the user's tag each of them went onto there.
-  late TagImport? _plan = widget.fromFriend;
-  Map<String, String> _landed = const {};
-  Set<String> _mapped = const {}, _unmapped = const {};
+  /// The friend's tags on the album, offered inside the tag sections.
+  late final FriendSuggestions? _friend = switch (widget.fromFriend) {
+    final plan? => FriendSuggestions(
+      plan,
+      shelf: widget.shelf,
+      choice: () => _tags,
+      onChanged: (t) => setState(() => _tags = t),
+    )..addListener(() => setState(() {})),
+    null => null,
+  };
 
-  /// [_plan] with the tags made on this page since.
-  TagImport? get _friendPlan => _plan?.withMyGroups(_tags.groups);
-
-  Future<void> _chooseFriendTags() async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute<FriendTagsResult>(
-        builder: (_) => FriendTagsPage(
-          plan: _friendPlan!,
-          shelf: widget.shelf,
-          choice: _tags,
-          landed: _landed,
-          changed: _mapped,
-          reset: _unmapped,
+  /// The friend's tags [open] as faint keys.
+  Widget _ghosts(FriendSuggestions friend, Iterable<Suggestion> open) =>
+      Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Wrap(
+          spacing: 8,
+          children: [
+            for (final s in open)
+              GhostChip(
+                label: s.label,
+                from: friend.plan.from.name,
+                isNew: s.isNew,
+                count: friend.others(s.tag).length + 1,
+                onTap: _saving ? null : () => friend.accept(context, s.tag),
+                onLongPress: _saving
+                    ? null
+                    : () => friend.change(context, s.tag),
+              ),
+          ],
         ),
-      ),
-    );
-    if (result == null || !mounted) return;
-    setState(() {
-      _tags = result.choice;
-      _plan = result.plan;
-      _landed = result.landed;
-      _mapped = result.changed;
-      _unmapped = result.reset;
-    });
-  }
-
-  /// "Anna's tags": how many are on her album and added, and the way in.
-  Widget _friendTagsRow(TagImport plan) {
-    final c = context.shelf;
-    final text = Theme.of(context).textTheme;
-    final added = plan.tags.where((t) {
-      final id = _landed[t.id] ?? plan.tagPlace(t).existing?.id;
-      return _tags.chosen.contains(id);
-    }).length;
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: c.line),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("${plan.from.name}'s tags", style: text.titleMedium),
-                Text(
-                  '${plan.tags.length} on this album · '
-                  '${added == 0 ? 'none added yet' : '$added added'}',
-                  style: text.bodySmall!.copyWith(color: c.muted),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          ShelfKey(
-            semanticLabel: "Choose from ${plan.from.name}'s tags",
-            onPressed: _saving ? null : _chooseFriendTags,
-            child: const Text('Choose'),
-          ),
-        ],
-      ),
-    );
-  }
+      );
 
   bool _saveFailed = false;
 
@@ -232,6 +193,7 @@ class _EntryPageState extends State<EntryPage> {
   @override
   void dispose() {
     _comment.dispose();
+    _friend?.dispose();
     super.dispose();
   }
 
@@ -322,6 +284,13 @@ class _EntryPageState extends State<EntryPage> {
     final label = text.labelSmall!.copyWith(color: c.muted);
     final addedFrom =
         widget.entry?.addedFromName ?? widget.fromFriend?.from.name;
+    final friend = _friend;
+    final open = friend?.open ?? const <Suggestion>[];
+    // The friend's tags the user has: all of them can go on in one tap.
+    final have = [
+      for (final s in open)
+        if (!s.isNew && friend!.others(s.tag).isEmpty) s,
+    ];
     return PopScope(
       canPop: !_changed,
       onPopInvokedWithResult: (didPop, _) {
@@ -367,16 +336,78 @@ class _EntryPageState extends State<EntryPage> {
                             const SizedBox(height: 4),
                             HelpLine("Added from $addedFrom's shelf"),
                           ],
-                          if (_friendPlan case final plan?
-                              when plan.tags.isNotEmpty)
-                            _friendTagsRow(plan),
-                          const SizedBox(height: 16),
+                          if (open.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: c.signal,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    "${friend!.plan.from.name}'s tags",
+                                    style: label,
+                                  ),
+                                ),
+                                if (have.isNotEmpty)
+                                  TextLink(
+                                    label: have.length == 1
+                                        ? 'Add the one I have'
+                                        : 'Add the ${have.length} I have',
+                                    onPressed: () {
+                                      if (!_saving) {
+                                        friend.acceptAll(context, [
+                                          for (final s in have) s.tag,
+                                        ]);
+                                      }
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ] else
+                            const SizedBox(height: 16),
                           TagSection(
                             choice: _tags,
                             onChanged: (t) => setState(() => _tags = t),
                             onCreate: (group, name) =>
                                 widget.shelf.createTag(group.id, name),
+                            suggested: {for (final s in open) ?s.onKey},
+                            extra: (group) {
+                              final here = open.where(
+                                (s) =>
+                                    s.onKey == null && s.home?.id == group.id,
+                              );
+                              return here.isEmpty
+                                  ? null
+                                  : _ghosts(friend!, here);
+                            },
                           ),
+                          if (open.any((s) => s.home == null)) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'New from ${friend!.plan.from.name}',
+                              style: label,
+                            ),
+                            _ghosts(friend, open.where((s) => s.home == null)),
+                          ],
+                          if (friend?.note case final note?) ...[
+                            const SizedBox(height: 8),
+                            HelpLine(note),
+                          ],
+                          if (friend?.failed ?? false) ...[
+                            const SizedBox(height: 8),
+                            const HelpLine(
+                              "Couldn't copy the tag. Check your connection "
+                              'and try again.',
+                              error: true,
+                            ),
+                          ],
                           const SizedBox(height: 16),
                           Row(
                             children: [
@@ -512,7 +543,9 @@ class _EntryPageState extends State<EntryPage> {
                 Expanded(
                   child: ShelfKey(
                     primary: true,
-                    onPressed: _saving ? null : _save,
+                    onPressed: _saving || (_friend?.busy ?? false)
+                        ? null
+                        : _save,
                     child: Text(
                       widget.adding
                           ? (_saving ? 'Adding…' : 'Add to shelf')

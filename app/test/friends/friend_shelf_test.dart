@@ -9,15 +9,13 @@ import 'package:shelf_app/main.dart';
 import 'package:shelf_app/settings/settings.dart';
 import 'package:shelf_app/share/link_resolver.dart';
 import 'package:shelf_app/share/shared_link_inbox.dart';
-import 'package:shelf_app/shelf/friend_tags_page.dart';
-import 'package:shelf_app/shelf/path_bar.dart';
+import 'package:shelf_app/shelf/friend_suggestions.dart';
 import 'package:shelf_app/shelf/place_picker_page.dart';
 import 'package:shelf_app/shelf/entry_page.dart';
 import 'package:shelf_app/shelf/shelf.dart';
 import 'package:shelf_app/widgets/filter_bar.dart';
 import 'package:shelf_app/widgets/hidden_mark.dart';
 import 'package:shelf_app/widgets/shelf_key.dart';
-import 'package:shelf_app/widgets/text_link.dart';
 
 import '../auth/fake_auth.dart';
 import '../search/fake_search.dart';
@@ -407,41 +405,28 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    /// Taps the key that reads [label] to a screen reader ("Add Own").
-    Future<void> tapKey(WidgetTester tester, String label) async {
-      final key = find.byWidgetPredicate(
-        (w) =>
-            (w is ShelfKey && w.semanticLabel == label) ||
-            (w is TextLink && w.semanticLabel == label),
-      );
-      await tester.ensureVisible(key);
+    /// One of Anna's tags offered as a faint key, by what it reads.
+    Finder ghost(String label) =>
+        find.byWidgetPredicate((w) => w is GhostChip && w.label == label);
+
+    Future<void> tapGhost(WidgetTester tester, String label) async {
+      await tester.ensureVisible(ghost(label));
       await tester.pumpAndSettle();
-      await tester.tap(key);
+      await tester.tap(ghost(label));
       await tester.pumpAndSettle();
     }
 
-    /// Adds [title] from Anna and opens "Anna's tags".
-    Future<void> annasTags(WidgetTester tester, String title) async {
-      await addFromAnna(tester, title);
-      await tapText(tester, 'Choose');
+    Future<void> pressGhost(WidgetTester tester, String label) async {
+      await tester.ensureVisible(ghost(label));
+      await tester.pumpAndSettle();
+      await tester.longPress(ghost(label));
+      await tester.pumpAndSettle();
     }
 
     List<String> tagsIn(String groupId) => [
       for (final t in shelf.groups.firstWhere((g) => g.id == groupId).tags)
         t.name,
     ];
-
-    /// Taps the part of a To path that reads [label] to a screen reader
-    /// ("Change Metal, new for Black metal").
-    Future<void> tapPart(WidgetTester tester, String label) async {
-      final chip = find.byWidgetPredicate(
-        (w) => w is PathChip && w.part.semanticLabel == label,
-      );
-      await tester.ensureVisible(chip);
-      await tester.pumpAndSettle();
-      await tester.tap(chip);
-      await tester.pumpAndSettle();
-    }
 
     /// Anna's OK Computer with [tagIds], and Subgenre › Free jazz, Bebop
     /// under her Jazz, Pressing › First under her Parlophone.
@@ -482,43 +467,29 @@ void main() {
       );
     }
 
-    testWidgets('the entry says how many tags she has, none added', (
+    testWidgets('her tags are offered inside my own tags; none is set', (
       tester,
     ) async {
       await addFromAnna(tester, 'OK Computer');
 
       expect(find.text("Anna's tags"), findsOneWidget);
-      expect(find.text('4 on this album · none added yet'), findsOneWidget);
       expect(find.text("Added from Anna's shelf"), findsOneWidget);
+      expect(ghost('Shoegaze'), findsOneWidget, reason: 'in my Genre');
+      expect(find.text('New from Anna'), findsOneWidget);
+      expect(ghost('Label › Parlophone'), findsOneWidget);
+      expect(ghost('Own'), findsNothing, reason: 'my key has a dot instead');
       expect(shelf.trackLookups, ['mb-ok'], reason: 'no list of theirs');
       await tapText(tester, 'Add to shelf');
 
       expect(shelf.addedTags, isEmpty);
     });
 
-    testWidgets('one bar when her path is mine, From and To when not', (
-      tester,
-    ) async {
-      await annasTags(tester, 'OK Computer');
+    testWidgets('a tap takes a tag I have, with its parent', (tester) async {
+      await addFromAnna(tester, 'Kid A');
 
-      expect(find.byType(FriendTagsPage), findsOneWidget);
-      expect(find.text('= mine'), findsNWidgets(2), reason: 'Own, Listened');
-      expect(find.text('FROM'), findsNWidgets(2), reason: 'the two new ones');
-      expect(find.text('TO'), findsNWidgets(2));
-    });
+      await tapGhost(tester, 'Own › Format › Vinyl');
 
-    testWidgets('Add sets my tag with its parent; Undo takes it off', (
-      tester,
-    ) async {
-      await annasTags(tester, 'Kid A');
-
-      await tapKey(tester, 'Add Vinyl');
-      expect(find.text('On the album'), findsNWidgets(2), reason: 'Own too');
-      await tapKey(tester, 'Add Listened');
-      await tapKey(tester, 'Undo Listened');
-      await tapText(tester, 'Done');
-
-      expect(find.text('3 on this album · 2 added'), findsOneWidget);
+      expect(ghost('Own › Format › Vinyl'), findsNothing);
       await tapText(tester, 'Add to shelf');
       expect(shelf.addedTags, unorderedEquals(['own', 'vinyl']));
       expect(shelf.addedFrom, (userId: 'anna', name: 'Anna'));
@@ -531,38 +502,34 @@ void main() {
     });
 
     testWidgets('the ones I have are one tap away', (tester) async {
-      await annasTags(tester, 'Kid A');
+      await addFromAnna(tester, 'Kid A');
 
-      await tapText(tester, 'Add 3 = mine');
-      expect(find.text('Add 3 = mine'), findsNothing);
-      await tester.binding.handlePopRoute(); // Back, like Done.
-      await tester.pumpAndSettle();
+      await tapText(tester, 'Add the 3 I have');
+
+      expect(find.text("Anna's tags"), findsNothing, reason: 'all taken');
       await tapText(tester, 'Add to shelf');
-
       expect(shelf.addedTags, unorderedEquals(['own', 'vinyl', 'listened']));
     });
 
-    testWidgets('Copy creates a tag I lack in my group of that name', (
+    testWidgets('a tag I lack is created in my group of that name', (
       tester,
     ) async {
-      await annasTags(tester, 'OK Computer');
+      await addFromAnna(tester, 'OK Computer');
 
-      await tapKey(tester, 'Copy Shoegaze');
+      await tapGhost(tester, 'Shoegaze');
 
       expect(tagsIn('genre'), contains('Shoegaze'));
-      await tapText(tester, 'Done');
       await tapText(tester, 'Add to shelf');
       expect(shelf.addedTags, ['shoegaze']);
     });
 
-    testWidgets('Copy brings her structure when I lack the group', (
+    testWidgets('a tag with no place of mine brings her structure', (
       tester,
     ) async {
-      annaNests(const {'a-parlophone', 'a-first'});
-      await annasTags(tester, 'OK Computer');
+      annaNests(const {'a-first'});
+      await addFromAnna(tester, 'OK Computer');
 
-      await tapKey(tester, 'Copy First');
-      await tapText(tester, 'Done');
+      await tapGhost(tester, 'Label › Parlophone › Pressing › First');
       await tapText(tester, 'Add to shelf');
 
       expect(shelf.addedTags, unorderedEquals(['parlophone', 'first']));
@@ -576,165 +543,73 @@ void main() {
       );
     });
 
-    testWidgets('Undo also takes off the parents the line brought', (
-      tester,
-    ) async {
-      annaNests(const {'a-first'});
-      await annasTags(tester, 'OK Computer');
-
-      await tapKey(tester, 'Copy First');
-      await tapKey(tester, 'Undo First');
-      await tapText(tester, 'Done');
-      await tapText(tester, 'Add to shelf');
-
-      expect(shelf.addedTags, isEmpty, reason: 'Parlophone came off too');
-    });
-
-    group('changing a part of where it lands', () {
+    group('a long press sends it elsewhere', () {
       /// Anna's Genre › Jazz › Subgenre › Free jazz; I have Genre › Jazz
       /// and no Subgenre.
       Future<void> freeJazz(WidgetTester tester) async {
         annaNests(const {'a-free'});
-        await annasTags(tester, 'OK Computer');
+        await addFromAnna(tester, 'OK Computer');
+        await pressGhost(tester, 'Jazz › Subgenre › Free jazz');
       }
 
-      testWidgets('the tag: one of my tags instead, remembered once added', (
-        tester,
-      ) async {
+      testWidgets('flat into my group; remembered once taken', (tester) async {
         await freeJazz(tester);
 
-        await tapPart(tester, 'Change Free jazz, new for Free jazz');
-        expect(find.text("like Anna's"), findsOneWidget);
-        await tapText(tester, 'Genre › Jazz');
+        expect(find.text('FROM'), findsOneWidget);
+        await tapText(tester, 'no sub-group');
         await tapText(tester, 'Done');
 
-        expect(shelf.copyTargetsSaved, isEmpty, reason: 'not added yet');
-        await tapKey(tester, 'Add Free jazz');
-        expect(shelf.copyTargetsSaved, {'a-free': const OntoTag('jazz')});
-        await tapText(tester, 'Done');
-        await tapText(tester, 'Add to shelf');
-        expect(shelf.addedTags, ['jazz']);
+        expect(ghost('Free jazz'), findsOneWidget);
+        expect(shelf.copyTargetsSaved, isEmpty, reason: 'not taken yet');
+        await tapGhost(tester, 'Free jazz');
+        expect(tagsIn('genre'), contains('Free jazz'));
         expect(shelf.groups.any((g) => g.name == 'Subgenre'), isFalse);
+        expect(shelf.copyTargetsSaved, {'a-sub': const IntoGroup('genre')});
+        await tapText(tester, 'Add to shelf');
+        expect(shelf.addedTags, ['free jazz']);
       });
 
-      testWidgets('a sub-group: flat into my group, the rest comes along', (
+      testWidgets('the rest of her group can come along, after a check', (
         tester,
       ) async {
         await freeJazz(tester);
-
-        await tapPart(tester, 'Change Subgenre, new for Free jazz');
         await tapText(tester, 'no sub-group');
         await tapText(tester, '+ 1 more tag from Subgenre');
         await tapText(tester, 'Done');
-        await tapText(tester, 'Copy 2 tags');
 
+        await tapGhost(tester, 'Free jazz');
         expect(find.text('Check'), findsOneWidget);
         expect(find.text('+ 1 MORE TAG, COPIED ONLY'), findsOneWidget);
         await tapText(tester, 'Copy 2 tags');
 
         expect(tagsIn('genre'), containsAll(['Free jazz', 'Bebop']));
-        expect(shelf.groups.any((g) => g.name == 'Subgenre'), isFalse);
-        expect(shelf.copyTargetsSaved, {'a-sub': const IntoGroup('genre')});
-        await tapText(tester, 'Done');
         await tapText(tester, 'Add to shelf');
         expect(shelf.addedTags, ['free jazz'], reason: 'Bebop only copied');
       });
 
-      testWidgets('a sub-group: under another of my tags, from the browser', (
-        tester,
-      ) async {
+      testWidgets('under another of my tags, from the browser', (tester) async {
         await freeJazz(tester);
 
-        await tapPart(tester, 'Change Subgenre, new for Free jazz');
         await tapText(tester, 'Another place…');
         expect(find.byType(PlacePickerPage), findsOneWidget);
         await tapText(tester, 'Genre');
         await tapText(tester, 'Ambient');
         await tapText(tester, 'Subgenre under Ambient');
-        expect(find.text('Genre › Ambient › Subgenre'), findsOneWidget);
         await tapText(tester, 'Done');
-        await tapKey(tester, 'Copy Free jazz');
+        await tapGhost(tester, 'Ambient › Subgenre › Free jazz');
 
         expect(
           shelf.groups.firstWhere((g) => g.name == 'Subgenre').parentTagId,
           'ambient',
         );
         expect(shelf.copyTargetsSaved, {'a-sub': const UnderTag('ambient')});
-        await tapText(tester, 'Done');
         await tapText(tester, 'Add to shelf');
         expect(shelf.addedTags, unorderedEquals(['ambient', 'free jazz']));
-      });
-
-      testWidgets('a change is still saved when added on a later visit', (
-        tester,
-      ) async {
-        await freeJazz(tester);
-        await tapPart(tester, 'Change Free jazz, new for Free jazz');
-        await tapText(tester, 'Genre › Jazz');
-        await tapText(tester, 'Done');
-        await tapText(tester, 'Done'); // Leave the list without adding.
-
-        await tapText(tester, 'Choose');
-        await tapKey(tester, 'Add Free jazz');
-
-        expect(shelf.copyTargetsSaved, {'a-free': const OntoTag('jazz')});
-      });
-
-      testWidgets('bringing the rest survives a change to another part', (
-        tester,
-      ) async {
-        await freeJazz(tester);
-        await tapPart(tester, 'Change Subgenre, new for Free jazz');
-        await tapText(tester, '+ 1 more tag from Subgenre');
-        await tapText(tester, 'Done');
-        expect(find.text('Copy 2 tags'), findsOneWidget);
-
-        await tapPart(tester, 'Change Free jazz, new for Free jazz');
-        await tapText(tester, 'Done');
-
-        expect(find.text('Copy 2 tags'), findsOneWidget);
-      });
-
-      testWidgets('a remembered place is used, and can go back to hers', (
-        tester,
-      ) async {
-        shelf.copyTargetsSaved['a-free'] = const OntoTag('ambient');
-        await freeJazz(tester);
-
-        expect(find.text('Ambient'), findsOneWidget);
-        await tapPart(tester, 'Change Ambient for Free jazz');
-        await tapText(tester, "like Anna's");
-        await tapText(tester, 'Done');
-        await tapKey(tester, 'Copy Free jazz');
-
-        expect(shelf.copyTargetsSaved, isEmpty);
-        expect(
-          shelf.groups.firstWhere((g) => g.name == 'Subgenre').parentTagId,
-          'jazz',
-        );
-      });
-
-      testWidgets('a tag pushed out of a one-per-album group is named', (
-        tester,
-      ) async {
-        await annasTags(tester, 'OK Computer');
-        await tapKey(tester, 'Add Own');
-
-        await tapPart(tester, 'Change Listened for Listened');
-        await tapText(tester, 'Another place…');
-        await tapText(tester, 'My tags');
-        await tapText(tester, 'Collection');
-        await tapText(tester, 'Listened into Collection');
-        await tapText(tester, 'Done');
-        await tapKey(tester, 'Copy Listened');
-
-        expect(find.text('Own: off, one per album'), findsOneWidget);
       });
 
       testWidgets('the sheet and the browser are accessible', (tester) async {
         final semantics = tester.ensureSemantics();
         await freeJazz(tester);
-        await tapPart(tester, 'Change Subgenre, new for Free jazz');
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
         await expectLater(tester, meetsGuideline(textContrastGuideline));
@@ -747,36 +622,57 @@ void main() {
       });
     });
 
+    testWidgets('a remembered place is used, and can go back to hers', (
+      tester,
+    ) async {
+      shelf.copyTargetsSaved['a-free'] = const OntoTag('ambient');
+      annaNests(const {'a-free'});
+      await addFromAnna(tester, 'OK Computer');
+
+      expect(ghost('Ambient'), findsOneWidget);
+      await pressGhost(tester, 'Ambient');
+      await tapText(tester, "like Anna's");
+      await tapText(tester, 'Done');
+      await tapGhost(tester, 'Jazz › Subgenre › Free jazz');
+
+      expect(shelf.copyTargetsSaved, isEmpty);
+      expect(
+        shelf.groups.firstWhere((g) => g.name == 'Subgenre').parentTagId,
+        'jazz',
+      );
+    });
+
     testWidgets("a failed copy says so and can be tried again", (tester) async {
       shelf.failEdit = true;
-      await annasTags(tester, 'OK Computer');
+      await addFromAnna(tester, 'OK Computer');
 
-      await tapKey(tester, 'Copy Parlophone');
+      await tapGhost(tester, 'Label › Parlophone');
       expect(
         find.text(
           "Couldn't copy the tag. Check your connection and try again.",
         ),
         findsOneWidget,
       );
-      await tapKey(tester, 'Copy Parlophone');
+      await tapGhost(tester, 'Label › Parlophone');
 
       expect(shelf.groups.any((g) => g.name == 'Label'), isTrue);
-      await tapText(tester, 'Done');
       await tapText(tester, 'Add to shelf');
       expect(shelf.addedTags, ['parlophone']);
     });
 
     testWidgets('copies stay when the add is cancelled', (tester) async {
-      await annasTags(tester, 'OK Computer');
-      await tapKey(tester, 'Copy Shoegaze');
-      await tapText(tester, 'Done');
+      await addFromAnna(tester, 'OK Computer');
+      await tapGhost(tester, 'Shoegaze');
       await tapText(tester, 'Cancel');
       await tapText(tester, 'Discard');
 
       expect(shelf.entries.any((e) => e.album.musicbrainzId == 'mb-ok'), false);
       await tapText(tester, 'Add to my shelf');
-      await tapText(tester, 'Choose');
-      expect(find.text('Add 3 = mine'), findsOneWidget);
+      expect(
+        tester.widget<GhostChip>(ghost('Shoegaze')).isNew,
+        isFalse,
+        reason: 'mine now',
+      );
     });
 
     testWidgets("adding says so when your shelf doesn't load", (tester) async {
@@ -792,17 +688,12 @@ void main() {
       expect(find.text('Add to shelf'), findsNothing);
     });
 
-    testWidgets("Anna's tags meet the accessibility guidelines", (
+    testWidgets("her tags on the entry meet the accessibility guidelines", (
       tester,
     ) async {
       final semantics = tester.ensureSemantics();
       await addFromAnna(tester, 'OK Computer');
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(textContrastGuideline));
 
-      await tapText(tester, 'Choose');
-      await tapKey(tester, 'Add Own');
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
       await expectLater(tester, meetsGuideline(textContrastGuideline));

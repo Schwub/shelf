@@ -4,21 +4,17 @@ import '../theme/shelf_colors.dart';
 
 /// One part of a tag's path: a group or tag name. [isNew] parts don't exist
 /// yet (dashed, with a plus), [on] parts are filled in, [dim] ones stand
-/// back. With [onTap] the part can be changed.
+/// back.
 class PathPart {
   const PathPart(
     this.name, {
     this.isNew = false,
     this.on = false,
     this.dim = false,
-    this.onTap,
-    this.semanticLabel,
   });
 
   final String name;
   final bool isNew, on, dim;
-  final VoidCallback? onTap;
-  final String? semanticLabel;
 }
 
 /// A tag's full path as a row of parts that wraps, the last one the tag
@@ -40,7 +36,7 @@ class PathBar extends StatelessWidget {
       children: [
         SizedBox(
           width: 44,
-          height: 48,
+          height: 40,
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -72,8 +68,7 @@ class PathBar extends StatelessWidget {
   }
 }
 
-/// A part of a path as a chip; a full-height touch area when it can be
-/// tapped.
+/// A part of a path as a chip.
 class PathChip extends StatelessWidget {
   const PathChip(this.part, {super.key, this.last = false});
 
@@ -92,7 +87,7 @@ class PathChip extends StatelessWidget {
         ? c.off
         : c.line;
     final chip = CustomPaint(
-      foregroundPainter: part.isNew && !part.on ? _Dashes(c.muted) : null,
+      foregroundPainter: part.isNew && !part.on ? DashedOutline(c.muted) : null,
       child: Container(
         height: 32,
         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -123,28 +118,19 @@ class PathChip extends StatelessWidget {
       ),
     );
     return Semantics(
-      button: part.onTap != null,
-      label: part.semanticLabel ?? '${part.name}${part.isNew ? ', new' : ''}',
-      onTap: part.onTap,
+      label: '${part.name}${part.isNew ? ', new' : ''}',
       excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: part.onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: Center(widthFactor: 1, child: chip),
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+        child: chip,
       ),
     );
   }
 }
 
 /// A dashed rounded outline, for a part that doesn't exist yet.
-class _Dashes extends CustomPainter {
-  const _Dashes(this.color);
+class DashedOutline extends CustomPainter {
+  const DashedOutline(this.color);
 
   final Color color;
 
@@ -168,5 +154,5 @@ class _Dashes extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_Dashes old) => old.color != color;
+  bool shouldRepaint(DashedOutline old) => old.color != color;
 }
